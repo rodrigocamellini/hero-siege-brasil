@@ -75,6 +75,51 @@ const BlogComments = React.memo(function BlogComments({ postId }) {
   );
 });
 
+const PASSIVE_RELICS = [
+  { name: 'Barbed Shield', stats: ['Dmg Returned'], l1: ['10%'], l5: ['60%'], l10: ['200%'] },
+  { name: 'Bonsai Tree', stats: ['Vitality', 'Magic Find'], l1: ['+2', '2%'], l5: ['+10', '10%'], l10: ['+20', '20%'] },
+  { name: 'Bracer of Life', stats: ['Replenish Life'], l1: ['5%'], l5: ['25%'], l10: ['50%'] },
+  { name: 'Butterfly Knife', stats: ['Atk Speed', 'Crit Dmg'], l1: ['+2%', '+2%'], l5: ['+10%', '+10%'], l10: ['+20%', '+20%'] },
+  { name: 'Cake', stats: ['Life Increased'], l1: ['2%'], l5: ['10%'], l10: ['20%'] },
+  { name: 'Charmed Blood', stats: ['Life Stolen'], l1: ['1%'], l5: ['5%'], l10: ['10%'] },
+  { name: 'Cheese Burger', stats: ['Replenish Life', 'Life'], l1: ['5%', '+25'], l5: ['25%', '+245'], l10: ['50%', '+580'] },
+  { name: "Commander's Sword", stats: ['Move Speed', 'Atk Damage'], l1: ['-2%', '10%'], l5: ['-10%', '50%'], l10: ['-20%', '100%'] },
+  { name: 'Cookies & Milk', img: 'https://herosiege.wiki.gg/images/Relics_Cookies_%26_Milk.png', stats: ['Replenish Life', 'Replenish Mana'], l1: ['3%', '3%'], l5: ['15%', '15%'], l10: ['30%', '30%'] },
+  { name: 'Damned Buckler', stats: ['Armor', 'FHR'], l1: ['+5', '2%'], l5: ['+16', '10%'], l10: ['+32', '20%'] },
+  { name: 'Dirge', stats: ['Atk Rating', 'Add Phys Dmg'], l1: ['+12', '+8'], l5: ['+110', '+128'], l10: ['+475', '+1896'] },
+  { name: 'Doom Flute', stats: ['Strength', 'Dexterity'], l1: ['+4', '+4'], l5: ['+12', '+12'], l10: ['+22', '+22'] },
+  { name: 'Fortune Card', stats: ['Extra Gold', 'Magic Find'], l1: ['3%', '3%'], l5: ['15%', '15%'], l10: ['30%', '30%'] },
+  { name: 'Half Eaten Mochi', stats: ['Life After Kill', 'Mana After Kill'], l1: ['+3', '+3'], l5: ['+11', '+11'], l10: ['+21', '+21'] },
+  { name: 'Hand of Midas', stats: ['Extra Gold'], l1: ['+4%'], l5: ['+20%'], l10: ['+40%'] },
+  { name: 'Hand Scythe', stats: ['Atk Speed', 'Atk Rating'], l1: ['+3%', '+2%'], l5: ['+15%', '+10%'], l10: ['+30%', '+20%'] },
+  { name: 'Hellscream Axe', stats: ['Add Phys Dmg', 'Add Fire Dmg'], l1: ['+8', '+8'], l5: ['+128', '+128'], l10: ['+1696', '+1696'] },
+  { name: 'Horned Mask', stats: ['Dmg Returned', 'Phys Dmg Reduct'], l1: ['2%', '1%'], l5: ['10%', '5%'], l10: ['20%', '10%'] },
+  { name: "Jefre's Subscription", img: 'https://herosiege.wiki.gg/images/Relics_Jefre%27s_Subscription.png', stats: ['Light Radius', 'Magic Find'], l1: ['+1', '3%'], l5: ['+5', '15%'], l10: ['+10', '30%'] },
+  { name: "King's Crown", img: 'https://herosiege.wiki.gg/images/Relics_King%27s_Crown.png', stats: ['Extra Gold'], l1: ['3%'], l5: ['18%'], l10: ['35%'] },
+  { name: 'Light Katana', stats: ['Atk Speed'], l1: ['+4%'], l5: ['+20%'], l10: ['+40%'] },
+  { name: 'Lost Wand', stats: ['Cast Rate', 'Energy'], l1: ['+4%', '+5'], l5: ['+20%', '+25'], l10: ['+40%', '+50'] },
+  { name: 'Magic Mushroom', stats: ['All Attributes'], l1: ['+3'], l5: ['+15'], l10: ['+30'] },
+  { name: "Mayo's Old Sock", img: 'https://herosiege.wiki.gg/images/Relics_Mayo%27s_Old_Sock.png', stats: ['Vitality', 'Life'], l1: ['+2', '+10'], l5: ['+10', '+110'], l10: ['+20', '+600'] },
+  { name: 'Monkey King Bar', stats: ['Move Speed', 'Atk Damage'], l1: ['3%', '2%'], l5: ['+15%', '10%'], l10: ['+30%', '20%'] },
+  { name: 'Newt Tail', stats: ['Move Speed', 'Magic Find'], l1: ['3%', '2%'], l5: ['15%', '10%'], l10: ['30%', '20%'] },
+  { name: 'Nunchucks', stats: ['Atk Speed', 'Crit Dmg'], l1: ['3%', '3%'], l5: ['15%', '15%'], l10: ['30%', '30%'] },
+  { name: 'Odd Book of Spells', stats: ['Magic Skill Dmg'], l1: ['1%'], l5: ['5%'], l10: ['10%'] },
+  { name: 'Razer Blade', stats: ['Crit Dmg'], l1: ['+5%'], l5: ['+25%'], l10: ['+50%'] },
+  { name: 'Rock Belt', stats: ['Move Speed', 'Strength'], l1: ['3%', '+3'], l5: ['15%', '+15'], l10: ['30%', '+30'] },
+  { name: 'Sausage', stats: ['Life Inc.', 'Mana Inc.'], l1: ['1%', '1%'], l5: ['5%', '5%'], l10: ['10%', '10%'] },
+  { name: 'Skull Axe', stats: ['Atk Rating', 'Strength'], l1: ['+10', '+4'], l5: ['+80', '+20'], l10: ['+250', '+40'] },
+  { name: 'Spirit Skull', stats: ['Strength', 'Vitality'], l1: ['+3', '+3'], l5: ['+15', '+15'], l10: ['+30', '+30'] },
+  { name: 'Steam Sale', stats: ['Merchant Prices Reduced'], l1: ['1%'], l5: ['5%'], l10: ['10%'] },
+  { name: 'Stigmata', stats: ['Mana Costs', 'Replenish Mana'], l1: ['3%', '1%'], l5: ['15%', '5%'], l10: ['30%', '10%'] },
+  { name: 'The Amputation Kit', stats: ['Move Speed'], l1: ['+5%'], l5: ['+25%'], l10: ['+50%'] },
+  { name: 'The Holy Bible', stats: ['All Attributes', 'All Skills'], l1: ['+1', '+1'], l5: ['+5', '+2'], l10: ['+10', '---'] },
+  { name: 'The Spoon', stats: ['Replenish Mana', 'Mana'], l1: ['3%', '+5'], l5: ['15%', '+25'], l10: ['30%', '+50'] },
+  { name: 'Token of Luck', stats: ['Magic Find'], l1: ['2%'], l5: ['18%'], l10: ['50%'] },
+  { name: 'Triforce', stats: ['All Stats', 'All Resistances'], l1: ['+3', '+3%'], l5: ['+15', '+15%'], l10: ['+30', '+30%'] },
+  { name: 'Twin Blade', stats: ['Crit Chance', 'Crit Dmg'], l1: ['1%', '3%'], l5: ['5%', '15%'], l10: ['10%', '30%'] },
+  { name: 'Whip', stats: ['Atk Speed', 'Add Phys Dmg'], l1: ['3%', '+5'], l5: ['15%', '+25'], l10: ['30%', '+50'] }
+];
+
 const NewDesign = ({ onBack }) => {
   const [currentView, setCurrentView] = useState('home');
   const [activeFilter, setActiveFilter] = useState('ALL');
@@ -142,6 +187,84 @@ const NewDesign = ({ onBack }) => {
   const [blogPosts, setBlogPosts] = useState([]);
   const [selectedBlogPost, setSelectedBlogPost] = useState(null);
   const postsUnsubRef = useRef(null);
+  const [contactName, setContactName] = useState('');
+  const [contactEmail, setContactEmail] = useState('');
+  const [contactSubject, setContactSubject] = useState('Contato');
+  const [contactMessage, setContactMessage] = useState('');
+  const [contactImageUrl, setContactImageUrl] = useState('');
+  const [contactCaptchaAnswer, setContactCaptchaAnswer] = useState('');
+  const [contactCaptchaA, setContactCaptchaA] = useState(0);
+  const [contactCaptchaB, setContactCaptchaB] = useState(0);
+  const [contactCaptchaOp, setContactCaptchaOp] = useState('+');
+  const [contactSending, setContactSending] = useState(false);
+  const [contactSent, setContactSent] = useState(false);
+  const [contactError, setContactError] = useState('');
+
+  const resetContactCaptcha = () => {
+    const a = Math.floor(Math.random() * 10);
+    const b = Math.floor(Math.random() * 10);
+    const useSub = Math.random() < 0.5;
+    if (useSub) {
+      const max = Math.max(a, b);
+      const min = Math.min(a, b);
+      setContactCaptchaA(max);
+      setContactCaptchaB(min);
+      setContactCaptchaOp('-');
+    } else {
+      setContactCaptchaA(a);
+      setContactCaptchaB(b);
+      setContactCaptchaOp('+');
+    }
+    setContactCaptchaAnswer('');
+  };
+
+  useEffect(() => {
+    if (currentView === 'contact') {
+      resetContactCaptcha();
+    }
+  }, [currentView]);
+
+  const submitContact = async () => {
+    setContactError('');
+    setContactSent(false);
+    if (!contactName || !contactEmail || !contactMessage || !contactSubject) {
+      setContactError('Preencha todos os campos.');
+      return;
+    }
+    const a = contactCaptchaA;
+    const b = contactCaptchaB;
+    const expected = contactCaptchaOp === '+' ? a + b : a - b;
+    const given = parseInt(String(contactCaptchaAnswer).trim(), 10);
+    if (Number.isNaN(given) || given !== expected) {
+      setContactError('Verificação incorreta. Tente novamente.');
+      resetContactCaptcha();
+      return;
+    }
+    try {
+      setContactSending(true);
+      await addDoc(collection(db, 'messages'), {
+        name: contactName,
+        email: contactEmail,
+        category: contactSubject,
+        message: contactMessage,
+        imageUrl: contactImageUrl || '',
+        read: false,
+        createdAt: serverTimestamp()
+      });
+      setContactName('');
+      setContactEmail('');
+      setContactSubject('Contato');
+      setContactMessage('');
+      setContactImageUrl('');
+      setContactCaptchaAnswer('');
+      resetContactCaptcha();
+      setContactSent(true);
+    } catch (e) {
+      setContactError('Erro ao enviar. Tente novamente.');
+    } finally {
+      setContactSending(false);
+    }
+  };
 
   const [steamPlayers, setSteamPlayers] = useState(null);
   const [builderReady, setBuilderReady] = useState(false);
@@ -303,6 +426,131 @@ const NewDesign = ({ onBack }) => {
     if (t.includes('magic')) return { text: 'text-indigo-400', glow: '0 0 18px rgba(129,140,248,0.55)', hex: '#818cf8' };
     if (t.includes('common') || t.includes('normal')) return { text: 'text-gray-300', glow: '0 0 10px rgba(209,213,219,0.35)', hex: '#d1d5db' };
     return { text: 'text-white', glow: '0 0 0 rgba(0,0,0,0)', hex: '#ffffff' };
+  };
+
+  const passiveRelics = useMemo(
+    () => PASSIVE_RELICS.slice().sort((a, b) => a.name.localeCompare(b.name)),
+    []
+  );
+
+  const RelicsView = () => {
+    const [search, setSearch] = useState('');
+
+    const filtered = useMemo(() => {
+      const q = search.trim().toLowerCase();
+      if (!q) return passiveRelics;
+      return passiveRelics.filter((r) => {
+        const base = (r.name || '').toLowerCase();
+        const stats = (r.stats || []).join(' ').toLowerCase();
+        return base.includes(q) || stats.includes(q);
+      });
+    }, [search, passiveRelics]);
+
+    const valueClass = (v) => {
+      if (!v) return 'text-gray-300';
+      const t = String(v).trim();
+      if (t === '---') return 'text-gray-400';
+      if (t.startsWith('-')) return 'text-red-400';
+      return 'text-green-400';
+    };
+
+    const renderLevelCells = (rel, key) => {
+      const names = rel.stats || [];
+      const vals = rel[key] || [];
+      return names.map((label, idx) => {
+        const val = vals[idx] || '---';
+        return (
+          <div key={`${rel.name}-${key}-${idx}`} className="text-xs">
+            <span className="text-[10px] text-gray-400 mr-1">{label}:</span>
+            <span className={valueClass(val)}>{val}</span>
+          </div>
+        );
+      });
+    };
+
+    const imgFor = (rel) => {
+      if (rel.img) return normalizeImageUrl(rel.img);
+      const safeName = String(rel.name || '')
+        .replace(/ /g, '_')
+        .replace(/'/g, '%27');
+      return `https://herosiege.wiki.gg/images/Relics_${safeName}.png`;
+    };
+
+    return (
+      <div className="space-y-4">
+        <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-3">
+          <div className="text-xs uppercase tracking-widest text-gray-400">
+            Relíquias Passivas · {filtered.length} itens
+          </div>
+          <div>
+            <input
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              placeholder="Buscar relíquia..."
+              className="w-full md:w-80 bg-[#1c1c21] border border-white/10 px-3 py-2 text-sm text-white rounded focus:outline-none focus:border-yellow-400"
+            />
+          </div>
+        </div>
+        <div className="overflow-x-auto border border-white/10 bg-[#151923] rounded">
+          <table className="min-w-full text-sm">
+            <thead>
+              <tr className="bg-[#1c1c21] border-b border-white/10">
+                <th className="px-4 py-3 text-left text-[11px] font-bold uppercase tracking-widest text-yellow-300">
+                  Relíquia
+                </th>
+                <th className="px-4 py-3 text-left text-[11px] font-bold uppercase tracking-widest text-yellow-300">
+                  Level 1
+                </th>
+                <th className="px-4 py-3 text-left text-[11px] font-bold uppercase tracking-widest text-yellow-300">
+                  Level 5
+                </th>
+                <th className="px-4 py-3 text-left text-[11px] font-bold uppercase tracking-widest text-yellow-300">
+                  Level 10
+                </th>
+              </tr>
+            </thead>
+            <tbody>
+              {filtered.map((r, idx) => (
+                <tr
+                  key={r.name}
+                  className={`border-t border-black/40 ${
+                    idx % 2 === 0 ? 'bg-black/40' : 'bg-black/20'
+                  } hover:bg-black/60`}
+                >
+                  <td className="px-4 py-3">
+                    <div className="flex items-center gap-3">
+                      <img
+                        src={imgFor(r)}
+                        alt={r.name}
+                        className="w-8 h-8 object-contain"
+                        onError={(e) => {
+                          e.currentTarget.src = 'https://via.placeholder.com/32?text=?';
+                        }}
+                      />
+                      <span className="text-sm font-bold text-white">{r.name}</span>
+                    </div>
+                  </td>
+                  <td className="px-4 py-3 align-top">
+                    {renderLevelCells(r, 'l1')}
+                  </td>
+                  <td className="px-4 py-3 align-top">
+                    {renderLevelCells(r, 'l5')}
+                  </td>
+                  <td className="px-4 py-3 align-top">
+                    {renderLevelCells(r, 'l10')}
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+          {filtered.length === 0 && (
+            <div className="px-4 py-3 text-xs text-gray-400">
+              Nenhuma relíquia encontrada para esse termo.
+            </div>
+          )}
+        </div>
+      </div>
+    );
   };
 
   useEffect(() => {
@@ -1671,7 +1919,7 @@ const NewDesign = ({ onBack }) => {
               <button
                 type="button"
                 onClick={() => setIsDbOpen(v => !v)}
-                className={`transition-colors ${['classes','items','quests'].includes(currentView) || isDbOpen ? 'text-orange-500' : 'hover:text-white'}`}
+                className={`transition-colors ${['classes','items','relics','quests'].includes(currentView) || isDbOpen ? 'text-orange-500' : 'hover:text-white'}`}
               >
                 DataBase
               </button>
@@ -1687,6 +1935,12 @@ const NewDesign = ({ onBack }) => {
                   className={`block w-full text-left px-4 py-2 text-xs font-bold uppercase tracking-widest hover:bg-white/5 ${currentView === 'items' ? 'text-orange-500' : 'text-gray-400 hover:text-white'}`}
                 >
                   Items
+                </button>
+                <button
+                  onClick={() => { setCurrentView('relics'); setIsDbOpen(false); }}
+                  className={`block w-full text-left px-4 py-2 text-xs font-bold uppercase tracking-widest hover:bg-white/5 ${currentView === 'relics' ? 'text-orange-500' : 'text-gray-400 hover:text-white'}`}
+                >
+                  Relíquias
                 </button>
                 <button
                   onClick={() => { setCurrentView('quests'); setIsDbOpen(false); }}
@@ -2275,7 +2529,7 @@ const NewDesign = ({ onBack }) => {
                     </div>
                   </div>
                 )}
-                {(currentView === 'contact' || currentView === 'quests') && (
+                {(currentView === 'quests') && (
                   <div className="flex flex-col items-center justify-center h-96 border border-white/5 bg-[#151923] p-12 text-center animate-fade-in">
                     <span className="text-6xl mb-6 grayscale opacity-50">🚧</span>
                     <h2 className="text-3xl font-black text-white uppercase italic tracking-tighter mb-4">
@@ -2284,6 +2538,98 @@ const NewDesign = ({ onBack }) => {
                     <p className="text-gray-400 max-w-md mx-auto">
                       Esta seção está sendo desenvolvida para a Season 9. Em breve novidades!
                     </p>
+                  </div>
+                )}
+
+                {currentView === 'relics' && (
+                  <div className="space-y-6 animate-fade-in">
+                    <div className="flex items-end justify-between mb-6 border-b border-white/10 pb-4">
+                      <h2 className="text-4xl font-black text-white uppercase italic tracking-tighter">
+                        Banco de <span className="text-red-600">Relíquias</span>
+                      </h2>
+                    </div>
+                    <RelicsView db={db} />
+                  </div>
+                )}
+
+                {currentView === 'contact' && (
+                  <div className="animate-fade-in">
+                    <div className="space-y-6 max-w-xl">
+                      <h2 className="text-3xl font-black text-white uppercase italic tracking-tighter">
+                        Fale <span className="text-red-600">Conosco</span>
+                      </h2>
+                      <div className="bg-[#151923] p-6 border border-white/10 space-y-4">
+                        <input
+                          value={contactName}
+                          onChange={(e) => setContactName(e.target.value)}
+                          placeholder="Seu nome"
+                          className="w-full bg-black/30 border border-white/10 p-3 text-sm text-white focus:border-red-500 outline-none transition-colors"
+                        />
+                        <input
+                          value={contactEmail}
+                          onChange={(e) => setContactEmail(e.target.value)}
+                          placeholder="Seu e-mail"
+                          className="w-full bg-black/30 border border-white/10 p-3 text-sm text-white focus:border-red-500 outline-none transition-colors"
+                        />
+                        <select
+                          value={contactSubject}
+                          onChange={(e) => setContactSubject(e.target.value)}
+                          className="w-full bg-black/30 border border-white/10 p-3 text-sm text-white focus:border-red-500 outline-none transition-colors"
+                        >
+                          <option value="Contato">Contato</option>
+                          <option value="Reclamação">Reclamação</option>
+                          <option value="Sugestão">Sugestão</option>
+                          <option value="Parceria">Parceria</option>
+                          <option value="Bug">Bug</option>
+                          <option value="Outro">Outro</option>
+                        </select>
+                        <textarea
+                          value={contactMessage}
+                          onChange={(e) => setContactMessage(e.target.value)}
+                          placeholder="Sua mensagem"
+                          rows="5"
+                          className="w-full bg-black/30 border border-white/10 p-3 text-sm text-white focus:border-red-500 outline-none transition-colors"
+                        />
+                        <input
+                          value={contactImageUrl}
+                          onChange={(e) => setContactImageUrl(e.target.value)}
+                          placeholder="Link de imagem (opcional)"
+                          className="w-full bg-black/30 border border-white/10 p-3 text-sm text-white focus:border-red-500 outline-none transition-colors"
+                        />
+                        <div className="flex flex-col gap-2 text-xs text-gray-300">
+                          <span>Verificação simples:</span>
+                          <div className="flex items-center gap-2">
+                            <span className="px-3 py-2 bg-black/40 border border-white/10 rounded">
+                              {contactCaptchaA} {contactCaptchaOp} {contactCaptchaB} =
+                            </span>
+                            <input
+                              value={contactCaptchaAnswer}
+                              onChange={(e) => setContactCaptchaAnswer(e.target.value)}
+                              placeholder="Resultado"
+                              className="w-24 bg-black/30 border border-white/10 p-2 text-xs text-white focus:border-red-500 outline-none transition-colors"
+                            />
+                            <button
+                              type="button"
+                              onClick={resetContactCaptcha}
+                              className="text-[10px] uppercase tracking-widest border border-white/10 px-2 py-1 hover:bg-white/5 text-gray-300"
+                            >
+                              Trocar
+                            </button>
+                          </div>
+                        </div>
+                        <div className="flex items-center gap-3">
+                          <button
+                            onClick={submitContact}
+                            disabled={contactSending}
+                            className="border border-white/10 text-white font-bold uppercase px-6 py-3 text-xs tracking-widest hover:bg-white/5 transition-colors disabled:opacity-50"
+                          >
+                            Enviar
+                          </button>
+                          {contactSent && <span className="text-xs text-green-400">Recebido! Obrigado pelo contato.</span>}
+                          {!!contactError && <span className="text-xs text-red-400">{contactError}</span>}
+                        </div>
+                      </div>
+                    </div>
                   </div>
                 )}
 
