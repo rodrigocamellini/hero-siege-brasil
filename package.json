@@ -1,0 +1,49 @@
+{
+  "name": "hero-siege-brasil",
+  "version": "0.1.0",
+  "private": true,
+  "dependencies": {
+    "@testing-library/dom": "^10.4.1",
+    "@testing-library/jest-dom": "^6.9.1",
+    "@testing-library/react": "^16.3.2",
+    "@testing-library/user-event": "^13.5.0",
+    "firebase": "^12.9.0",
+    "react": "^19.2.4",
+    "react-dom": "^19.2.4",
+    "react-scripts": "5.0.1",
+    "web-vitals": "^2.1.4"
+  },
+  "scripts": {
+    "start": "react-scripts start",
+    "prebuild": "node scripts/generate-sitemap.mjs",
+    "build": "react-scripts build",
+    "build:dist": "npm run build && node -e \"const fs=require('fs');const path=require('path');const src='build';const dst='dist';try{fs.rmSync(dst,{recursive:true,force:true});}catch{};fs.cpSync(src,dst,{recursive:true});const ht='public/.htaccess';if(fs.existsSync(ht)){fs.copyFileSync(ht,path.join(dst,'.htaccess'));console.log('Copied .htaccess -> dist/.htaccess');}else{console.log('.htaccess not found in public/, skipped');}console.log('Copied build -> dist');\"",
+    "preview:dist": "npx serve -s dist -l 5001",
+    "sitemap": "node scripts/generate-sitemap.mjs",
+    "test": "react-scripts test",
+    "eject": "react-scripts eject"
+  },
+  "eslintConfig": {
+    "extends": [
+      "react-app",
+      "react-app/jest"
+    ]
+  },
+  "browserslist": {
+    "production": [
+      ">0.2%",
+      "not dead",
+      "not op_mini all"
+    ],
+    "development": [
+      "last 1 chrome version",
+      "last 1 firefox version",
+      "last 1 safari version"
+    ]
+  },
+  "devDependencies": {
+    "autoprefixer": "^10.4.24",
+    "postcss": "^8.5.6",
+    "tailwindcss": "^3.4.19"
+  }
+}

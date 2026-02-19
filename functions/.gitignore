@@ -1,0 +1,17 @@
+# Compiled JavaScript files
+# (For TypeScript projects, this matches the transpiled JS)
+# lib/
+
+# TypeScript v1 declaration files
+# (For TypeScript projects)
+# *.d.ts
+
+# Node modules
+node_modules/
+
+# Firebase debug logs
+firebase-debug.log*
+
+# Firebase emulator data
+firestore-debug.log
+ui-debug.log
