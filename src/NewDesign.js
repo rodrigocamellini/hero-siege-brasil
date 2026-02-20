@@ -88,6 +88,11 @@ const NewDesign = ({ onBack }) => {
   const [contactError, setContactError] = useState('');
   const [tiers, setTiers] = useState({ S: [], A: [], B: [], C: [], D: [], E: [] });
   const [tierModalOpen, setTierModalOpen] = useState(false);
+  const [forumSelectedClass, setForumSelectedClass] = useState(null);
+  const [buildCountsByForum, setBuildCountsByForum] = useState({});
+  const [buildsByForum, setBuildsByForum] = useState({});
+  const [selectedBuild, setSelectedBuild] = useState(null);
+  const [buildModalOpen, setBuildModalOpen] = useState(false);
 
   const resetContactCaptcha = () => {
     const a = Math.floor(Math.random() * 10);
@@ -168,6 +173,33 @@ const NewDesign = ({ onBack }) => {
         E: Array.isArray(d.E) ? d.E : [],
       };
       setTiers(next);
+    });
+    return () => unsub();
+  }, []);
+
+  const buildModalContentHtml = useMemo(() => {
+    if (!selectedBuild || !selectedBuild.content_html) return '';
+    return sanitizeAndNormalizeHtml(selectedBuild.content_html);
+  }, [selectedBuild]);
+
+  useEffect(() => {
+    const ref = collection(db, 'builds');
+    const unsub = onSnapshot(ref, (snap) => {
+      const counts = {};
+      const byForum = {};
+      snap.forEach((docSnap) => {
+        const data = docSnap.data() || {};
+        const status = data.status || 'draft';
+        if (status !== 'published') return;
+        const baseClass = data.className || data.heroClass || '';
+        const forum = data.forum || data.classSlug || (baseClass ? slugifyClass(baseClass) : '');
+        if (!forum) return;
+        counts[forum] = (counts[forum] || 0) + 1;
+        if (!byForum[forum]) byForum[forum] = [];
+        byForum[forum].push({ id: docSnap.id, ...data });
+      });
+      setBuildCountsByForum(counts);
+      setBuildsByForum(byForum);
     });
     return () => unsub();
   }, []);
@@ -352,6 +384,13 @@ const NewDesign = ({ onBack }) => {
     const basePath = pub ? `${pub}/images` : `images`;
     return `${basePath}/${base}.${ext}`;
   };
+  const slugifyClass = (name) =>
+    String(name || '')
+      .normalize('NFD')
+      .replace(/[\u0300-\u036f]/g, '')
+      .toLowerCase()
+      .replace(/[^a-z0-9]+/g, '-')
+      .replace(/(^-|-$)/g, '');
   const formatDateTime = (post) => {
     // Prioriza createdAt do Firestore; fallback para 'date' string
     let d = null;
@@ -2131,6 +2170,161 @@ const NewDesign = ({ onBack }) => {
 
                 {currentView === 'builder' && (
                   <div className="animate-fade-in">
+                    <div className="max-w-7xl mx-auto px-4 md:px-6 mb-8">
+                      <div className="flex items-center justify-between gap-4 mb-4">
+                        <div>
+                          <h2 className="text-2xl md:text-3xl font-black text-white uppercase italic tracking-tighter">
+                            Forum de <span className="text-orange-500">Builds</span>
+                          </h2>
+                          <p className="text-xs md:text-sm text-gray-400 mt-1">
+                            Escolha uma classe para ver builds da comunidade. Em breve você poderá publicar as suas.
+                          </p>
+                        </div>
+                        <button
+                          type="button"
+                          className="px-4 py-2 text-[11px] font-bold uppercase tracking-widest border border-white/20 text-white hover:bg-white hover:text-black transition-colors"
+                        >
+                          Nova Build
+                        </button>
+                      </div>
+                      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
+                        {CLASS_DATA.map((c) => {
+                          const selected = forumSelectedClass === c.name;
+                          const slug = slugifyClass(c.name);
+                          const count = buildCountsByForum[slug] || 0;
+                          const countLabel = count === 1 ? '1 build' : `${count} builds`;
+                          return (
+                            <button
+                              key={c.name}
+                              type="button"
+                              onClick={() =>
+                                setForumSelectedClass((prev) => (prev === c.name ? null : c.name))
+                              }
+                              className={`relative flex flex-col items-stretch px-3 py-3 border text-left bg-gradient-to-b from-[#181b25] to-[#0c0e17] hover:from-[#1f2431] hover:to-[#10131d] transition-colors ${
+                                selected
+                                  ? 'border-orange-500 shadow-[0_0_18px_rgba(249,115,22,0.5)]'
+                                  : 'border-white/10'
+                              }`}
+                            >
+                              <div className="flex items-center gap-3">
+                                <div className="w-10 h-10 rounded-full overflow-hidden border border-white/10 bg-black/40 flex items-center justify-center">
+                                  <img
+                                    src={classImagePath(c.name)}
+                                    onError={(e) => {
+                                      const t = e.currentTarget;
+                                      if (!t.dataset.fallback) {
+                                        t.dataset.fallback = '1';
+                                        t.src = classImagePath(c.name, 'png');
+                                      }
+                                    }}
+                                    alt={c.name}
+                                    className="w-full h-full object-contain"
+                                  />
+                                </div>
+                                <div className="flex-1">
+                                  <div className="text-xs font-bold text-white uppercase tracking-widest">
+                                    {c.name}
+                                  </div>
+                                  <div className="text-[10px] text-gray-400 uppercase tracking-widest">
+                                    {countLabel}
+                                  </div>
+                                </div>
+                              </div>
+                              <div className="mt-2 flex items-end justify-end text-[10px] text-gray-500">
+                                {selected && (
+                                  <span className="px-2 py-0.5 rounded-full bg-orange-500/20 text-orange-400 font-semibold">
+                                    Aberto
+                                  </span>
+                                )}
+                              </div>
+                            </button>
+                          );
+                        })}
+                      </div>
+                      <div className="mt-4 border border-dashed border-white/15 rounded-sm bg-[#0f111a] p-4">
+                        {forumSelectedClass ? (
+                          (() => {
+                            const selectedSlug = slugifyClass(forumSelectedClass);
+                            const list = buildsByForum[selectedSlug] || [];
+                            const count = list.length;
+                            return (
+                              <div>
+                                <div className="text-xs font-bold uppercase tracking-widest text-gray-400 mb-1">
+                                  Builds para
+                                </div>
+                                <div className="text-sm font-bold text-white mb-1">
+                                  {forumSelectedClass}
+                                </div>
+                                <div className="text-[11px] text-gray-400 mb-3">
+                                  {count === 0
+                                    ? 'Nenhuma build publicada ainda nesta área.'
+                                    : count === 1
+                                    ? '1 build publicada nesta área.'
+                                    : `${count} builds publicadas nesta área.`}
+                                </div>
+                                {count > 0 && (
+                                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 max-h-60 overflow-y-auto pr-1">
+                                    {list.map((b) => {
+                                      const tagsArr = Array.isArray(b.tags) ? b.tags : [];
+                                      const normTags = tagsArr.map((t) =>
+                                        String(t || '')
+                                          .normalize('NFD')
+                                          .replace(/[\u0300-\u036f]/g, '')
+                                          .toLowerCase()
+                                      );
+                                      let tierType = null;
+                                      if (normTags.includes('final')) tierType = 'final';
+                                      else if (normTags.includes('atualizada')) tierType = 'atualizada';
+                                      else if (normTags.includes('iniciante')) tierType = 'iniciante';
+                                      let badgeClass = 'bg-gray-500/20 text-gray-300';
+                                      let badgeLabel = 'Build';
+                                      if (tierType === 'iniciante') {
+                                        badgeClass = 'bg-emerald-500/20 text-emerald-400';
+                                        badgeLabel = 'Iniciante';
+                                      } else if (tierType === 'atualizada') {
+                                        badgeClass = 'bg-amber-500/20 text-amber-400';
+                                        badgeLabel = 'Atualizada';
+                                      } else if (tierType === 'final') {
+                                        badgeClass = 'bg-red-500/20 text-red-400';
+                                        badgeLabel = 'Final';
+                                      }
+                                      return (
+                                        <button
+                                          key={b.id}
+                                          type="button"
+                                          onClick={() => {
+                                            setSelectedBuild(b);
+                                            setBuildModalOpen(true);
+                                          }}
+                                          className="w-full text-left border border-white/10 bg-gradient-to-b from-[#181b25] to-[#0c0e17] hover:from-[#1f2431] hover:to-[#10131d] px-3 py-2 text-[11px] flex flex-col gap-1"
+                                        >
+                                          <div className="flex items-center justify-between mb-1">
+                                            <span className={`px-2 py-0.5 rounded-full font-semibold uppercase tracking-widest ${badgeClass}`}>
+                                              {badgeLabel}
+                                            </span>
+                                          </div>
+                                          <div className="font-semibold text-gray-100 truncate">
+                                            {b.title || '(sem título)'}
+                                          </div>
+                                          <div className="text-gray-400 truncate">
+                                            {b.author || ''}
+                                          </div>
+                                        </button>
+                                      );
+                                    })}
+                                  </div>
+                                )}
+                              </div>
+                            );
+                          })()
+                        ) : (
+                          <div className="text-xs text-gray-500">
+                            Selecione uma classe acima para ver as builds da comunidade.
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                    <div className="border-t border-white/10 mb-6" />
                     <style>{`
                       :root {
                         --bg: #0a0a0c; --panel: #16161e; --primary: #ca8a04;
@@ -2258,6 +2452,44 @@ const NewDesign = ({ onBack }) => {
                           if (sub) sub.style.display = 'none';
                           if (ov) ov.style.display = 'none';
                         }}>Voltar</button>
+                      </div>
+                    </div>
+                  </div>
+                )}
+                {buildModalOpen && selectedBuild && (
+                  <div className="fixed inset-0 z-50">
+                    <div className="absolute inset-0 bg-black/80" onClick={() => { setBuildModalOpen(false); setSelectedBuild(null); }} />
+                    <div className="absolute inset-0 flex items-center justify-center p-4">
+                      <div className="bg-[#151923] border border-white/10 rounded-sm shadow-xl max-w-3xl w-full max-h-[80vh] flex flex-col">
+                        <div className="flex items-center justify-between px-5 py-4 border-b border-white/10">
+                          <div>
+                            <div className="text-sm font-black text-white uppercase tracking-widest">
+                              {selectedBuild.title || '(sem título)'}
+                            </div>
+                            <div className="text-[11px] text-gray-400 mt-1">
+                              {selectedBuild.className || selectedBuild.heroClass || ''}{selectedBuild.author ? ` · ${selectedBuild.author}` : ''}
+                            </div>
+                          </div>
+                          <button
+                            type="button"
+                            className="px-3 py-1 text-xs font-bold uppercase tracking-widest border border-white/10 text-gray-300 hover:bg-white hover:text-black transition-colors"
+                            onClick={() => { setBuildModalOpen(false); setSelectedBuild(null); }}
+                          >
+                            Fechar
+                          </button>
+                        </div>
+                        <div className="p-5 overflow-y-auto text-sm leading-relaxed custom-scrollbar">
+                          {buildModalContentHtml ? (
+                            <div
+                              className="prose prose-invert prose-sm max-w-none"
+                              dangerouslySetInnerHTML={{ __html: buildModalContentHtml }}
+                            />
+                          ) : (
+                            <div className="text-gray-500 text-sm">
+                              Nenhum conteúdo detalhado foi cadastrado para esta build.
+                            </div>
+                          )}
+                        </div>
                       </div>
                     </div>
                   </div>
