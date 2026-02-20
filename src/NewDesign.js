@@ -1,124 +1,11 @@
 import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { db } from './firebase';
 import { doc, getDoc, collection, getDocs, addDoc, serverTimestamp, query, where, orderBy, onSnapshot } from 'firebase/firestore';
-
-const BlogComments = React.memo(function BlogComments({ postId }) {
-  const [comments, setComments] = useState([]);
-  const [author, setAuthor] = useState('');
-  const [text, setText] = useState('');
-  const [sent, setSent] = useState(false);
-  useEffect(() => {
-    let alive = true;
-    (async () => {
-      try {
-        const col = collection(db, 'posts', postId, 'comments');
-        let q;
-        try {
-          q = query(col, where('approved', '==', true));
-        } catch {
-          q = col;
-        }
-        const snap = await getDocs(q);
-        const arr = [];
-        snap.forEach(s => {
-          const d = s.data();
-          if (d.approved === true) arr.push({ id: s.id, ...d });
-        });
-        arr.sort((a,b) => {
-          const at = (a.createdAt && a.createdAt.seconds) ? a.createdAt.seconds : 0;
-          const bt = (b.createdAt && b.createdAt.seconds) ? b.createdAt.seconds : 0;
-          return bt - at;
-        });
-        if (alive) setComments(arr);
-      } catch {
-        if (alive) setComments([]);
-      }
-    })();
-    return () => { alive = false; };
-  }, [postId]);
-  const submit = async () => {
-    if (!author || !text) return;
-    try {
-      await addDoc(collection(db, 'posts', postId, 'comments'), {
-        author,
-        text,
-        approved: false,
-        createdAt: serverTimestamp()
-      });
-      setAuthor('');
-      setText('');
-      setSent(true);
-    } catch {}
-  };
-  return (
-    <div>
-      <div className="space-y-3 mb-6">
-        {comments.length === 0 && <div className="text-gray-500 text-sm">Sem comentários aprovados ainda.</div>}
-        {comments.map(c => (
-          <div key={c.id} className="border border-white/10 p-3 bg-black/30">
-            <div className="text-xs text-gray-400 font-bold uppercase tracking-widest">{c.author || 'Anônimo'}</div>
-            <div className="text-sm text-gray-200 mt-1">{c.text}</div>
-          </div>
-        ))}
-      </div>
-      <div className="border border-white/10 p-4 bg-black/30">
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-          <input value={author} onChange={e => setAuthor(e.target.value)} placeholder="Seu nome" className="bg-black/30 border border-white/10 p-3 text-sm text-white focus:border-red-500 outline-none" />
-          <input value={text} onChange={e => setText(e.target.value)} placeholder="Seu comentário" className="bg-black/30 border border-white/10 p-3 text-sm text-white focus:border-red-500 outline-none" />
-        </div>
-        <div className="mt-3 flex items-center gap-3">
-          <button onClick={submit} className="border border-white/10 text-white font-bold uppercase px-6 py-3 text-xs tracking-widest hover:bg-white/5 transition-colors">Enviar</button>
-          {sent && <span className="text-xs text-gray-400">Enviado para aprovação.</span>}
-        </div>
-      </div>
-    </div>
-  );
-});
-
-const PASSIVE_RELICS = [
-  { name: 'Barbed Shield', stats: ['Dmg Returned'], l1: ['10%'], l5: ['60%'], l10: ['200%'] },
-  { name: 'Bonsai Tree', stats: ['Vitality', 'Magic Find'], l1: ['+2', '2%'], l5: ['+10', '10%'], l10: ['+20', '20%'] },
-  { name: 'Bracer of Life', stats: ['Replenish Life'], l1: ['5%'], l5: ['25%'], l10: ['50%'] },
-  { name: 'Butterfly Knife', stats: ['Atk Speed', 'Crit Dmg'], l1: ['+2%', '+2%'], l5: ['+10%', '+10%'], l10: ['+20%', '+20%'] },
-  { name: 'Cake', stats: ['Life Increased'], l1: ['2%'], l5: ['10%'], l10: ['20%'] },
-  { name: 'Charmed Blood', stats: ['Life Stolen'], l1: ['1%'], l5: ['5%'], l10: ['10%'] },
-  { name: 'Cheese Burger', stats: ['Replenish Life', 'Life'], l1: ['5%', '+25'], l5: ['25%', '+245'], l10: ['50%', '+580'] },
-  { name: "Commander's Sword", stats: ['Move Speed', 'Atk Damage'], l1: ['-2%', '10%'], l5: ['-10%', '50%'], l10: ['-20%', '100%'] },
-  { name: 'Cookies & Milk', img: 'https://herosiege.wiki.gg/images/Relics_Cookies_%26_Milk.png', stats: ['Replenish Life', 'Replenish Mana'], l1: ['3%', '3%'], l5: ['15%', '15%'], l10: ['30%', '30%'] },
-  { name: 'Damned Buckler', stats: ['Armor', 'FHR'], l1: ['+5', '2%'], l5: ['+16', '10%'], l10: ['+32', '20%'] },
-  { name: 'Dirge', stats: ['Atk Rating', 'Add Phys Dmg'], l1: ['+12', '+8'], l5: ['+110', '+128'], l10: ['+475', '+1896'] },
-  { name: 'Doom Flute', stats: ['Strength', 'Dexterity'], l1: ['+4', '+4'], l5: ['+12', '+12'], l10: ['+22', '+22'] },
-  { name: 'Fortune Card', stats: ['Extra Gold', 'Magic Find'], l1: ['3%', '3%'], l5: ['15%', '15%'], l10: ['30%', '30%'] },
-  { name: 'Half Eaten Mochi', stats: ['Life After Kill', 'Mana After Kill'], l1: ['+3', '+3'], l5: ['+11', '+11'], l10: ['+21', '+21'] },
-  { name: 'Hand of Midas', stats: ['Extra Gold'], l1: ['+4%'], l5: ['+20%'], l10: ['+40%'] },
-  { name: 'Hand Scythe', stats: ['Atk Speed', 'Atk Rating'], l1: ['+3%', '+2%'], l5: ['+15%', '+10%'], l10: ['+30%', '+20%'] },
-  { name: 'Hellscream Axe', stats: ['Add Phys Dmg', 'Add Fire Dmg'], l1: ['+8', '+8'], l5: ['+128', '+128'], l10: ['+1696', '+1696'] },
-  { name: 'Horned Mask', stats: ['Dmg Returned', 'Phys Dmg Reduct'], l1: ['2%', '1%'], l5: ['10%', '5%'], l10: ['20%', '10%'] },
-  { name: "Jefre's Subscription", img: 'https://herosiege.wiki.gg/images/Relics_Jefre%27s_Subscription.png', stats: ['Light Radius', 'Magic Find'], l1: ['+1', '3%'], l5: ['+5', '15%'], l10: ['+10', '30%'] },
-  { name: "King's Crown", img: 'https://herosiege.wiki.gg/images/Relics_King%27s_Crown.png', stats: ['Extra Gold'], l1: ['3%'], l5: ['18%'], l10: ['35%'] },
-  { name: 'Light Katana', stats: ['Atk Speed'], l1: ['+4%'], l5: ['+20%'], l10: ['+40%'] },
-  { name: 'Lost Wand', stats: ['Cast Rate', 'Energy'], l1: ['+4%', '+5'], l5: ['+20%', '+25'], l10: ['+40%', '+50'] },
-  { name: 'Magic Mushroom', stats: ['All Attributes'], l1: ['+3'], l5: ['+15'], l10: ['+30'] },
-  { name: "Mayo's Old Sock", img: 'https://herosiege.wiki.gg/images/Relics_Mayo%27s_Old_Sock.png', stats: ['Vitality', 'Life'], l1: ['+2', '+10'], l5: ['+10', '+110'], l10: ['+20', '+600'] },
-  { name: 'Monkey King Bar', stats: ['Move Speed', 'Atk Damage'], l1: ['3%', '2%'], l5: ['+15%', '10%'], l10: ['+30%', '20%'] },
-  { name: 'Newt Tail', stats: ['Move Speed', 'Magic Find'], l1: ['3%', '2%'], l5: ['15%', '10%'], l10: ['30%', '20%'] },
-  { name: 'Nunchucks', stats: ['Atk Speed', 'Crit Dmg'], l1: ['3%', '3%'], l5: ['15%', '15%'], l10: ['30%', '30%'] },
-  { name: 'Odd Book of Spells', stats: ['Magic Skill Dmg'], l1: ['1%'], l5: ['5%'], l10: ['10%'] },
-  { name: 'Razer Blade', stats: ['Crit Dmg'], l1: ['+5%'], l5: ['+25%'], l10: ['+50%'] },
-  { name: 'Rock Belt', stats: ['Move Speed', 'Strength'], l1: ['3%', '+3'], l5: ['15%', '+15'], l10: ['30%', '+30'] },
-  { name: 'Sausage', stats: ['Life Inc.', 'Mana Inc.'], l1: ['1%', '1%'], l5: ['5%', '5%'], l10: ['10%', '10%'] },
-  { name: 'Skull Axe', stats: ['Atk Rating', 'Strength'], l1: ['+10', '+4'], l5: ['+80', '+20'], l10: ['+250', '+40'] },
-  { name: 'Spirit Skull', stats: ['Strength', 'Vitality'], l1: ['+3', '+3'], l5: ['+15', '+15'], l10: ['+30', '+30'] },
-  { name: 'Steam Sale', stats: ['Merchant Prices Reduced'], l1: ['1%'], l5: ['5%'], l10: ['10%'] },
-  { name: 'Stigmata', stats: ['Mana Costs', 'Replenish Mana'], l1: ['3%', '1%'], l5: ['15%', '5%'], l10: ['30%', '10%'] },
-  { name: 'The Amputation Kit', stats: ['Move Speed'], l1: ['+5%'], l5: ['+25%'], l10: ['+50%'] },
-  { name: 'The Holy Bible', stats: ['All Attributes', 'All Skills'], l1: ['+1', '+1'], l5: ['+5', '+2'], l10: ['+10', '---'] },
-  { name: 'The Spoon', stats: ['Replenish Mana', 'Mana'], l1: ['3%', '+5'], l5: ['15%', '+25'], l10: ['30%', '+50'] },
-  { name: 'Token of Luck', stats: ['Magic Find'], l1: ['2%'], l5: ['18%'], l10: ['50%'] },
-  { name: 'Triforce', stats: ['All Stats', 'All Resistances'], l1: ['+3', '+3%'], l5: ['+15', '+15%'], l10: ['+30', '+30%'] },
-  { name: 'Twin Blade', stats: ['Crit Chance', 'Crit Dmg'], l1: ['1%', '3%'], l5: ['5%', '15%'], l10: ['10%', '30%'] },
-  { name: 'Whip', stats: ['Atk Speed', 'Add Phys Dmg'], l1: ['3%', '+5'], l5: ['15%', '+25'], l10: ['30%', '+50'] }
-];
+import BlogComments from './BlogComments';
+import RelicsView from './RelicsView';
+import ClassesView from './ClassesView';
+import ItemsView from './ItemsView';
+import RunesView from './RunesView';
 
 const NewDesign = ({ onBack }) => {
   const [currentView, setCurrentView] = useState('home');
@@ -426,131 +313,6 @@ const NewDesign = ({ onBack }) => {
     if (t.includes('magic')) return { text: 'text-indigo-400', glow: '0 0 18px rgba(129,140,248,0.55)', hex: '#818cf8' };
     if (t.includes('common') || t.includes('normal')) return { text: 'text-gray-300', glow: '0 0 10px rgba(209,213,219,0.35)', hex: '#d1d5db' };
     return { text: 'text-white', glow: '0 0 0 rgba(0,0,0,0)', hex: '#ffffff' };
-  };
-
-  const passiveRelics = useMemo(
-    () => PASSIVE_RELICS.slice().sort((a, b) => a.name.localeCompare(b.name)),
-    []
-  );
-
-  const RelicsView = () => {
-    const [search, setSearch] = useState('');
-
-    const filtered = useMemo(() => {
-      const q = search.trim().toLowerCase();
-      if (!q) return passiveRelics;
-      return passiveRelics.filter((r) => {
-        const base = (r.name || '').toLowerCase();
-        const stats = (r.stats || []).join(' ').toLowerCase();
-        return base.includes(q) || stats.includes(q);
-      });
-    }, [search, passiveRelics]);
-
-    const valueClass = (v) => {
-      if (!v) return 'text-gray-300';
-      const t = String(v).trim();
-      if (t === '---') return 'text-gray-400';
-      if (t.startsWith('-')) return 'text-red-400';
-      return 'text-green-400';
-    };
-
-    const renderLevelCells = (rel, key) => {
-      const names = rel.stats || [];
-      const vals = rel[key] || [];
-      return names.map((label, idx) => {
-        const val = vals[idx] || '---';
-        return (
-          <div key={`${rel.name}-${key}-${idx}`} className="text-xs">
-            <span className="text-[10px] text-gray-400 mr-1">{label}:</span>
-            <span className={valueClass(val)}>{val}</span>
-          </div>
-        );
-      });
-    };
-
-    const imgFor = (rel) => {
-      if (rel.img) return normalizeImageUrl(rel.img);
-      const safeName = String(rel.name || '')
-        .replace(/ /g, '_')
-        .replace(/'/g, '%27');
-      return `https://herosiege.wiki.gg/images/Relics_${safeName}.png`;
-    };
-
-    return (
-      <div className="space-y-4">
-        <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-3">
-          <div className="text-xs uppercase tracking-widest text-gray-400">
-            Relíquias Passivas · {filtered.length} itens
-          </div>
-          <div>
-            <input
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-              placeholder="Buscar relíquia..."
-              className="w-full md:w-80 bg-[#1c1c21] border border-white/10 px-3 py-2 text-sm text-white rounded focus:outline-none focus:border-yellow-400"
-            />
-          </div>
-        </div>
-        <div className="overflow-x-auto border border-white/10 bg-[#151923] rounded">
-          <table className="min-w-full text-sm">
-            <thead>
-              <tr className="bg-[#1c1c21] border-b border-white/10">
-                <th className="px-4 py-3 text-left text-[11px] font-bold uppercase tracking-widest text-yellow-300">
-                  Relíquia
-                </th>
-                <th className="px-4 py-3 text-left text-[11px] font-bold uppercase tracking-widest text-yellow-300">
-                  Level 1
-                </th>
-                <th className="px-4 py-3 text-left text-[11px] font-bold uppercase tracking-widest text-yellow-300">
-                  Level 5
-                </th>
-                <th className="px-4 py-3 text-left text-[11px] font-bold uppercase tracking-widest text-yellow-300">
-                  Level 10
-                </th>
-              </tr>
-            </thead>
-            <tbody>
-              {filtered.map((r, idx) => (
-                <tr
-                  key={r.name}
-                  className={`border-t border-black/40 ${
-                    idx % 2 === 0 ? 'bg-black/40' : 'bg-black/20'
-                  } hover:bg-black/60`}
-                >
-                  <td className="px-4 py-3">
-                    <div className="flex items-center gap-3">
-                      <img
-                        src={imgFor(r)}
-                        alt={r.name}
-                        className="w-8 h-8 object-contain"
-                        onError={(e) => {
-                          e.currentTarget.src = 'https://via.placeholder.com/32?text=?';
-                        }}
-                      />
-                      <span className="text-sm font-bold text-white">{r.name}</span>
-                    </div>
-                  </td>
-                  <td className="px-4 py-3 align-top">
-                    {renderLevelCells(r, 'l1')}
-                  </td>
-                  <td className="px-4 py-3 align-top">
-                    {renderLevelCells(r, 'l5')}
-                  </td>
-                  <td className="px-4 py-3 align-top">
-                    {renderLevelCells(r, 'l10')}
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-          {filtered.length === 0 && (
-            <div className="px-4 py-3 text-xs text-gray-400">
-              Nenhuma relíquia encontrada para esse termo.
-            </div>
-          )}
-        </div>
-      </div>
-    );
   };
 
   useEffect(() => {
@@ -1937,6 +1699,12 @@ const NewDesign = ({ onBack }) => {
                   Items
                 </button>
                 <button
+                  onClick={() => { setCurrentView('runes'); setIsDbOpen(false); }}
+                  className={`block w-full text-left px-4 py-2 text-xs font-bold uppercase tracking-widest hover:bg-white/5 ${currentView === 'runes' ? 'text-orange-500' : 'text-gray-400 hover:text-white'}`}
+                >
+                  Runas
+                </button>
+                <button
                   onClick={() => { setCurrentView('relics'); setIsDbOpen(false); }}
                   className={`block w-full text-left px-4 py-2 text-xs font-bold uppercase tracking-widest hover:bg-white/5 ${currentView === 'relics' ? 'text-orange-500' : 'text-gray-400 hover:text-white'}`}
                 >
@@ -2156,244 +1924,35 @@ const NewDesign = ({ onBack }) => {
 
                 {/* Classes View: Filter & Grid */}
                 {currentView === 'classes' && (
-                    <>
-                        <div className="flex items-end justify-between mb-12 border-b border-white/10 pb-6">
-                            <h2 className="text-4xl font-black text-white uppercase italic tracking-tighter">
-                                Lista de <span className="text-red-600">Classes</span>
-                            </h2>
-                            <div className="flex gap-2 text-sm font-bold text-gray-500">
-                                <span 
-                                    onClick={() => setActiveFilter('ALL')}
-                                    className={`cursor-pointer transition-colors ${activeFilter === 'ALL' ? 'text-white border-b-2 border-red-600' : 'hover:text-white'}`}
-                                >
-                                    ALL
-                                </span>
-                                <span 
-                                    onClick={() => setActiveFilter('MELEE')}
-                                    className={`cursor-pointer transition-colors ${activeFilter === 'MELEE' ? 'text-white border-b-2 border-red-600' : 'hover:text-white'}`}
-                                >
-                                    MELEE
-                                </span>
-                                <span 
-                                    onClick={() => setActiveFilter('RANGED')}
-                                    className={`cursor-pointer transition-colors ${activeFilter === 'RANGED' ? 'text-white border-b-2 border-red-600' : 'hover:text-white'}`}
-                                >
-                                    RANGED
-                                </span>
-                                <span 
-                                    onClick={() => setActiveFilter('MAGIC')}
-                                    className={`cursor-pointer transition-colors ${activeFilter === 'MAGIC' ? 'text-white border-b-2 border-red-600' : 'hover:text-white'}`}
-                                >
-                                    MAGIC
-                                </span>
-                            </div>
-                        </div>
-
-                        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
-                            {filteredClasses.map((c) => (
-                                <div 
-                                    key={c.name}
-                                    onClick={() => fetchClassData(c.name)}
-                                    className="group relative h-64 bg-[#151923] border border-white/5 overflow-hidden cursor-pointer hover:border-red-500/50 transition-all duration-300"
-                                >
-                                    <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-transparent to-transparent z-10"></div>
-                                    <img 
-                                        src={classImagePath(c.name)} 
-                                        onError={(e) => { const t = e.currentTarget; if (!t.dataset.fallback) { t.dataset.fallback = '1'; t.src = classImagePath(c.name, 'png'); } }}
-                                        alt={c.name}
-                                        className="w-full h-full object-cover object-top opacity-60 group-hover:opacity-100 group-hover:scale-110 transition-all duration-500"
-                                    />
-                                    <div className="absolute bottom-0 left-0 w-full p-4 z-20">
-                                        <h3 className="text-white font-black uppercase text-lg italic tracking-wider group-hover:text-red-500 transition-colors">
-                                            {c.name}
-                                        </h3>
-                                        <div className="h-1 w-8 bg-red-600 mt-2 transform origin-left scale-x-0 group-hover:scale-x-100 transition-transform duration-300"></div>
-                                    </div>
-                                </div>
-                            ))}
-                        </div>
-                    </>
+                  <ClassesView
+                    activeFilter={activeFilter}
+                    setActiveFilter={setActiveFilter}
+                    filteredClasses={filteredClasses}
+                    onSelectClass={fetchClassData}
+                    classImagePath={classImagePath}
+                  />
                 )}
 
                 {/* Items View */}
                 {currentView === 'items' && (
-                  <div className="space-y-8">
-                    {!selectedItemCategory && (
-                      <>
-                        <div className="flex items-end justify-between mb-2 border-b border-white/10 pb-6">
-                          <h2 className="text-4xl font-black text-white uppercase italic tracking-tighter">
-                            Banco de <span className="text-red-600">Itens</span>
-                          </h2>
-                          <span className="text-xs text-gray-500 font-bold uppercase tracking-widest">
-                            {itemsLoading ? 'Carregando...' : `${itemCategories.length} categorias`}
-                          </span>
-                        </div>
-                        {itemCategories.length === 0 && !itemsLoading && (
-                          <div className="p-6 border border-white/10 bg-[#151923] text-gray-400 text-sm">
-                            Nenhuma categoria encontrada. Importe os dados para o Firestore e recarregue.
-                          </div>
-                        )}
-                        {(() => {
-                          const groups = {};
-                          itemCategories.forEach(cat => {
-                            let g = cat.group || 'Outros';
-                            if ((cat.title || '').toLowerCase().includes('throwing')) g = 'Weapons';
-                            if (!groups[g]) groups[g] = [];
-                            groups[g].push(cat);
-                          });
-                          const order = ['Weapons','Armor','Jewellery','Special Items','Misc','Outros'];
-                          return order.filter(g => groups[g]?.length).map(g => (
-                            <div key={g}>
-                              <h3 className="text-sm font-bold uppercase tracking-widest text-gray-400 mb-3">{g}</h3>
-                              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4 mb-8">
-                                {groups[g].map(cat => (
-                                  <div
-                                    key={cat.id}
-                                    onClick={() => loadItemsForCategory(cat)}
-                                    className="group relative h-44 bg-[#151923] border border-white/5 overflow-hidden cursor-pointer hover:border-orange-500/50 transition-all duration-300"
-                                  >
-                                    <div className="absolute inset-0 z-10 pointer-events-none"></div>
-                                    <div className="w-full h-full flex items-center justify-center p-4">
-                                      <img
-                                        src={cat.image || 'https://herosiege.wiki.gg/images/Item_Chest.png'}
-                                        alt={cat.title || cat.id}
-                                        className="max-h-full max-w-full object-contain"
-                                      />
-                                    </div>
-                                    <div className="absolute bottom-0 left-0 w-full p-3 z-20 bg-black/40 backdrop-blur-sm">
-                                      <h4 className="text-white font-bold uppercase text-xs tracking-wider">
-                                        {cat.title || cat.id}
-                                      </h4>
-                                    </div>
-                                  </div>
-                                ))}
-                              </div>
-                            </div>
-                          ));
-                        })()}
-                      </>
-                    )}
+                  <ItemsView
+                    itemCategories={itemCategories}
+                    selectedItemCategory={selectedItemCategory}
+                    itemsList={itemsList}
+                    itemsLoading={itemsLoading}
+                    selectedItem={selectedItem}
+                    onSelectCategory={loadItemsForCategory}
+                    onBackToCategories={() => {
+                      setSelectedItemCategory(null);
+                      setItemsList([]);
+                    }}
+                    onSelectItem={setSelectedItem}
+                    onCloseItem={() => setSelectedItem(null)}
+                  />
+                )}
 
-                    {selectedItemCategory && (
-                      <>
-                        <div className="flex items-center justify-between mb-6">
-                          <div>
-                            <button
-                              onClick={() => { setSelectedItemCategory(null); setItemsList([]); }}
-                              className="text-xs uppercase tracking-widest font-bold text-gray-400 hover:text-white"
-                            >
-                              ← Voltar
-                            </button>
-                            <h2 className="mt-2 text-3xl font-black text-white uppercase italic tracking-tighter">
-                              {selectedItemCategory.title || selectedItemCategory.id}
-                            </h2>
-                          </div>
-                          <span className="text-xs text-gray-500 font-bold uppercase tracking-widest">
-                            {itemsLoading ? 'Carregando...' : `${itemsList.length} itens`}
-                          </span>
-                        </div>
-                        {itemsList.length === 0 && !itemsLoading && (
-                          <div className="p-6 border border-white/10 bg-[#151923] text-gray-400 text-sm">
-                            Nenhum item encontrado para esta categoria.
-                          </div>
-                        )}
-                        {(() => {
-                          const clean = itemsList.filter(it => it.name && !it.name.includes('●'));
-                          const byRarity = {};
-                          clean.forEach(it => {
-                            const key = it.rarity || 'Sem raridade';
-                            if (!byRarity[key]) byRarity[key] = [];
-                            byRarity[key].push(it);
-                          });
-                          const rarityOrder = ['Satanic','Satanic Set','Heroic','Unholy','Angelic','Legendary','Epic','Rare','Magic','Normal','Common','Sem raridade'];
-                          return rarityOrder.filter(r => byRarity[r]?.length).map(r => (
-                            <div key={r} className="mb-10">
-                              <div className="flex items-center gap-3 mb-3">
-                                <div className={`px-3 py-1 text-[10px] font-bold uppercase tracking-widest border ${rarityStyle(r).text}`} style={{ borderColor: rarityStyle(r).hex }}>
-                                  {r}
-                                </div>
-                                <div className="h-px bg-white/10 flex-1" />
-                              </div>
-                              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
-                                {byRarity[r].map(item => (
-                                  <div
-                                    key={item.id}
-                                    onClick={() => setSelectedItem(item)}
-                                    className="bg-[#151923] border-2 p-4 transition-colors cursor-pointer"
-                                    style={{ boxShadow: rarityStyle(item.rarity).glow, borderColor: rarityStyle(item.rarity).hex }}
-                                  >
-                                    <div className="h-24 w-full flex items-center justify-center mb-3 bg-black/30">
-                                      {item.image ? (
-                                        <img src={item.image} alt={item.name} className="max-h-full max-w-full object-contain" />
-                                      ) : (
-                                        <span className="text-gray-600 text-3xl">🎒</span>
-                                      )}
-                                    </div>
-                                    <h4 className={`font-bold text-sm leading-tight ${rarityStyle(item.rarity).text}`}>{item.name || item.id}</h4>
-                                    {item.rarity && (
-                                      <span className="mt-1 inline-block text-[10px] uppercase font-bold tracking-widest text-gray-400">
-                                        {item.rarity}
-                                      </span>
-                                    )}
-                                  </div>
-                                ))}
-                              </div>
-                            </div>
-                          ));
-                        })()}
-                      </>
-                    )}
-                    {selectedItem && (
-                      <div className="fixed inset-0 z-50 bg-black/70 flex items-start md:items-center justify-center p-4 md:p-6" onClick={() => setSelectedItem(null)}>
-                        <div className="w-full max-w-2xl max-h-[85vh] overflow-y-auto bg-[#0f111a] border border-white/10 relative rounded-sm" onClick={(e) => e.stopPropagation()}>
-                          <div className="sticky top-0 z-10 flex justify-end p-3 bg-[#0f111a]/80 backdrop-blur border-b border-white/10">
-                            <button
-                              onClick={() => setSelectedItem(null)}
-                              className="text-gray-400 hover:text-white text-xl leading-none"
-                              aria-label="Fechar"
-                            >
-                              ×
-                            </button>
-                          </div>
-                          <div className="grid grid-cols-1 md:grid-cols-3 gap-0">
-                            <div className="p-6 border-b md:border-b-0 md:border-r border-white/10 flex items-center justify-center bg-[#151923]">
-                              {selectedItem.image ? (
-                                <img src={selectedItem.image} alt={selectedItem.name} className="max-h-40 object-contain" />
-                              ) : <span className="text-5xl">🎒</span>}
-                            </div>
-                            <div className="p-6 md:col-span-2">
-                              <h3 className={`text-2xl font-black uppercase italic tracking-tighter ${rarityStyle(selectedItem.rarity).text}`}>
-                                {selectedItem.name}
-                              </h3>
-                              {selectedItem.rarity && (
-                                <div className="mt-1 inline-block text-[10px] uppercase font-bold tracking-widest text-gray-400">
-                                  {selectedItem.rarity}
-                                </div>
-                              )}
-                              {selectedItem.description && (
-                                <p className="mt-4 text-gray-300 text-sm leading-relaxed">
-                                  {selectedItem.description}
-                                </p>
-                              )}
-                              {selectedItem.data && (
-                                <div className="mt-6">
-                                  <h4 className="text-xs font-bold uppercase tracking-widest text-gray-400 mb-2">Detalhes</h4>
-                                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-sm text-gray-300">
-                                    {Object.entries(selectedItem.data).map(([k,v]) => (
-                                      <div key={k} className="flex justify-between gap-3 border-b border-white/5 py-1">
-                                        <span className="text-gray-500">{k}</span>
-                                        <span className="text-white">{v}</span>
-                                      </div>
-                                    ))}
-                                  </div>
-                              </div>
-                              )}
-                            </div>
-                          </div>
-                        </div>
-                      </div>
-                    )}
-                  </div>
+                {currentView === 'runes' && (
+                  <RunesView />
                 )}
 
                 {currentView === 'builder' && (
