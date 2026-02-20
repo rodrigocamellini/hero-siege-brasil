@@ -380,9 +380,7 @@ function PainelSidebar({ view, onChange }) {
 
 function PainelDashboard() {
   const [catCount, setCatCount] = useState('–');
-  const [catDetail, setCatDetail] = useState('');
   const [classCount, setClassCount] = useState('–');
-  const [classDetail, setClassDetail] = useState('');
   const [publishedCount, setPublishedCount] = useState('–');
   const [draftCount, setDraftCount] = useState('–');
   const [buildsPublishedCount, setBuildsPublishedCount] = useState('–');
@@ -399,24 +397,17 @@ function PainelDashboard() {
         const snap = await getDocs(collection(db, 'item_categories'));
         if (!alive) return;
         setCatCount(String(snap.size));
-        const cats = [];
-        snap.forEach((d) => {
-          if (cats.length < 4) cats.push((d.data().title) || d.id);
-        });
-        setCatDetail(cats.join(', '));
+        snap.forEach(() => {});
       } catch {
         if (!alive) return;
-        setCatDetail('Não foi possível ler categorias.');
       }
       try {
         await getDocs(collection(db, 'classes'));
         if (!alive) return;
         setClassCount(String(KNOWN_CLASSES.length));
-        setClassDetail(KNOWN_CLASSES.slice(0, 4).join(', '));
       } catch {
         if (!alive) return;
         setClassCount(String(KNOWN_CLASSES.length));
-        setClassDetail(KNOWN_CLASSES.slice(0, 4).join(', '));
       }
       try {
         const snapPosts = await getDocs(collection(db, 'posts'));
@@ -925,7 +916,7 @@ function PainelHomepage() {
     if (mode !== 'random') return;
     if (!classes.length) return;
     setRandomPreviewIndex(Math.floor(Math.random() * classes.length));
-  }, [mode]);
+  }, [mode, classes.length]);
 
   useEffect(() => {
     const ref = doc(db, 'config', 'tierlist');
@@ -1078,8 +1069,6 @@ function PainelHomepage() {
     setTiers(next);
     saveTiers(next);
   };
-
-  const prevent = (e) => e.preventDefault();
 
   const downloadFullTierlistImage = async () => {
     const rowKeys = ['S','A','B','C','D','E'];
@@ -1960,11 +1949,6 @@ function PainelComments() {
   const handleToggleApprove = async (item) => {
     const next = item.approved ? false : true;
     await setDoc(item.ref, { approved: next, updatedAt: serverTimestamp() }, { merge: true });
-    loadComments();
-  };
-
-  const handleDelete = async (item) => {
-    await deleteDoc(item.ref);
     loadComments();
   };
 

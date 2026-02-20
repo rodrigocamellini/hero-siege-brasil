@@ -229,7 +229,10 @@ const NewDesign = ({ onBack }) => {
     if (!html) return '';
     return html.replace(/http:/g, 'https:');
   };
-  const contentHtml = useMemo(() => sanitizeAndNormalizeHtml(selectedBlogPost?.content_html || ''), [selectedBlogPost?.id, selectedBlogPost?.content_html]);
+  const contentHtml = useMemo(
+    () => sanitizeAndNormalizeHtml(selectedBlogPost?.content_html || ''),
+    [selectedBlogPost?.content_html]
+  );
   const contentRef = useRef(null);
   useEffect(() => {
     if (contentRef.current) {
@@ -284,7 +287,6 @@ const NewDesign = ({ onBack }) => {
           }
         }
         if (!stop) {
-          // Aceita tanto {player_count} quanto {response:{player_count}}
           const count = (j && typeof j.player_count === 'number')
             ? j.player_count
             : (j && j.response && typeof j.response.player_count === 'number')
@@ -300,20 +302,6 @@ const NewDesign = ({ onBack }) => {
     const id = setInterval(loadPlayers, 60 * 1000);
     return () => { stop = true; clearInterval(id); };
   }, []);
-  const rarityStyle = (r) => {
-    const t = (r || '').toLowerCase();
-    if (t.includes('satanic set')) return { text: 'text-green-400', glow: '0 0 18px rgba(74,222,128,0.55)', hex: '#4ade80' };
-    if (t.includes('satanic')) return { text: 'text-red-500', glow: '0 0 18px rgba(239,68,68,0.55)', hex: '#ef4444' };
-    if (t.includes('angelic')) return { text: 'text-yellow-300', glow: '0 0 18px rgba(253,224,71,0.55)', hex: '#fde047' };
-    if (t.includes('heroic')) return { text: 'text-emerald-400', glow: '0 0 18px rgba(52,211,153,0.55)', hex: '#34d399' };
-    if (t.includes('unholy')) return { text: 'text-pink-400', glow: '0 0 18px rgba(244,114,182,0.55)', hex: '#f472b6' };
-    if (t.includes('legend')) return { text: 'text-amber-400', glow: '0 0 18px rgba(251,191,36,0.55)', hex: '#fbbf24' };
-    if (t.includes('epic')) return { text: 'text-purple-400', glow: '0 0 18px rgba(192,132,252,0.55)', hex: '#c084fc' };
-    if (t.includes('rare')) return { text: 'text-blue-400', glow: '0 0 18px rgba(96,165,250,0.55)', hex: '#60a5fa' };
-    if (t.includes('magic')) return { text: 'text-indigo-400', glow: '0 0 18px rgba(129,140,248,0.55)', hex: '#818cf8' };
-    if (t.includes('common') || t.includes('normal')) return { text: 'text-gray-300', glow: '0 0 10px rgba(209,213,219,0.35)', hex: '#d1d5db' };
-    return { text: 'text-white', glow: '0 0 0 rgba(0,0,0,0)', hex: '#ffffff' };
-  };
 
   useEffect(() => {
     if (currentView !== 'home') return;
@@ -1268,7 +1256,7 @@ const NewDesign = ({ onBack }) => {
       sw.style.display = 'block';
       st.innerText = 'Sub-skills: ' + name;
       sc.innerHTML = '';
-      for (let i = 1; i <= 3; i++) {
+      [1, 2, 3].forEach((i) => {
         const sid = id + '_s' + i;
         const slvl = sSpent[sid] || 0;
         const item = document.createElement('div');
@@ -1291,7 +1279,7 @@ const NewDesign = ({ onBack }) => {
           update();
         };
         sc.appendChild(item);
-      }
+      });
     };
     const closeSub = () => {
       const ov = document.getElementById('overlay');
@@ -1668,7 +1656,12 @@ const NewDesign = ({ onBack }) => {
               }
             }}
           >
-            <span className="text-3xl font-black italic tracking-tighter text-white">HeroSiege<span className="text-transparent bg-clip-text bg-gradient-to-r from-green-400 to-yellow-400 pr-1 uppercase">BRASIL</span></span>
+            <img
+              src="/images/herosiege.png"
+              alt="Hero Siege Brasil"
+              className="block h-8 sm:h-9 w-auto"
+              style={{ imageRendering: 'auto' }}
+            />
           </div>
           <div className="hidden md:flex items-center gap-8 text-sm font-bold uppercase tracking-widest text-gray-400">
             <button onClick={() => setCurrentView('home')} className={`transition-colors ${currentView === 'home' ? 'text-orange-500' : 'hover:text-white'}`}>Home</button>
@@ -2076,7 +2069,7 @@ const NewDesign = ({ onBack }) => {
                       </div>
                       <div className="overlay" id="overlay" />
                       <div id="sub-window">
-                        <h3 id="sub-title" style={{ color: 'var(--primary)', marginTop: 0 }}></h3>
+                        <h3 id="sub-title" style={{ color: 'var(--primary)', marginTop: 0 }}>Sub-skills</h3>
                         <div id="sub-content"></div>
                         <button style={{ width: '100%', marginTop: 15, cursor: 'pointer' }} onClick={() => {
                           const sub = document.getElementById('sub-window');
