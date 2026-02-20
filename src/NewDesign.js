@@ -93,6 +93,22 @@ const NewDesign = ({ onBack }) => {
   const [buildsByForum, setBuildsByForum] = useState({});
   const [selectedBuild, setSelectedBuild] = useState(null);
   const [buildModalOpen, setBuildModalOpen] = useState(false);
+  const [newBuildOpen, setNewBuildOpen] = useState(false);
+  const [nbTitle, setNbTitle] = useState('');
+  const [nbAuthor, setNbAuthor] = useState('');
+  const [nbClass, setNbClass] = useState('');
+  const [nbType, setNbType] = useState('iniciante');
+  const [nbContent, setNbContent] = useState('');
+  const nbContentRef = useRef(null);
+  const [nbStats, setNbStats] = useState({
+    strength: 0,
+    dexterity: 0,
+    intelligence: 0,
+    energy: 0,
+    armor: 0,
+    vitality: 0,
+  });
+  const NB_TOTAL = 400;
 
   const resetContactCaptcha = () => {
     const a = Math.floor(Math.random() * 10);
@@ -177,6 +193,12 @@ const NewDesign = ({ onBack }) => {
     return () => unsub();
   }, []);
 
+  const sanitizeAndNormalizeHtml = (html) => {
+    if (!html) return '';
+    if (typeof html !== 'string') return '';
+    return html.replace(/http:/g, 'https:');
+  };
+
   const buildModalContentHtml = useMemo(() => {
     if (!selectedBuild || !selectedBuild.content_html) return '';
     return sanitizeAndNormalizeHtml(selectedBuild.content_html);
@@ -197,6 +219,13 @@ const NewDesign = ({ onBack }) => {
         counts[forum] = (counts[forum] || 0) + 1;
         if (!byForum[forum]) byForum[forum] = [];
         byForum[forum].push({ id: docSnap.id, ...data });
+      });
+      Object.keys(byForum).forEach((f) => {
+        byForum[f].sort((a, b) => {
+          const at = a.createdAt && typeof a.createdAt.seconds === 'number' ? a.createdAt.seconds : 0;
+          const bt = b.createdAt && typeof b.createdAt.seconds === 'number' ? b.createdAt.seconds : 0;
+          return bt - at;
+        });
       });
       setBuildCountsByForum(counts);
       setBuildsByForum(byForum);
@@ -391,8 +420,9 @@ const NewDesign = ({ onBack }) => {
       .toLowerCase()
       .replace(/[^a-z0-9]+/g, '-')
       .replace(/(^-|-$)/g, '');
+  const totalNbStats = (stats) =>
+    Object.values(stats || {}).reduce((sum, v) => sum + (Number(v) || 0), 0);
   const formatDateTime = (post) => {
-    // Prioriza createdAt do Firestore; fallback para 'date' string
     let d = null;
     if (post?.createdAt?.seconds) {
       d = new Date(post.createdAt.seconds * 1000);
@@ -408,9 +438,23 @@ const NewDesign = ({ onBack }) => {
     const MN = String(d.getMinutes()).padStart(2, '0');
     return `${dd}/${mm}/${yyyy} ${HH}:${MN}`;
   };
-  const sanitizeAndNormalizeHtml = (html) => {
-    if (!html) return '';
-    return html.replace(/http:/g, 'https:');
+  const formatBuildTimestamp = (build) => {
+    const ts = build?.createdAt;
+    let d = null;
+    if (ts && typeof ts === 'object' && typeof ts.seconds === 'number') {
+      d = new Date(ts.seconds * 1000);
+    } else if (typeof ts === 'string') {
+      const tryD = new Date(ts);
+      if (!Number.isNaN(tryD.getTime())) d = tryD;
+    }
+    if (!d) return '';
+    const dd = String(d.getDate()).padStart(2, '0');
+    const mm = String(d.getMonth() + 1).padStart(2, '0');
+    const yyyy = d.getFullYear();
+    const HH = String(d.getHours()).padStart(2, '0');
+    const MN = String(d.getMinutes()).padStart(2, '0');
+    const SS = String(d.getSeconds()).padStart(2, '0');
+    return `${dd}/${mm}/${yyyy} • ${HH}:${MN}:${SS}`;
   };
   const contentHtml = useMemo(
     () => sanitizeAndNormalizeHtml(selectedBlogPost?.content_html || ''),
@@ -2183,6 +2227,23 @@ const NewDesign = ({ onBack }) => {
                         <button
                           type="button"
                           className="px-4 py-2 text-[11px] font-bold uppercase tracking-widest border border-white/20 text-white hover:bg-white hover:text-black transition-colors"
+                          onClick={() => {
+                            setNbTitle('');
+                            setNbAuthor('');
+                            setNbContent('');
+                            const baseClass = forumSelectedClass || '';
+                            setNbClass(baseClass);
+                            setNbType('iniciante');
+                            setNbStats({
+                              strength: 0,
+                              dexterity: 0,
+                              intelligence: 0,
+                              energy: 0,
+                              armor: 0,
+                              vitality: 0,
+                            });
+                            setNewBuildOpen(true);
+                          }}
                         >
                           Nova Build
                         </button>
@@ -2200,7 +2261,7 @@ const NewDesign = ({ onBack }) => {
                               onClick={() =>
                                 setForumSelectedClass((prev) => (prev === c.name ? null : c.name))
                               }
-                              className={`relative flex flex-col items-stretch px-3 py-3 border text-left bg-gradient-to-b from-[#181b25] to-[#0c0e17] hover:from-[#1f2431] hover:to-[#10131d] transition-colors ${
+                              className={`relative flex flex-col items-stretch px-3 py-3 border text-left bg-gradient-to-b from-[#181b25] to-[#0c0e17] hover:from-[#1f2431] hover:to-[#10131d] transition-colors shadow-[0_0_0_1px_rgba(255,255,255,0.03),inset_0_0_0_1px_rgba(15,23,42,0.9)] ${
                                 selected
                                   ? 'border-orange-500 shadow-[0_0_18px_rgba(249,115,22,0.5)]'
                                   : 'border-white/10'
@@ -2274,20 +2335,26 @@ const NewDesign = ({ onBack }) => {
                                       );
                                       let tierType = null;
                                       if (normTags.includes('final')) tierType = 'final';
-                                      else if (normTags.includes('atualizada')) tierType = 'atualizada';
+                                      else if (normTags.includes('atualizada') || normTags.includes('avancada')) tierType = 'avancada';
                                       else if (normTags.includes('iniciante')) tierType = 'iniciante';
                                       let badgeClass = 'bg-gray-500/20 text-gray-300';
-                                      let badgeLabel = 'Build';
+                                      let badgeLabel = '';
+                                      let badgeIcon = '';
                                       if (tierType === 'iniciante') {
                                         badgeClass = 'bg-emerald-500/20 text-emerald-400';
                                         badgeLabel = 'Iniciante';
-                                      } else if (tierType === 'atualizada') {
+                                        badgeIcon = '🌱';
+                                      } else if (tierType === 'avancada') {
                                         badgeClass = 'bg-amber-500/20 text-amber-400';
-                                        badgeLabel = 'Atualizada';
+                                        badgeLabel = 'Avançada';
+                                        badgeIcon = '🛠️';
                                       } else if (tierType === 'final') {
                                         badgeClass = 'bg-red-500/20 text-red-400';
                                         badgeLabel = 'Final';
+                                        badgeIcon = '🏁';
                                       }
+                                      const clsName = b.className || b.heroClass || forumSelectedClass || '';
+                                      const createdLabel = formatBuildTimestamp(b);
                                       return (
                                         <button
                                           key={b.id}
@@ -2296,18 +2363,40 @@ const NewDesign = ({ onBack }) => {
                                             setSelectedBuild(b);
                                             setBuildModalOpen(true);
                                           }}
-                                          className="w-full text-left border border-white/10 bg-gradient-to-b from-[#181b25] to-[#0c0e17] hover:from-[#1f2431] hover:to-[#10131d] px-3 py-2 text-[11px] flex flex-col gap-1"
+                                          className="w-full text-left border border-white/10 bg-gradient-to-b from-[#181b25] to-[#0c0e17] hover:from-[#1f2431] hover:to-[#10131d] px-3 py-2 text-[11px] flex flex-col gap-1 shadow-[0_0_0_1px_rgba(255,255,255,0.03),inset_0_0_0_1px_rgba(15,23,42,0.9)]"
                                         >
                                           <div className="flex items-center justify-between mb-1">
-                                            <span className={`px-2 py-0.5 rounded-full font-semibold uppercase tracking-widest ${badgeClass}`}>
-                                              {badgeLabel}
-                                            </span>
+                                            <div className="font-semibold text-white truncate">
+                                              {clsName}
+                                            </div>
+                                            {badgeLabel && (
+                                              <div className="flex flex-col items-end">
+                                                <span className="text-[9px] uppercase tracking-widest text-gray-400 mb-0.5">
+                                                  Build
+                                                </span>
+                                                <span className={`px-2 py-0.5 rounded-full font-semibold uppercase tracking-widest ${badgeClass}`}>
+                                                  <span className="mr-1">{badgeIcon}</span>
+                                                  {badgeLabel}
+                                                </span>
+                                              </div>
+                                            )}
                                           </div>
+                                          {clsName && (
+                                            <div className="text-[10px] text-gray-400 mb-1 truncate">
+                                              Área para discussão sobre builds de {clsName}
+                                            </div>
+                                          )}
                                           <div className="font-semibold text-gray-100 truncate">
                                             {b.title || '(sem título)'}
                                           </div>
-                                          <div className="text-gray-400 truncate">
-                                            {b.author || ''}
+                                          <div className="text-[10px] text-gray-400 mt-1 truncate">
+                                            {(b.author || createdLabel) && (
+                                              <>
+                                                {b.author && <span>Autor: {b.author}</span>}
+                                                {b.author && createdLabel && <span> • </span>}
+                                                {createdLabel && <span>{createdLabel}</span>}
+                                              </>
+                                            )}
                                           </div>
                                         </button>
                                       );
@@ -2479,16 +2568,482 @@ const NewDesign = ({ onBack }) => {
                           </button>
                         </div>
                         <div className="p-5 overflow-y-auto text-sm leading-relaxed custom-scrollbar">
-                          {buildModalContentHtml ? (
-                            <div
-                              className="prose prose-invert prose-sm max-w-none"
-                              dangerouslySetInnerHTML={{ __html: buildModalContentHtml }}
-                            />
-                          ) : (
-                            <div className="text-gray-500 text-sm">
-                              Nenhum conteúdo detalhado foi cadastrado para esta build.
+                          {(() => {
+                            const tagsArr = Array.isArray(selectedBuild?.tags) ? selectedBuild.tags : [];
+                            const normTags = tagsArr.map((t) =>
+                              String(t || '')
+                                .normalize('NFD')
+                                .replace(/[\u0300-\u036f]/g, '')
+                                .toLowerCase()
+                            );
+                            let tierType = null;
+                            if (normTags.includes('final')) tierType = 'final';
+                            else if (normTags.includes('atualizada') || normTags.includes('avancada')) tierType = 'avancada';
+                            else if (normTags.includes('iniciante')) tierType = 'iniciante';
+                            let badgeClass = 'bg-gray-500/20 text-gray-300';
+                            let badgeLabel = '';
+                            let badgeIcon = '';
+                            if (tierType === 'iniciante') {
+                              badgeClass = 'bg-emerald-500/20 text-emerald-400';
+                              badgeLabel = 'Iniciante';
+                              badgeIcon = '🌱';
+                            } else if (tierType === 'avancada') {
+                              badgeClass = 'bg-amber-500/20 text-amber-400';
+                              badgeLabel = 'Avançada';
+                              badgeIcon = '🛠️';
+                            } else if (tierType === 'final') {
+                              badgeClass = 'bg-red-500/20 text-red-400';
+                              badgeLabel = 'Final';
+                              badgeIcon = '🏁';
+                            }
+                            const stats = selectedBuild?.stats || {};
+                            const statItems = [
+                              { key: 'strength', label: 'Strength', color: '#92400e' },
+                              { key: 'dexterity', label: 'Dexterity', color: '#22c55e' },
+                              { key: 'intelligence', label: 'Intelligence', color: '#ec4899' },
+                              { key: 'energy', label: 'Energy', color: '#0ea5e9' },
+                              { key: 'armor', label: 'Armor', color: '#4b5563' },
+                              { key: 'vitality', label: 'Vitality', color: '#ef4444' },
+                            ].filter(({ key }) => (Number(stats?.[key]) || 0) > 0);
+                            return (
+                              <>
+                                {(badgeLabel || statItems.length > 0) && (
+                                  <div className="mb-4 space-y-3">
+                                    {badgeLabel && (
+                                      <div className="flex items-center justify-between">
+                                        <div className="flex items-center gap-2">
+                                          {(() => {
+                                            const cls = selectedBuild?.className || selectedBuild?.heroClass || '';
+                                            if (!cls) return <div className="w-10 h-10 border border-white/10 rounded flex items-center justify-center text-gray-500">?</div>;
+                                            const img = classImagePath(cls, 'webp');
+                                            return (
+                                              <>
+                                                <img
+                                                  src={img}
+                                                  alt={cls}
+                                                  onError={(e) => { e.currentTarget.src = 'https://herosiege.wiki.gg/images/Item_Chest.png'; }}
+                                                  className="w-10 h-10 object-contain border border-white/10 rounded"
+                                                />
+                                                <div className="text-sm text-gray-200">{cls}</div>
+                                              </>
+                                            );
+                                          })()}
+                                        </div>
+                                        <div className="flex flex-col items-end">
+                                          <span className="text-[9px] uppercase tracking-widest text-gray-400 mb-0.5">
+                                            Build
+                                          </span>
+                                          <span className={`px-2 py-0.5 rounded-full font-semibold uppercase tracking-widest ${badgeClass}`}>
+                                            <span className="mr-1">{badgeIcon}</span>
+                                            {badgeLabel}
+                                          </span>
+                                        </div>
+                                      </div>
+                                    )}
+                                    {statItems.length > 0 && (
+                                      <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+                                        {statItems.map(({ key, label, color }) => (
+                                          <div key={key} className="flex items-center gap-2 border px-2 py-1" style={{ borderColor: color }}>
+                                            <div className="w-5 h-5">
+                                              <svg viewBox="0 0 24 24" className="w-full h-full">
+                                                <circle cx="12" cy="12" r="9" stroke={color} strokeWidth="1.5" fill="none" />
+                                                <path d="M12 4 L14.59 9.26 L20.24 9.91 L15.88 13.64 L17.18 19.19 L12 16.2 L6.82 19.19 L8.12 13.64 L3.76 9.91 L9.41 9.26 Z" stroke={color} strokeWidth="1.4" fill="none" strokeLinejoin="round" />
+                                              </svg>
+                                            </div>
+                                            <span className="text-xs" style={{ color }}>{label}</span>
+                                            <span className="ml-auto text-xs text-gray-300">{stats[key]}</span>
+                                          </div>
+                                        ))}
+                                      </div>
+                                    )}
+                                  </div>
+                                )}
+                                {buildModalContentHtml ? (
+                                  <div
+                                    className="prose prose-invert prose-sm max-w-none"
+                                    dangerouslySetInnerHTML={{ __html: buildModalContentHtml }}
+                                  />
+                                ) : (
+                                  <div className="text-gray-500 text-sm">
+                                    Nenhum conteúdo detalhado foi cadastrado para esta build.
+                                  </div>
+                                )}
+                              </>
+                            );
+                          })()}
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                )}
+                {newBuildOpen && (
+                  <div className="fixed inset-0 z-50">
+                    <div className="absolute inset-0 bg-black/80" onClick={() => setNewBuildOpen(false)} />
+                    <div className="absolute inset-0 flex items-center justify-center p-4">
+                      <div className="bg-[#151923] border border-white/10 rounded-sm shadow-xl max-w-4xl w-full max-h-[85vh] flex flex-col">
+                        <div className="flex items-center justify-between px-5 py-4 border-b border-white/10">
+                          <div className="text-sm font-black text-white uppercase tracking-widest">
+                            Nova Build
+                          </div>
+                          <button
+                            type="button"
+                            className="px-3 py-1 text-xs font-bold uppercase tracking-widest border border-white/10 text-gray-300 hover:bg-white hover:text-black transition-colors"
+                            onClick={() => setNewBuildOpen(false)}
+                          >
+                            Fechar
+                          </button>
+                        </div>
+                        <div className="p-5 overflow-y-auto custom-scrollbar">
+                          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div className="space-y-4">
+                              <label className="block text-[11px] font-bold uppercase tracking-widest text-gray-400 mb-1">
+                                Título da Build
+                              </label>
+                              <input
+                                value={nbTitle}
+                                onChange={(e) => setNbTitle(e.target.value)}
+                                className="w-full bg-[#0f111a] border border-white/10 text-sm text-white px-3 py-2"
+                                placeholder="Ex.: Bard Solo Map Farm"
+                              />
+                              <label className="block text-[11px] font-bold uppercase tracking-widest text-gray-400 mb-1">
+                                Autor / Nickname
+                              </label>
+                              <input
+                                value={nbAuthor}
+                                onChange={(e) => setNbAuthor(e.target.value)}
+                                className="w-full bg-[#0f111a] border border-white/10 text-sm text-white px-3 py-2"
+                                placeholder="Seu nick"
+                              />
+                              <label className="block text-[11px] font-bold uppercase tracking-widest text-gray-400 mb-1">
+                                Classe
+                              </label>
+                              <select
+                                value={nbClass}
+                                onChange={(e) => setNbClass(e.target.value)}
+                                className="w-full bg-[#0f111a] border border-white/10 text-sm text-white px-3 py-2"
+                              >
+                                <option value="">Selecione</option>
+                                {CLASS_DATA.map((c) => (
+                                  <option key={c.name} value={c.name}>{c.name}</option>
+                                ))}
+                              </select>
+                              <label className="block text-[11px] font-bold uppercase tracking-widest text-gray-400 mb-1">
+                                Tipo da Build
+                              </label>
+                              <select
+                                value={nbType}
+                                onChange={(e) => setNbType(e.target.value)}
+                                className="w-full bg-[#0f111a] border border-white/10 text-sm text-white px-3 py-2"
+                              >
+                                <option value="iniciante">Iniciante 🌱</option>
+                                <option value="avançada">Avançada 🛠️</option>
+                                <option value="final">Final 🏁</option>
+                              </select>
+                              <div className="text-[11px] font-bold uppercase tracking-widest text-gray-400">
+                                Distribuição de Pontos (Total: {NB_TOTAL}) · Restantes: {Math.max(0, NB_TOTAL - totalNbStats(nbStats))}
+                              </div>
+                              <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
+                                {[
+                                  { key: 'strength', label: 'Strength', color: '#92400e' },
+                                  { key: 'dexterity', label: 'Dexterity', color: '#22c55e' },
+                                  { key: 'intelligence', label: 'Intelligence', color: '#ec4899' },
+                                  { key: 'energy', label: 'Energy', color: '#0ea5e9' },
+                                  { key: 'armor', label: 'Armor', color: '#4b5563' },
+                                  { key: 'vitality', label: 'Vitality', color: '#ef4444' },
+                                ].map(({ key, label, color }) => {
+                                  const val = nbStats[key] || 0;
+                                  const remain = NB_TOTAL - totalNbStats(nbStats);
+                                  return (
+                                    <div
+                                      key={key}
+                                      className="border p-3 bg-[#0f111a]"
+                                      style={{ borderColor: color }}
+                                    >
+                                      <div className="flex items-center justify-between mb-2">
+                                        <div className="flex items-center gap-2">
+                                          <div className="w-6 h-6">
+                                            <svg
+                                              viewBox="0 0 24 24"
+                                              className="w-full h-full"
+                                            >
+                                              <circle
+                                                cx="12"
+                                                cy="12"
+                                                r="9"
+                                                stroke={color}
+                                                strokeWidth="1.5"
+                                                fill="none"
+                                              />
+                                              <path
+                                                d="M12 4 L14.59 9.26 L20.24 9.91 L15.88 13.64 L17.18 19.19 L12 16.2 L6.82 19.19 L8.12 13.64 L3.76 9.91 L9.41 9.26 Z"
+                                                stroke={color}
+                                                strokeWidth="1.4"
+                                                fill="none"
+                                                strokeLinejoin="round"
+                                              />
+                                            </svg>
+                                          </div>
+                                          <div
+                                            className="text-xs font-bold"
+                                            style={{ color }}
+                                          >
+                                            {label}
+                                          </div>
+                                        </div>
+                                      </div>
+                                      <div className="flex items-center gap-2 text-[11px]">
+                                        <button
+                                          type="button"
+                                          className="px-2 py-1 border border-white/10 text-white hover:bg-white hover:text-black"
+                                          onClick={() =>
+                                            setNbStats((s) => ({
+                                              ...s,
+                                              [key]: Math.max(0, (s[key] || 0) - 1),
+                                            }))
+                                          }
+                                        >
+                                          −
+                                        </button>
+                                        <div className="flex-1 text-center text-white">{val}</div>
+                                        <button
+                                          type="button"
+                                          className="px-2 py-1 border border-white/10 text-white hover:bg-white hover:text-black disabled:opacity-40"
+                                          onClick={() =>
+                                            setNbStats((s) => ({
+                                              ...s,
+                                              [key]: (s[key] || 0) + 1,
+                                            }))
+                                          }
+                                          disabled={remain <= 0}
+                                        >
+                                          +1
+                                        </button>
+                                        <button
+                                          type="button"
+                                          className="px-2 py-1 border border-white/10 text-white hover:bg-white hover:text-black disabled:opacity-40"
+                                          onClick={() =>
+                                            setNbStats((s) => {
+                                              const current = s[key] || 0;
+                                              const toAdd = Math.min(10, NB_TOTAL - totalNbStats(s));
+                                              if (toAdd <= 0) return s;
+                                              return {
+                                                ...s,
+                                                [key]: current + toAdd,
+                                              };
+                                            })
+                                          }
+                                          disabled={remain <= 0}
+                                        >
+                                          +10
+                                        </button>
+                                      </div>
+                                    </div>
+                                  );
+                                })}
+                              </div>
+                              <label className="block text-[11px] font-bold uppercase tracking-widest text-gray-400 mb-1">
+                                Conteúdo (opcional)
+                              </label>
+                            <div className="flex flex-wrap gap-2 mb-2">
+                              {[
+                                { s: '✅', bg: 'bg-emerald-600/20', fg: 'text-emerald-400' },
+                                { s: '❌', bg: 'bg-red-600/20', fg: 'text-red-400' },
+                                { s: '⭐', bg: 'bg-yellow-600/20', fg: 'text-yellow-400' },
+                                { s: '⚠️', bg: 'bg-amber-600/20', fg: 'text-amber-400' },
+                                { s: '🔥', bg: 'bg-orange-600/20', fg: 'text-orange-400' },
+                                { s: '🛡️', bg: 'bg-slate-600/20', fg: 'text-slate-300' },
+                                { s: '🗡️', bg: 'bg-rose-600/20', fg: 'text-rose-300' },
+                                { s: '🧪', bg: 'bg-fuchsia-600/20', fg: 'text-fuchsia-300' },
+                                { s: '💡', bg: 'bg-sky-600/20', fg: 'text-sky-300' },
+                                { s: '📌', bg: 'bg-violet-600/20', fg: 'text-violet-300' },
+                              ].map(({ s, bg, fg }) => (
+                                <button
+                                  key={s}
+                                  type="button"
+                                  className={`px-2 py-1 text-[12px] rounded ${bg} ${fg} border border-white/10 hover:bg-white/10`}
+                                  onClick={() => {
+                                    const ta = nbContentRef.current;
+                                    if (ta && typeof ta.selectionStart === 'number') {
+                                      const start = ta.selectionStart;
+                                      const end = ta.selectionEnd;
+                                      const next = (nbContent || '');
+                                      const updated = next.slice(0, start) + s + next.slice(end);
+                                      setNbContent(updated);
+                                      setTimeout(() => {
+                                        ta.focus();
+                                        const pos = start + s.length;
+                                        ta.setSelectionRange(pos, pos);
+                                      }, 0);
+                                    } else {
+                                      setNbContent((v) => (v || '') + s);
+                                    }
+                                  }}
+                                  aria-label={`Inserir marcador ${s}`}
+                                  title={`Inserir marcador ${s}`}
+                                >
+                                  {s}
+                                </button>
+                              ))}
                             </div>
-                          )}
+                            <textarea
+                              ref={nbContentRef}
+                              value={nbContent}
+                              onChange={(e) => setNbContent(e.target.value)}
+                              className="w-full bg-[#0f111a] border border-white/10 text-sm text-white px-3 py-2 min-h-[120px]"
+                              placeholder="Descreva os detalhes da build (itens, rotação, dicas)..."
+                            />
+                            </div>
+                            <div className="md:col-start-2 md:row-start-1 md:self-start">
+                              {(() => {
+                                const t = nbType;
+                                let badgeClass = 'bg-gray-500/20 text-gray-300';
+                                let badgeLabel = '';
+                                let badgeIcon = '';
+                                if (t === 'iniciante') {
+                                  badgeClass = 'bg-emerald-500/20 text-emerald-400';
+                                  badgeLabel = 'Iniciante';
+                                  badgeIcon = '🌱';
+                                } else if (t === 'avançada') {
+                                  badgeClass = 'bg-amber-500/20 text-amber-400';
+                                  badgeLabel = 'Avançada';
+                                  badgeIcon = '🛠️';
+                                } else if (t === 'final') {
+                                  badgeClass = 'bg-red-500/20 text-red-400';
+                                  badgeLabel = 'Final';
+                                  badgeIcon = '🏁';
+                                }
+                                const stats = nbStats || {};
+                                const statItems = [
+                                  { key: 'strength', label: 'Strength', color: '#92400e' },
+                                  { key: 'dexterity', label: 'Dexterity', color: '#22c55e' },
+                                  { key: 'intelligence', label: 'Intelligence', color: '#ec4899' },
+                                  { key: 'energy', label: 'Energy', color: '#0ea5e9' },
+                                  { key: 'armor', label: 'Armor', color: '#4b5563' },
+                                  { key: 'vitality', label: 'Vitality', color: '#ef4444' },
+                                ].filter(({ key }) => (Number(stats?.[key]) || 0) > 0);
+                                const cls = nbClass || '';
+                                const img = cls ? classImagePath(cls, 'webp') : '';
+                                return (
+                                  <div className="border border-white/10 bg-[#0f111a] p-4">
+                                    <div className="text-sm font-black text-white uppercase tracking-widest">
+                                      {nbTitle || '(sem título)'}
+                                    </div>
+                                    <div className="text-[11px] text-gray-400 mt-1">
+                                      {nbAuthor ? `Autor: ${nbAuthor}` : ''}
+                                    </div>
+                                    <div className="mt-3 flex items-center justify-between">
+                                      <div className="flex items-center gap-2">
+                                        {cls ? (
+                                          <img
+                                            src={img}
+                                            alt={cls}
+                                            onError={(e) => { e.currentTarget.src = 'https://herosiege.wiki.gg/images/Item_Chest.png'; }}
+                                            className="w-10 h-10 object-contain border border-white/10 rounded"
+                                          />
+                                        ) : (
+                                          <div className="w-10 h-10 border border-white/10 rounded flex items-center justify-center text-gray-500">?</div>
+                                        )}
+                                        <div className="text-sm text-gray-200">{cls || 'Classe'}</div>
+                                      </div>
+                                      {badgeLabel && (
+                                        <div className="flex flex-col items-end">
+                                          <span className="text-[9px] uppercase tracking-widest text-gray-400 mb-0.5">
+                                            Build
+                                          </span>
+                                          <span className={`px-2 py-0.5 rounded-full font-semibold uppercase tracking-widest ${badgeClass}`}>
+                                            <span className="mr-1">{badgeIcon}</span>
+                                            {badgeLabel}
+                                          </span>
+                                        </div>
+                                      )}
+                                    </div>
+                                    {(badgeLabel || statItems.length > 0) && (
+                                      <div className="mt-4 space-y-3">
+                                        {statItems.length > 0 && (
+                                          <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+                                            {statItems.map(({ key, label, color }) => (
+                                              <div key={key} className="flex items-center gap-2 border px-2 py-1" style={{ borderColor: color }}>
+                                                <div className="w-5 h-5">
+                                                  <svg viewBox="0 0 24 24" className="w-full h-full">
+                                                    <circle cx="12" cy="12" r="9" stroke={color} strokeWidth="1.5" fill="none" />
+                                                    <path d="M12 4 L14.59 9.26 L20.24 9.91 L15.88 13.64 L17.18 19.19 L12 16.2 L6.82 19.19 L8.12 13.64 L3.76 9.91 L9.41 9.26 Z" stroke={color} strokeWidth="1.4" fill="none" strokeLinejoin="round" />
+                                                  </svg>
+                                                </div>
+                                                <span className="text-xs" style={{ color }}>{label}</span>
+                                                <span className="ml-auto text-xs text-gray-300">{stats[key]}</span>
+                                              </div>
+                                            ))}
+                                          </div>
+                                        )}
+                                      </div>
+                                    )}
+                                    {(nbContent || '').trim() && (
+                                      <div className="mt-4 text-sm whitespace-pre-wrap text-gray-200">
+                                        {nbContent}
+                                      </div>
+                                    )}
+                                  </div>
+                                );
+                              })()}
+                            </div>
+                          </div>
+                          <div className="mt-5 flex justify-end gap-2">
+                            <button
+                              type="button"
+                              className="px-4 py-2 text-[11px] font-bold uppercase tracking-widest border border-white/20 text-white hover:bg-white hover:text-black transition-colors"
+                              onClick={async () => {
+                                const title = (nbTitle || '').trim();
+                                const author = (nbAuthor || '').trim();
+                                const heroClass = (nbClass || '').trim();
+                                if (!title || !heroClass) return;
+                                const forum = slugifyClass(heroClass);
+                                const tags = [nbType];
+                                const rawContent = (nbContent || '').trim();
+                                let contentHtml = '';
+                                if (rawContent) {
+                                  const escaped = rawContent
+                                    .replace(/&/g, '&amp;')
+                                    .replace(/</g, '&lt;')
+                                    .replace(/>/g, '&gt;');
+                                  contentHtml = escaped.replace(/\n/g, '<br />');
+                                }
+                                try {
+                                  await addDoc(collection(db, 'builds'), {
+                                    title,
+                                    author,
+                                    className: heroClass,
+                                    heroClass: heroClass,
+                                    classSlug: forum,
+                                    forum: forum,
+                                    tags,
+                                    status: 'pending',
+                                    content_html: contentHtml,
+                                    stats: { ...nbStats, total: NB_TOTAL },
+                                    createdAt: serverTimestamp(),
+                                    updatedAt: serverTimestamp(),
+                                  });
+                                  setNewBuildOpen(false);
+                                  setNbTitle('');
+                                  setNbAuthor('');
+                                  setNbContent('');
+                                  setNbClass('');
+                                  setNbType('iniciante');
+                                  setNbStats({
+                                    strength: 0,
+                                    dexterity: 0,
+                                    intelligence: 0,
+                                    energy: 0,
+                                    armor: 0,
+                                    vitality: 0,
+                                  });
+                                } catch {
+                                  // silencioso
+                                }
+                              }}
+                            >
+                              Enviar para moderação
+                            </button>
+                          </div>
                         </div>
                       </div>
                     </div>

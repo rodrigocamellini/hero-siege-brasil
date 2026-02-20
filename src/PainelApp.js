@@ -599,6 +599,7 @@ function PainelForum() {
   const [className, setClassName] = useState('');
   const [contentHtml, setContentHtml] = useState('');
   const [tags, setTags] = useState('');
+  const [buildType, setBuildType] = useState('');
   const [status, setStatus] = useState('draft');
   const [msg, setMsg] = useState('');
   const [confirmOpen, setConfirmOpen] = useState(false);
@@ -646,6 +647,7 @@ function PainelForum() {
     setClassName('');
     setContentHtml('');
     setTags('');
+    setBuildType('');
     setStatus('draft');
     setMsg('');
   };
@@ -661,7 +663,23 @@ function PainelForum() {
     setAuthor(docObj.author || '');
     setClassName(docObj.className || docObj.heroClass || '');
     setContentHtml(docObj.content_html || '');
-    setTags(Array.isArray(docObj.tags) ? docObj.tags.join(', ') : '');
+    const tagsArr = Array.isArray(docObj.tags) ? docObj.tags : [];
+    setTags(tagsArr.join(', '));
+    const normTags = tagsArr.map((t) =>
+      String(t || '')
+        .normalize('NFD')
+        .replace(/[\u0300-\u036f]/g, '')
+        .toLowerCase()
+    );
+    if (normTags.includes('final')) {
+      setBuildType('final');
+    } else if (normTags.includes('iniciante')) {
+      setBuildType('iniciante');
+    } else if (normTags.includes('avancada') || normTags.includes('atualizada')) {
+      setBuildType('avançada');
+    } else {
+      setBuildType('');
+    }
     setStatus(docObj.status || 'draft');
     setMsg(`Editando: ${docObj.title || docObj.id}`);
     setModalOpen(true);
@@ -674,6 +692,21 @@ function PainelForum() {
       .map(t => t.trim())
       .filter(Boolean);
     const uniqTags = Array.from(new Set(rawTags));
+    const filteredTags = uniqTags.filter((t) => {
+      const n = String(t || '')
+        .normalize('NFD')
+        .replace(/[\u0300-\u036f]/g, '')
+        .toLowerCase();
+      if (n === 'iniciante') return false;
+      if (n === 'final') return false;
+      if (n === 'avancada') return false;
+      if (n === 'atualizada') return false;
+      return true;
+    });
+    const nextTags = [...filteredTags];
+    if (buildType === 'iniciante') nextTags.push('iniciante');
+    if (buildType === 'avançada') nextTags.push('avançada');
+    if (buildType === 'final') nextTags.push('final');
     const baseClass = className || (editDoc && (editDoc.className || editDoc.heroClass)) || '';
     const forum = baseClass ? slugifyClass(baseClass) : '';
     const data = {
@@ -684,7 +717,7 @@ function PainelForum() {
       classSlug: forum || '',
       forum: forum || '',
       content_html: contentHtml || '',
-      tags: uniqTags,
+      tags: nextTags,
       status: status || 'draft',
       updatedAt: serverTimestamp(),
     };
@@ -844,6 +877,13 @@ function PainelForum() {
             <select className="painel-select" value={className} onChange={(e) => setClassName(e.target.value)}>
               <option value="">Selecione</option>
               {KNOWN_CLASSES.map((c) => <option key={c} value={c}>{c}</option>)}
+            </select>
+            <label className="painel-login-label" style={{ marginTop: 8 }}>Tipo da Build</label>
+            <select className="painel-select" value={buildType} onChange={(e) => setBuildType(e.target.value)}>
+              <option value="">(nenhum / manual nas tags)</option>
+              <option value="iniciante">Iniciante</option>
+              <option value="avançada">Avançada</option>
+              <option value="final">Final</option>
             </select>
             <label className="painel-login-label" style={{ marginTop: 8 }}>Conteúdo (HTML)</label>
             <textarea className="painel-textarea" value={contentHtml} onChange={(e) => setContentHtml(e.target.value)} placeholder="<p>...</p>" />
