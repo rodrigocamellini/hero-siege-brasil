@@ -86,6 +86,8 @@ const NewDesign = ({ onBack }) => {
   const [contactSending, setContactSending] = useState(false);
   const [contactSent, setContactSent] = useState(false);
   const [contactError, setContactError] = useState('');
+  const [tiers, setTiers] = useState({ S: [], A: [], B: [], C: [], D: [], E: [] });
+  const [tierModalOpen, setTierModalOpen] = useState(false);
 
   const resetContactCaptcha = () => {
     const a = Math.floor(Math.random() * 10);
@@ -153,6 +155,147 @@ const NewDesign = ({ onBack }) => {
     }
   };
 
+  useEffect(() => {
+    const ref = doc(db, 'config', 'tierlist');
+    const unsub = onSnapshot(ref, (snap) => {
+      const d = snap.data() || {};
+      const next = {
+        S: Array.isArray(d.S) ? d.S : [],
+        A: Array.isArray(d.A) ? d.A : [],
+        B: Array.isArray(d.B) ? d.B : [],
+        C: Array.isArray(d.C) ? d.C : [],
+        D: Array.isArray(d.D) ? d.D : [],
+        E: Array.isArray(d.E) ? d.E : [],
+      };
+      setTiers(next);
+    });
+    return () => unsub();
+  }, []);
+
+  const imageFor = (name) => {
+    const base = String(name || '')
+      .normalize('NFD')
+      .replace(/[\u0300-\u036f]/g, '')
+      .toLowerCase()
+      .replace(/\s+/g, '');
+    const pub = process.env.PUBLIC_URL || '';
+    const basePath = pub ? `${pub}/images` : `images`;
+    return `${basePath}/${base}.webp`;
+  };
+
+  const downloadTierImage = async () => {
+    const rowKeys = ['S','A','B','C','D','E'];
+    const colors = { S:'#dc2626', A:'#f97316', B:'#eab308', C:'#84cc16', D:'#22c55e', E:'#6b7280' };
+    const bgColors = { S:'rgba(220,38,38,0.12)', A:'rgba(249,115,22,0.12)', B:'rgba(234,179,8,0.12)', C:'rgba(132,204,22,0.12)', D:'rgba(34,197,94,0.12)', E:'rgba(107,114,128,0.12)' };
+    const w = 1024;
+    const pad = 24;
+    const headerH = 56;
+    const labelSize = 48;
+    const iconSize = 40;
+    const gap = 8;
+    const rowGap = 16;
+    let height = pad + headerH + pad;
+    const rows = [];
+    rowKeys.forEach(k => {
+      const rowH = Math.max(labelSize, iconSize) + pad;
+      rows.push({ key:k, y: height, h: rowH });
+      height += rowH + rowGap;
+    });
+    height += pad + 40;
+    const canvas = document.createElement('canvas');
+    canvas.width = w;
+    canvas.height = height;
+    const ctx = canvas.getContext('2d');
+    ctx.fillStyle = '#151923';
+    ctx.fillRect(0, 0, w, height);
+    const loadImg = (src) => new Promise((resolve) => {
+      const img = new Image();
+      img.onload = () => resolve(img);
+      img.onerror = () => resolve(null);
+      img.crossOrigin = 'anonymous';
+      img.src = src;
+    });
+    // Header with logo and title
+    const logoBase = (process.env.PUBLIC_URL || '') ? `${process.env.PUBLIC_URL}/images` : `images`;
+    const logo = await loadImg(`${logoBase}/herosiege.png`);
+    if (logo) {
+      const lw = 160;
+      const lh = 40;
+      const ly = pad + Math.max(0, (headerH - lh) / 2);
+      ctx.drawImage(logo, pad, ly, lw, lh);
+      ctx.font = 'bold 22px Segoe UI, sans-serif';
+      ctx.textBaseline = 'middle';
+      ctx.textAlign = 'left';
+      ctx.fillStyle = '#ffffff';
+      ctx.fillText('Tier List Completa', pad + lw + 12, pad + headerH / 2);
+    }
+    ctx.fillStyle = 'rgba(255,255,255,0.08)';
+    ctx.fillRect(pad, pad + headerH, w - pad * 2, 1); // bottom border of header
+    // Rows
+    ctx.font = 'bold 20px Segoe UI, sans-serif';
+    ctx.textBaseline = 'middle';
+    ctx.textAlign = 'center';
+    const tasks = [];
+    rows.forEach(row => {
+      const k = row.key;
+      const y = row.y;
+      // Row background (lighter) and left border
+      ctx.fillStyle = bgColors[k] || 'rgba(255,255,255,0.06)';
+      ctx.fillRect(pad, y, w - pad*2, row.h - rowGap + 4);
+      ctx.fillStyle = colors[k] || '#6b7280';
+      ctx.fillRect(pad, y, 4, row.h - rowGap + 4);
+      // Tier square
+      ctx.fillStyle = colors[k] || '#6b7280';
+      ctx.fillRect(pad + 8, y + Math.max(0, ((row.h - rowGap) - labelSize)/2), labelSize, labelSize);
+      ctx.fillStyle = '#ffffff';
+      ctx.fillText(k, pad + 8 + labelSize/2, y + Math.max(0, ((row.h - rowGap) - labelSize)/2) + labelSize/2);
+      // Icons
+      let x = pad + 8 + labelSize + 16;
+      (tiers[k] || []).forEach(cls => {
+        const src = imageFor(cls);
+        tasks.push({
+          x,
+          y: y + Math.max(0, ((row.h - rowGap) - iconSize)/2),
+          src
+        });
+        x += iconSize + gap;
+      });
+    });
+    for (let i=0;i<tasks.length;i++) {
+      const t = tasks[i];
+      // eslint-disable-next-line no-await-in-loop
+      const img = await loadImg(t.src);
+      if (img) ctx.drawImage(img, t.x, t.y, iconSize, iconSize);
+    }
+    // Timestamp bottom-right
+    const now = new Date();
+    const dd = String(now.getDate()).padStart(2,'0');
+    const mm = String(now.getMonth()+1).padStart(2,'0');
+    const yyyy = String(now.getFullYear());
+    const hh = String(now.getHours()).padStart(2,'0');
+    const min = String(now.getMinutes()).padStart(2,'0');
+    const stamp = `${dd}/${mm}/${yyyy} ${hh}:${min}`;
+    ctx.font = 'bold 18px Segoe UI, sans-serif';
+    ctx.textBaseline = 'alphabetic';
+    ctx.textAlign = 'right';
+    ctx.fillStyle = '#e5e7eb';
+    ctx.fillText(stamp, w - pad, height - 12);
+    const url = canvas.toDataURL('image/png');
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `tierlist_${yyyy}${mm}${dd}_${hh}${min}.png`;
+    a.click();
+  };
+
+  const tierRowStyle = (k) => {
+    if (k === 'S') return { backgroundColor: 'rgba(220,38,38,0.12)', borderLeft: '4px solid #dc2626' };
+    if (k === 'A') return { backgroundColor: 'rgba(249,115,22,0.12)', borderLeft: '4px solid #f97316' };
+    if (k === 'B') return { backgroundColor: 'rgba(234,179,8,0.12)', borderLeft: '4px solid #eab308' };
+    if (k === 'C') return { backgroundColor: 'rgba(132,204,22,0.12)', borderLeft: '4px solid #84cc16' };
+    if (k === 'D') return { backgroundColor: 'rgba(34,197,94,0.12)', borderLeft: '4px solid #22c55e' };
+    return { backgroundColor: 'rgba(107,114,128,0.12)', borderLeft: '4px solid #6b7280' };
+  };
+
   const [steamPlayers, setSteamPlayers] = useState(null);
   const [builderReady, setBuilderReady] = useState(false);
   const iconCacheRef = useRef({});
@@ -206,7 +349,8 @@ const NewDesign = ({ onBack }) => {
   const classImagePath = (name, ext = 'webp') => {
     const base = classSlug(name);
     const pub = process.env.PUBLIC_URL || '';
-    return `${pub}/images/${base}.${ext}`;
+    const basePath = pub ? `${pub}/images` : `images`;
+    return `${basePath}/${base}.${ext}`;
   };
   const formatDateTime = (post) => {
     // Prioriza createdAt do Firestore; fallback para 'date' string
@@ -1824,11 +1968,11 @@ const NewDesign = ({ onBack }) => {
                                     {/* S Tier */}
                                     <div className="flex items-center gap-4">
                                         <div className="w-12 h-12 bg-red-600 flex items-center justify-center font-black text-white text-xl shadow-[0_0_15px_rgba(220,38,38,0.5)]">S</div>
-                                        <div className="flex-1 flex gap-2 flex-wrap">
-                                            {["Necromancer", "Pyromancer", "Viking"].map(c => (
+                                    <div className="flex-1 flex gap-2 flex-wrap">
+                                            {(tiers.S || []).map(c => (
                                                 <div key={c} className="relative group/icon cursor-pointer" onClick={() => {fetchClassData(c); setCurrentView('classes');}}>
                                                     <img 
-                                                        src={`https://herosiege.wiki.gg/images/${c.replace(/\s+/g, '_')}.png`} 
+                                                        src={imageFor(c)} 
                                                         alt={c} 
                                                         className="w-10 h-10 object-contain drop-shadow-md hover:scale-110 transition-transform"
                                                     />
@@ -1844,10 +1988,10 @@ const NewDesign = ({ onBack }) => {
                                     <div className="flex items-center gap-4">
                                         <div className="w-12 h-12 bg-orange-500 flex items-center justify-center font-black text-white text-xl shadow-[0_0_15px_rgba(249,115,22,0.5)]">A</div>
                                         <div className="flex-1 flex gap-2 flex-wrap">
-                                            {["Samurai", "Paladin", "Marksman", "Nomad"].map(c => (
+                                            {(tiers.A || []).map(c => (
                                                 <div key={c} className="relative group/icon cursor-pointer" onClick={() => {fetchClassData(c); setCurrentView('classes');}}>
                                                     <img 
-                                                        src={`https://herosiege.wiki.gg/images/${c.replace(/\s+/g, '_')}.png`} 
+                                                        src={imageFor(c)} 
                                                         alt={c} 
                                                         className="w-10 h-10 object-contain drop-shadow-md hover:scale-110 transition-transform"
                                                     />
@@ -1863,10 +2007,10 @@ const NewDesign = ({ onBack }) => {
                                     <div className="flex items-center gap-4">
                                         <div className="w-12 h-12 bg-yellow-500 flex items-center justify-center font-black text-white text-xl shadow-[0_0_15px_rgba(234,179,8,0.5)]">B</div>
                                         <div className="flex-1 flex gap-2 flex-wrap">
-                                            {["Redneck", "Pirate", "Shield Lancer"].map(c => (
+                                            {(tiers.B || []).map(c => (
                                                 <div key={c} className="relative group/icon cursor-pointer" onClick={() => {fetchClassData(c); setCurrentView('classes');}}>
                                                     <img 
-                                                        src={`https://herosiege.wiki.gg/images/${c.replace(/\s+/g, '_')}.png`} 
+                                                        src={imageFor(c)} 
                                                         alt={c} 
                                                         className="w-10 h-10 object-contain drop-shadow-md hover:scale-110 transition-transform"
                                                     />
@@ -1879,11 +2023,48 @@ const NewDesign = ({ onBack }) => {
                                     </div>
                                 </div>
 
-                                <button className="w-full mt-6 py-3 border border-white/10 text-gray-400 text-xs font-bold uppercase tracking-widest hover:bg-white hover:text-black transition-colors">
+                                <button onClick={() => setTierModalOpen(true)} className="w-full mt-6 py-3 border border-white/10 text-gray-400 text-xs font-bold uppercase tracking-widest hover:bg-white hover:text-black transition-colors">
                                     Ver Tier List Completa
                                 </button>
                             </div>
                         </div>
+
+                        {tierModalOpen && (
+                          <div className="fixed inset-0 z-50">
+                            <div className="absolute inset-0 bg-black/80" onClick={() => setTierModalOpen(false)} />
+                            <div className="absolute inset-0 flex items-center justify-center p-4">
+                              <div className="bg-[#151923] border border-white/10 rounded-sm shadow-xl max-w-5xl w-[92vw] md:w-[80vw]">
+                                <div className="flex items-center justify-between px-5 py-4 border-b border-white/10">
+                                  <div className="flex items-center gap-3">
+                                    <img src="/images/herosiege.png" alt="Hero Siege Brasil" className="h-6 w-auto" />
+                                    <div className="text-lg font-black text-white uppercase italic tracking-widest">Tier List Completa</div>
+                                  </div>
+                                  <div className="flex gap-2">
+                                    <button onClick={downloadTierImage} className="px-3 py-2 text-xs font-bold uppercase tracking-widest border border-white/10 text-gray-300 hover:bg-white hover:text-black">Baixar imagem</button>
+                                    <button onClick={() => setTierModalOpen(false)} className="px-3 py-2 text-xs font-bold uppercase tracking-widest border border-white/10 text-gray-300 hover:bg-white hover:text-black">Fechar</button>
+                                  </div>
+                                </div>
+                                <div className="p-5 space-y-4 overflow-y-auto" style={{ maxHeight: '75vh' }}>
+                                  {['S','A','B','C','D','E'].map((k) => (
+                                    <div key={k} className="flex items-center gap-4 rounded-sm border-l pl-4" style={tierRowStyle(k)}>
+                                      <div className="w-12 h-12 flex items-center justify-center font-black text-white text-xl" style={{ backgroundColor: k==='S'?'#dc2626':k==='A'?'#f97316':k==='B'?'#eab308':k==='C'?'#84cc16':k==='D'?'#22c55e':'#6b7280' }}>{k}</div>
+                                      <div className="flex-1 flex gap-2 flex-wrap">
+                                        {(tiers[k] || []).map((c) => (
+                                          <div key={`${k}-${c}`} className="relative group/icon">
+                                            <img src={imageFor(c)} alt={c} className="w-10 h-10 object-contain drop-shadow-md" />
+                                            <div className="absolute -bottom-6 left-1/2 -translate-x-1/2 bg-black text-white text-[10px] px-2 py-1 opacity-0 group-hover/icon:opacity-100 transition-opacity whitespace-nowrap z-50 border border-white/10 pointer-events-none">
+                                              {c}
+                                            </div>
+                                          </div>
+                                        ))}
+                                      </div>
+                                    </div>
+                                  ))}
+                                </div>
+                              </div>
+                            </div>
+                          </div>
+                        )}
 
                         {/* News Grid (from Blog posts) */}
                         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
