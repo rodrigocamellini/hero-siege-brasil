@@ -1,18 +1,27 @@
 import React from 'react';
+import { Routes, Route, Navigate } from 'react-router-dom';
 import PainelApp from './PainelApp';
 import NewDesign from './NewDesign';
 
 function App() {
-  const path = window.location.pathname || '';
-  const hash = window.location.hash || '';
-  const isPainel =
-    path.startsWith('/painel') || hash.startsWith('#painel');
+  return (
+    <Routes>
+      <Route path="/painel/*" element={<PainelApp />} />
 
-  if (isPainel) {
-    return <PainelApp />;
-  }
+      <Route path="/" element={<NewDesign initialView="home" />} />
+      <Route path="/classes" element={<NewDesign initialView="classes" />} />
+      <Route path="/items" element={<NewDesign initialView="items" />} />
+      <Route path="/runes" element={<NewDesign initialView="runes" />} />
+      <Route path="/relics" element={<NewDesign initialView="relics" />} />
+      <Route path="/quests" element={<NewDesign initialView="quests" />} />
+      <Route path="/builder" element={<NewDesign initialView="builder" />} />
+      <Route path="/contato" element={<NewDesign initialView="contact" />} />
+      <Route path="/blog" element={<NewDesign initialView="blog" />} />
+      <Route path="/blog/:postId" element={<NewDesign initialView="blog" />} />
 
-  return <NewDesign />;
+      <Route path="*" element={<Navigate to="/" replace />} />
+    </Routes>
+  );
 }
 
 export default App;

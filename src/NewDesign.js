@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef, useMemo } from 'react';
+import { useNavigate, useParams } from 'react-router-dom';
 import { db } from './firebase';
 import { doc, getDoc, collection, getDocs, addDoc, serverTimestamp, query, where, orderBy, onSnapshot } from 'firebase/firestore';
 import BlogComments from './BlogComments';
@@ -7,8 +8,10 @@ import ClassesView from './ClassesView';
 import ItemsView from './ItemsView';
 import RunesView from './RunesView';
 
-const NewDesign = ({ onBack }) => {
-  const [currentView, setCurrentView] = useState('home');
+const NewDesign = ({ onBack, initialView = 'home' }) => {
+  const navigate = useNavigate();
+  const { postId } = useParams();
+  const [currentView, setCurrentView] = useState(initialView || 'home');
   const [activeFilter, setActiveFilter] = useState('ALL');
   const [isDbOpen, setIsDbOpen] = useState(false);
   const dbMenuRef = useRef(null);
@@ -109,6 +112,51 @@ const NewDesign = ({ onBack }) => {
     vitality: 0,
   });
   const NB_TOTAL = 400;
+
+  useEffect(() => {
+    if (typeof document === 'undefined' || typeof window === 'undefined') return;
+    let title = 'Hero Siege Brasil | Wiki, Itens e Builds em Português';
+    if (currentView === 'classes') title = 'Classes | Hero Siege Brasil';
+    else if (currentView === 'items') title = 'Itens | Hero Siege Brasil';
+    else if (currentView === 'runes') title = 'Runas | Hero Siege Brasil';
+    else if (currentView === 'relics') title = 'Relíquias | Hero Siege Brasil';
+    else if (currentView === 'quests') title = 'Quests | Hero Siege Brasil';
+    else if (currentView === 'builder') {
+      const cls = builderClass || 'Viking';
+      title = `Builder ${cls} | Hero Siege Brasil`;
+    } else if (currentView === 'contact') {
+      title = 'Contato | Hero Siege Brasil';
+    } else if (currentView === 'blog') {
+      if (selectedBlogPost && selectedBlogPost.title) {
+        title = `${selectedBlogPost.title} | Blog | Hero Siege Brasil`;
+      } else {
+        title = 'Blog | Hero Siege Brasil';
+      }
+    }
+    let path = '/';
+    if (currentView === 'classes') path = '/classes';
+    else if (currentView === 'items') path = '/items';
+    else if (currentView === 'runes') path = '/runes';
+    else if (currentView === 'relics') path = '/relics';
+    else if (currentView === 'quests') path = '/quests';
+    else if (currentView === 'builder') path = '/builder';
+    else if (currentView === 'contact') path = '/contato';
+    else if (currentView === 'blog') {
+      const id = postId || (selectedBlogPost && selectedBlogPost.id);
+      if (id) path = `/blog/${encodeURIComponent(id)}`;
+      else path = '/blog';
+    }
+    const origin = window.location.origin || 'https://herosiegebrasil.com.br';
+    const href = origin + path;
+    let link = document.querySelector("link[rel='canonical']");
+    if (!link) {
+      link = document.createElement('link');
+      link.setAttribute('rel', 'canonical');
+      document.head.appendChild(link);
+    }
+    link.setAttribute('href', href);
+    document.title = title;
+  }, [currentView, builderClass, selectedBlogPost, postId]);
 
   const resetContactCaptcha = () => {
     const a = Math.floor(Math.random() * 10);
@@ -357,6 +405,27 @@ const NewDesign = ({ onBack }) => {
     return { backgroundColor: 'rgba(107,114,128,0.12)', borderLeft: '4px solid #6b7280' };
   };
 
+  const navigateToView = (view) => {
+    setCurrentView(view);
+    if (view === 'home') navigate('/');
+    else if (view === 'classes') navigate('/classes');
+    else if (view === 'items') navigate('/items');
+    else if (view === 'runes') navigate('/runes');
+    else if (view === 'relics') navigate('/relics');
+    else if (view === 'quests') navigate('/quests');
+    else if (view === 'builder') navigate('/builder');
+    else if (view === 'contact') navigate('/contato');
+    else if (view === 'blog') navigate('/blog');
+  };
+
+  const openBlogPost = (post) => {
+    if (!post) return;
+    setSelectedBlogPost(post);
+    setCurrentView('blog');
+    if (post.id) navigate(`/blog/${post.id}`);
+    else navigate('/blog');
+  };
+
   const [steamPlayers, setSteamPlayers] = useState(null);
   const [builderReady, setBuilderReady] = useState(false);
   const iconCacheRef = useRef({});
@@ -400,7 +469,7 @@ const NewDesign = ({ onBack }) => {
     if (!url || typeof url !== 'string') return '';
     return url.replace(/^http:/i, 'https:');
   };
-  const imageOrFallback = (url) => normalizeImageUrl(url) || 'https://herosiege.wiki.gg/images/Item_Chest.png';
+  const imageOrFallback = (url) => normalizeImageUrl(url) || '/images/herosiege.png';
   const classSlug = (name) =>
     String(name || '')
       .normalize('NFD')
@@ -470,7 +539,7 @@ const NewDesign = ({ onBack }) => {
           if (img.src.startsWith('http:')) img.src = img.src.replace(/^http:/i, 'https:');
           img.style.maxWidth = '100%';
           img.style.height = 'auto';
-          img.onerror = () => { img.src = 'https://herosiege.wiki.gg/images/Item_Chest.png'; };
+         img.onerror = () => { img.src = '/images/herosiege.png'; };
         });
         const ifr = contentRef.current.querySelectorAll('iframe');
         ifr.forEach((f) => {
@@ -654,23 +723,20 @@ const NewDesign = ({ onBack }) => {
   }, [currentView]);
 
   useEffect(() => {
-    const openFromHash = async () => {
-      const h = window.location.hash || '';
-      const m = h.match(/^#blog\/(.+)$/);
-      if (m && m[1]) {
-        if (blogPosts.length === 0) await loadBlogPosts();
-        const post = blogPosts.find(p => p.id === m[1]);
-        if (post) {
-          setSelectedBlogPost(post);
-          setCurrentView('blog');
-        }
+    const openFromRoute = async () => {
+      if (!postId) return;
+      if (blogPosts.length === 0) {
+        await loadBlogPosts();
+      }
+      const post = blogPosts.find((p) => p.id === postId);
+      if (post) {
+        setSelectedBlogPost(post);
+        setCurrentView('blog');
       }
     };
-    openFromHash();
-    const onHash = () => openFromHash();
-    window.addEventListener('hashchange', onHash);
-    return () => window.removeEventListener('hashchange', onHash);
-  }, [blogPosts]);
+    openFromRoute();
+  }, [postId, blogPosts]);
+
   useEffect(() => {
     if (currentView !== 'builder') return;
     const onCtx = (e) => { e.preventDefault(); };
@@ -1415,7 +1481,7 @@ const NewDesign = ({ onBack }) => {
         iconCandidates.push(`https://herosiege.wiki.gg/images/Icon_${base}.png`);
         iconCandidates.push(`https://herosiege.wiki.gg/images/${base}.jpg`);
         iconCandidates.push(`https://herosiege.wiki.gg/images/Icon_${base}.jpg`);
-        iconCandidates.push(`https://herosiege.wiki.gg/images/Item_Chest.png`);
+        iconCandidates.push(`/images/herosiege.png`);
         const pts = spent[sk.id] || 0;
         const locked = sk.req && (spent[sk.req] || 0) === 0;
         const div = document.createElement('div');
@@ -1631,7 +1697,7 @@ const NewDesign = ({ onBack }) => {
         let mainSections = data.especializacoes || [{ title: "Geral", html: "<div>Sem dados de especialização.</div>" }];
         const extraSections = (data.extra_info || []).map(s => ({ ...s, isExtra: true }));
         if (nome === 'Bard') {
-          const chest = 'https://herosiege.wiki.gg/images/Item_Chest.png';
+          const chest = '/images/herosiege.png';
           const iconPrimary = (base) => `https://herosiege.wiki.gg/images/Monk_${base}.png`;
           const iconAlt = (base) => `https://herosiege.wiki.gg/images/Icon_Monk_${base}.png`;
           const row = (n, r, l) => {
@@ -1743,7 +1809,7 @@ const NewDesign = ({ onBack }) => {
       } else {
         console.error("Documento não encontrado para:", tryIds.join(', '));
         if (nome === 'Bard') {
-          const chest = 'https://herosiege.wiki.gg/images/Item_Chest.png';
+          const chest = '/images/herosiege.png';
           const iconPrimary = (base) => `https://herosiege.wiki.gg/images/Monk_${base}.png`;
           const iconAlt = (base) => `https://herosiege.wiki.gg/images/Icon_Monk_${base}.png`;
           const row = (n, r, l) => {
@@ -1875,12 +1941,7 @@ const NewDesign = ({ onBack }) => {
             className="flex items-center gap-2 cursor-pointer"
             onClick={() => {
               setSelectedBlogPost(null);
-              setCurrentView('home');
-              try {
-                window.history.replaceState(null, '', window.location.pathname);
-              } catch {
-                window.location.hash = '';
-              }
+              navigateToView('home');
             }}
           >
             <img
@@ -1891,7 +1952,7 @@ const NewDesign = ({ onBack }) => {
             />
           </div>
           <div className="hidden md:flex items-center gap-8 text-sm font-bold uppercase tracking-widest text-gray-400">
-            <button onClick={() => setCurrentView('home')} className={`transition-colors ${currentView === 'home' ? 'text-orange-500' : 'hover:text-white'}`}>Home</button>
+            <button onClick={() => navigateToView('home')} className={`transition-colors ${currentView === 'home' ? 'text-orange-500' : 'hover:text-white'}`}>Home</button>
             <div
               className="relative"
               ref={dbMenuRef}
@@ -1907,40 +1968,40 @@ const NewDesign = ({ onBack }) => {
               </button>
               <div className={`absolute left-0 top-full w-44 bg-[#0b0d14] border border-white/10 rounded shadow-xl py-2 ${isDbOpen ? 'opacity-100 pointer-events-auto' : 'opacity-0 pointer-events-none'} transition`}>
                 <button
-                  onClick={() => { setCurrentView('classes'); setIsDbOpen(false); }}
+                  onClick={() => { navigateToView('classes'); setIsDbOpen(false); }}
                   className={`block w-full text-left px-4 py-2 text-xs font-bold uppercase tracking-widest hover:bg-white/5 ${currentView === 'classes' ? 'text-orange-500' : 'text-gray-400 hover:text-white'}`}
                 >
                   Classes
                 </button>
                 <button
-                  onClick={() => { setCurrentView('items'); setIsDbOpen(false); }}
+                  onClick={() => { navigateToView('items'); setIsDbOpen(false); }}
                   className={`block w-full text-left px-4 py-2 text-xs font-bold uppercase tracking-widest hover:bg-white/5 ${currentView === 'items' ? 'text-orange-500' : 'text-gray-400 hover:text-white'}`}
                 >
                   Items
                 </button>
                 <button
-                  onClick={() => { setCurrentView('runes'); setIsDbOpen(false); }}
+                  onClick={() => { navigateToView('runes'); setIsDbOpen(false); }}
                   className={`block w-full text-left px-4 py-2 text-xs font-bold uppercase tracking-widest hover:bg-white/5 ${currentView === 'runes' ? 'text-orange-500' : 'text-gray-400 hover:text-white'}`}
                 >
                   Runas
                 </button>
                 <button
-                  onClick={() => { setCurrentView('relics'); setIsDbOpen(false); }}
+                  onClick={() => { navigateToView('relics'); setIsDbOpen(false); }}
                   className={`block w-full text-left px-4 py-2 text-xs font-bold uppercase tracking-widest hover:bg-white/5 ${currentView === 'relics' ? 'text-orange-500' : 'text-gray-400 hover:text-white'}`}
                 >
                   Relíquias
                 </button>
                 <button
-                  onClick={() => { setCurrentView('quests'); setIsDbOpen(false); }}
+                  onClick={() => { navigateToView('quests'); setIsDbOpen(false); }}
                   className={`block w-full text-left px-4 py-2 text-xs font-bold uppercase tracking-widest hover:bg-white/5 ${currentView === 'quests' ? 'text-orange-500' : 'text-gray-400 hover:text-white'}`}
                 >
                   Quests
                 </button>
               </div>
             </div>
-            <button onClick={() => { setCurrentView('blog'); setSelectedBlogPost(null); }} className={`transition-colors ${currentView === 'blog' ? 'text-orange-500' : 'hover:text-white'}`}>Blog</button>
-            <button onClick={() => setCurrentView('builder')} className={`transition-colors ${currentView === 'builder' ? 'text-orange-500' : 'hover:text-white'}`}>Builder</button>
-            <button onClick={() => setCurrentView('contact')} className={`transition-colors ${currentView === 'contact' ? 'text-orange-500' : 'hover:text-white'}`}>Contatos</button>
+            <button onClick={() => { setSelectedBlogPost(null); navigateToView('blog'); }} className={`transition-colors ${currentView === 'blog' ? 'text-orange-500' : 'hover:text-white'}`}>Blog</button>
+            <button onClick={() => navigateToView('builder')} className={`transition-colors ${currentView === 'builder' ? 'text-orange-500' : 'hover:text-white'}`}>Builder</button>
+            <button onClick={() => navigateToView('contact')} className={`transition-colors ${currentView === 'contact' ? 'text-orange-500' : 'hover:text-white'}`}>Contatos</button>
           </div>
         </div>
       </nav>
@@ -2023,7 +2084,7 @@ const NewDesign = ({ onBack }) => {
                                     <button 
                                         onClick={() => {
                                             setActiveFilter('MAGIC');
-                                            setCurrentView('classes');
+                                            navigateToView('classes');
                                         }}
                                         className="bg-white text-black font-bold uppercase px-6 py-3 text-xs tracking-widest hover:bg-red-600 hover:text-white transition-all transform hover:-translate-y-1"
                                     >
@@ -2053,7 +2114,7 @@ const NewDesign = ({ onBack }) => {
                                         <div className="w-12 h-12 bg-red-600 flex items-center justify-center font-black text-white text-xl shadow-[0_0_15px_rgba(220,38,38,0.5)]">S</div>
                                     <div className="flex-1 flex gap-2 flex-wrap">
                                             {(tiers.S || []).map(c => (
-                                                <div key={c} className="relative group/icon cursor-pointer" onClick={() => {fetchClassData(c); setCurrentView('classes');}}>
+                                                <div key={c} className="relative group/icon cursor-pointer" onClick={() => {fetchClassData(c); navigateToView('classes');}}>
                                                     <img 
                                                         src={imageFor(c)} 
                                                         alt={c} 
@@ -2072,7 +2133,7 @@ const NewDesign = ({ onBack }) => {
                                         <div className="w-12 h-12 bg-orange-500 flex items-center justify-center font-black text-white text-xl shadow-[0_0_15px_rgba(249,115,22,0.5)]">A</div>
                                         <div className="flex-1 flex gap-2 flex-wrap">
                                             {(tiers.A || []).map(c => (
-                                                <div key={c} className="relative group/icon cursor-pointer" onClick={() => {fetchClassData(c); setCurrentView('classes');}}>
+                                                <div key={c} className="relative group/icon cursor-pointer" onClick={() => {fetchClassData(c); navigateToView('classes');}}>
                                                     <img 
                                                         src={imageFor(c)} 
                                                         alt={c} 
@@ -2091,7 +2152,7 @@ const NewDesign = ({ onBack }) => {
                                         <div className="w-12 h-12 bg-yellow-500 flex items-center justify-center font-black text-white text-xl shadow-[0_0_15px_rgba(234,179,8,0.5)]">B</div>
                                         <div className="flex-1 flex gap-2 flex-wrap">
                                             {(tiers.B || []).map(c => (
-                                                <div key={c} className="relative group/icon cursor-pointer" onClick={() => {fetchClassData(c); setCurrentView('classes');}}>
+                                                <div key={c} className="relative group/icon cursor-pointer" onClick={() => {fetchClassData(c); navigateToView('classes');}}>
                                                     <img 
                                                         src={imageFor(c)} 
                                                         alt={c} 
@@ -2152,13 +2213,13 @@ const NewDesign = ({ onBack }) => {
                         {/* News Grid (from Blog posts) */}
                         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                           {(blogPosts.slice(0,6)).map((post) => (
-                            <div key={post.id} onClick={() => { setSelectedBlogPost(post); setCurrentView('blog'); window.location.hash = `#blog/${post.id}`; }} className="group relative bg-[#151923] border border-white/5 overflow-hidden cursor-pointer hover:border-orange-500/50 transition-all">
+                            <div key={post.id} onClick={() => openBlogPost(post)} className="group relative bg-[#151923] border border-white/5 overflow-hidden cursor-pointer hover:border-orange-500/50 transition-all">
                               <div className="h-40 overflow-hidden relative flex items-center justify-center bg-black/50">
                                 <div className="absolute inset-0 bg-gradient-to-t from-[#151923] to-transparent z-10"></div>
                                 <img
                                   src={imageOrFallback(post.image)}
                                   alt={post.title}
-                                  onError={(e) => { e.currentTarget.src = 'https://herosiege.wiki.gg/images/Item_Chest.png'; }}
+                                  onError={(e) => { e.currentTarget.src = '/images/herosiege.png'; }}
                                   className="h-full object-contain opacity-80 group-hover:opacity-100 group-hover:scale-110 transition-all duration-500"
                                 />
                               </div>
@@ -2621,7 +2682,7 @@ const NewDesign = ({ onBack }) => {
                                                 <img
                                                   src={img}
                                                   alt={cls}
-                                                  onError={(e) => { e.currentTarget.src = 'https://herosiege.wiki.gg/images/Item_Chest.png'; }}
+                                                  onError={(e) => { e.currentTarget.src = '/images/herosiege.png'; }}
                                                   className="w-10 h-10 object-contain border border-white/10 rounded"
                                                 />
                                                 <div className="text-sm text-gray-200">{cls}</div>
@@ -2937,7 +2998,7 @@ const NewDesign = ({ onBack }) => {
                                           <img
                                             src={img}
                                             alt={cls}
-                                            onError={(e) => { e.currentTarget.src = 'https://herosiege.wiki.gg/images/Item_Chest.png'; }}
+                                            onError={(e) => { e.currentTarget.src = '/images/herosiege.png'; }}
                                             className="w-10 h-10 object-contain border border-white/10 rounded"
                                           />
                                         ) : (
@@ -3164,13 +3225,13 @@ const NewDesign = ({ onBack }) => {
                         </div>
                         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                           {blogPosts.map(post => (
-                            <div key={post.id} onClick={() => { setSelectedBlogPost(post); window.location.hash = `#blog/${post.id}`; }} className="group relative bg-[#151923] border border-white/5 overflow-hidden cursor-pointer hover:border-orange-500/50 transition-all">
+                            <div key={post.id} onClick={() => openBlogPost(post)} className="group relative bg-[#151923] border border-white/5 overflow-hidden cursor-pointer hover:border-orange-500/50 transition-all">
                               <div className="h-40 overflow-hidden relative flex items-center justify-center bg-black/50">
                                 <div className="absolute inset-0 bg-gradient-to-t from-[#151923] to-transparent z-10"></div>
                                 <img
                                   src={imageOrFallback(post.image)}
                                   alt={post.title}
-                                  onError={(e) => { e.currentTarget.src = 'https://herosiege.wiki.gg/images/Item_Chest.png'; }}
+                                  onError={(e) => { e.currentTarget.src = '/images/herosiege.png'; }}
                                   className="h-full object-contain opacity-80 group-hover:opacity-100 group-hover:scale-110 transition-all duration-500"
                                 />
                               </div>
@@ -3190,13 +3251,13 @@ const NewDesign = ({ onBack }) => {
                     )}
                     {selectedBlogPost && (
                       <div>
-                        <button onClick={() => { setSelectedBlogPost(null); window.location.hash = '#blog'; }} className="text-xs uppercase tracking-widest font-bold text-gray-400 hover:text-white mb-4">← Voltar</button>
+                        <button onClick={() => { setSelectedBlogPost(null); navigate('/blog'); }} className="text-xs uppercase tracking-widest font-bold text-gray-400 hover:text-white mb-4">← Voltar</button>
                         <div className="bg-[#151923] border border-white/5">
                           <div className="h-60 w-full overflow-hidden relative flex items-center justify-center bg-black/50">
                             <img
                               src={imageOrFallback(selectedBlogPost.image)}
                               alt={selectedBlogPost.title}
-                              onError={(e) => { e.currentTarget.src = 'https://herosiege.wiki.gg/images/Item_Chest.png'; }}
+                              onError={(e) => { e.currentTarget.src = '/images/herosiege.png'; }}
                               className="h-full object-contain"
                             />
                           </div>
@@ -3314,13 +3375,13 @@ const NewDesign = ({ onBack }) => {
                     </h3>
                     <div className="space-y-4">
                         {(blogPosts.slice(0,3)).map((p) => (
-                          <div key={p.id} className="flex gap-4 group cursor-pointer" onClick={() => { setCurrentView('blog'); setSelectedBlogPost(p); window.location.hash = `#blog/${p.id}`; }}>
+                          <div key={p.id} className="flex gap-4 group cursor-pointer" onClick={() => openBlogPost(p)}>
                             <div className="w-20 h-20 bg-[#151923] flex-shrink-0 overflow-hidden relative">
                               {p.image ? (
                                 <img
                                   src={imageOrFallback(p.image)}
                                   alt={p.title}
-                                  onError={(e) => { e.currentTarget.src = 'https://herosiege.wiki.gg/images/Item_Chest.png'; }}
+                                  onError={(e) => { e.currentTarget.src = '/images/herosiege.png'; }}
                                   className="w-full h-full object-cover opacity-80 group-hover:opacity-100 transition-colors"
                                 />
                               ) : (

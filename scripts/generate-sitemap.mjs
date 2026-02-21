@@ -99,8 +99,8 @@ function blogIndexHtml() {
     '<!doctype html>',
     '<html lang="pt-BR"><head>',
     '<meta charset="utf-8" />',
-    '<meta http-equiv="refresh" content="0; url=/#blog" />',
-    `<link rel="canonical" href="${BASE_URL}/#blog" />`,
+    '<meta http-equiv="refresh" content="0; url=/blog" />',
+    `<link rel="canonical" href="${BASE_URL}/blog" />`,
     '<title>Blog | Hero Siege Brasil</title>',
     '</head><body>',
     '<noscript>Redirecionando para o Blog...</noscript>',
@@ -115,12 +115,12 @@ function blogPostHtml(id, title) {
     '<!doctype html>',
     '<html lang="pt-BR"><head>',
     '<meta charset="utf-8" />',
-    `<meta http-equiv="refresh" content="0; url=/#blog/${encodeURIComponent(id)}" />`,
-    `<link rel="canonical" href="${BASE_URL}/#blog/${encodeURIComponent(id)}" />`,
+    `<meta http-equiv="refresh" content="0; url=/blog/${encodeURIComponent(id)}" />`,
+    `<link rel="canonical" href="${BASE_URL}/blog/${encodeURIComponent(id)}" />`,
     `<title>${safeTitle}</title>`,
     '</head><body>',
     '<noscript>Redirecionando para o post...</noscript>',
-    `<script>location.replace("/#blog/${id}");</script>`,
+    `<script>location.replace("/blog/${id}");</script>`,
     '</body></html>'
   ].join('');
 }
@@ -150,9 +150,7 @@ function buildSitemapXml(entries) {
 async function main() {
   const posts = await loadPublishedPosts();
 
-  // Blog stubs
   ensureDir(blogDir);
-  writeFile(path.join(blogDir, 'index.html'), blogIndexHtml());
   for (const p of posts) {
     const html = blogPostHtml(p.id, p.title);
     writeFile(path.join(blogDir, `${p.id}.html`), html);
@@ -162,12 +160,19 @@ async function main() {
   const today = new Date();
   const entries = [
     { loc: `${BASE_URL}/`, lastmod: today, changefreq: 'daily', priority: 1.0 },
-    { loc: `${BASE_URL}/blog/`, lastmod: today, changefreq: 'daily', priority: 0.8 }
+    { loc: `${BASE_URL}/classes`, lastmod: today, changefreq: 'weekly', priority: 0.9 },
+    { loc: `${BASE_URL}/items`, lastmod: today, changefreq: 'weekly', priority: 0.9 },
+    { loc: `${BASE_URL}/runes`, lastmod: today, changefreq: 'weekly', priority: 0.8 },
+    { loc: `${BASE_URL}/relics`, lastmod: today, changefreq: 'weekly', priority: 0.8 },
+    { loc: `${BASE_URL}/quests`, lastmod: today, changefreq: 'weekly', priority: 0.5 },
+    { loc: `${BASE_URL}/builder`, lastmod: today, changefreq: 'weekly', priority: 0.7 },
+    { loc: `${BASE_URL}/contato`, lastmod: today, changefreq: 'weekly', priority: 0.6 },
+    { loc: `${BASE_URL}/blog`, lastmod: today, changefreq: 'daily', priority: 0.8 }
   ];
   for (const p of posts) {
     const last = p.updatedAt || p.createdAt || today;
     entries.push({
-      loc: `${BASE_URL}/blog/${encodeURIComponent(p.id)}.html`,
+      loc: `${BASE_URL}/blog/${encodeURIComponent(p.id)}`,
       lastmod: last,
       changefreq: 'weekly',
       priority: 0.7
