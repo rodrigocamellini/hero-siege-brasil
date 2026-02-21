@@ -8,6 +8,7 @@ import ClassesView from './ClassesView';
 import ItemsView from './ItemsView';
 import RunesView from './RunesView';
 import ChaosTowerPage from './ChaosTowerPage';
+import MercenariosPage from './MercenariosPage';
 
 const NewDesign = ({ onBack, initialView = 'home' }) => {
   const navigate = useNavigate();
@@ -122,6 +123,7 @@ const NewDesign = ({ onBack, initialView = 'home' }) => {
     else if (currentView === 'runes') title = 'Runas | Hero Siege Brasil';
     else if (currentView === 'relics') title = 'Relíquias | Hero Siege Brasil';
     else if (currentView === 'chaosTower') title = 'Chaos Tower | Hero Siege Brasil';
+    else if (currentView === 'mercenaries') title = 'Mercenários | Hero Siege Brasil';
     else if (currentView === 'quests') title = 'Quests | Hero Siege Brasil';
     else if (currentView === 'builder') {
       const cls = builderClass || 'Viking';
@@ -141,6 +143,7 @@ const NewDesign = ({ onBack, initialView = 'home' }) => {
     else if (currentView === 'runes') path = '/runes';
     else if (currentView === 'relics') path = '/relics';
     else if (currentView === 'chaosTower') path = '/chaos-tower';
+    else if (currentView === 'mercenaries') path = '/mercenarios';
     else if (currentView === 'quests') path = '/quests';
     else if (currentView === 'builder') path = '/builder';
     else if (currentView === 'contact') path = '/contato';
@@ -415,8 +418,9 @@ const NewDesign = ({ onBack, initialView = 'home' }) => {
     else if (view === 'items') navigate('/items');
     else if (view === 'runes') navigate('/runes');
     else if (view === 'relics') navigate('/relics');
-    else if (view === 'quests') navigate('/quests');
     else if (view === 'chaosTower') navigate('/chaos-tower');
+    else if (view === 'mercenaries') navigate('/mercenarios');
+    else if (view === 'quests') navigate('/quests');
     else if (view === 'builder') navigate('/builder');
     else if (view === 'contact') navigate('/contato');
     else if (view === 'blog') navigate('/blog');
@@ -2002,6 +2006,12 @@ const NewDesign = ({ onBack, initialView = 'home' }) => {
                   Chaos Tower
                 </button>
                 <button
+                  onClick={() => { navigateToView('mercenaries'); setIsDbOpen(false); }}
+                  className={`block w-full text-left px-4 py-2 text-xs font-bold uppercase tracking-widest hover:bg-white/5 ${currentView === 'mercenaries' ? 'text-orange-500' : 'text-gray-400 hover:text-white'}`}
+                >
+                  Mercenários
+                </button>
+                <button
                   onClick={() => { navigateToView('quests'); setIsDbOpen(false); }}
                   className={`block w-full text-left px-4 py-2 text-xs font-bold uppercase tracking-widest hover:bg-white/5 ${currentView === 'quests' ? 'text-orange-500' : 'text-gray-400 hover:text-white'}`}
                 >
@@ -3122,6 +3132,10 @@ const NewDesign = ({ onBack, initialView = 'home' }) => {
                 )}
                 {(currentView === 'chaosTower') && (
                   <ChaosTowerPage />
+                )}
+
+                {(currentView === 'mercenaries') && (
+                  <MercenariosPage />
                 )}
 
                 {(currentView === 'quests') && (
