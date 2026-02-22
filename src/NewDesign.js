@@ -9,6 +9,7 @@ import ItemsView from './ItemsView';
 import RunesView from './RunesView';
 import ChaosTowerPage from './ChaosTowerPage';
 import MercenariosPage from './MercenariosPage';
+import MineracaoPage from './MineracaoPage';
 
 const NewDesign = ({ onBack, initialView = 'home' }) => {
   const navigate = useNavigate();
@@ -124,6 +125,7 @@ const NewDesign = ({ onBack, initialView = 'home' }) => {
     else if (currentView === 'relics') title = 'Relíquias | Hero Siege Brasil';
     else if (currentView === 'chaosTower') title = 'Chaos Tower | Hero Siege Brasil';
     else if (currentView === 'mercenaries') title = 'Mercenários | Hero Siege Brasil';
+    else if (currentView === 'mining') title = 'Mineração | Hero Siege Brasil';
     else if (currentView === 'quests') title = 'Quests | Hero Siege Brasil';
     else if (currentView === 'builder') {
       const cls = builderClass || 'Viking';
@@ -144,6 +146,7 @@ const NewDesign = ({ onBack, initialView = 'home' }) => {
     else if (currentView === 'relics') path = '/relics';
     else if (currentView === 'chaosTower') path = '/chaos-tower';
     else if (currentView === 'mercenaries') path = '/mercenarios';
+    else if (currentView === 'mining') path = '/mineracao';
     else if (currentView === 'quests') path = '/quests';
     else if (currentView === 'builder') path = '/builder';
     else if (currentView === 'contact') path = '/contato';
@@ -420,6 +423,7 @@ const NewDesign = ({ onBack, initialView = 'home' }) => {
     else if (view === 'relics') navigate('/relics');
     else if (view === 'chaosTower') navigate('/chaos-tower');
     else if (view === 'mercenaries') navigate('/mercenarios');
+    else if (view === 'mining') navigate('/mineracao');
     else if (view === 'quests') navigate('/quests');
     else if (view === 'builder') navigate('/builder');
     else if (view === 'contact') navigate('/contato');
@@ -2017,6 +2021,12 @@ const NewDesign = ({ onBack, initialView = 'home' }) => {
                 >
                   Quests
                 </button>
+                <button
+                  onClick={() => { navigateToView('mining'); setIsDbOpen(false); }}
+                  className={`block w-full text-left px-4 py-2 text-xs font-bold uppercase tracking-widest hover:bg-white/5 ${currentView === 'mining' ? 'text-orange-500' : 'text-gray-400 hover:text-white'}`}
+                >
+                  Mineração
+                </button>
               </div>
             </div>
             <button onClick={() => { setSelectedBlogPost(null); navigateToView('blog'); }} className={`transition-colors ${currentView === 'blog' ? 'text-orange-500' : 'hover:text-white'}`}>Blog</button>
@@ -3136,6 +3146,10 @@ const NewDesign = ({ onBack, initialView = 'home' }) => {
 
                 {(currentView === 'mercenaries') && (
                   <MercenariosPage />
+                )}
+
+                {(currentView === 'mining') && (
+                  <MineracaoPage />
                 )}
 
                 {(currentView === 'quests') && (

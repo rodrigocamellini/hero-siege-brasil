@@ -1,0 +1,24 @@
+# 1. IMPEDIR LISTAGEM DE DIRETÓRIOS 
+# Impede que curiosos vejam a lista de arquivos nas pastas de imagens 
+Options -Indexes 
+
+# 2. PROTEÇÃO DE HOTLINK (BLOQUEIO DE ACESSO EXTERNO) 
+RewriteEngine on 
+
+# Permite que a imagem carregue se o usuário colar o link direto no navegador (opcional) 
+RewriteCond %{HTTP_REFERER} !^$ 
+
+# PERMITIR SEU PRÓPRIO SITE (Versões com e sem www) 
+RewriteCond %{HTTP_REFERER} !^https?://(www\.)?herosiegebrasil\.com\.br [NC] 
+
+# PERMITIR REDES SOCIAIS E BUSCADORES (Essencial para SEO e compartilhamento) 
+RewriteCond %{HTTP_REFERER} !^https?://(www\.)?google\. [NC] 
+RewriteCond %{HTTP_REFERER} !^https?://(www\.)?facebook\.com [NC] 
+RewriteCond %{HTTP_REFERER} !^https?://(www\.)?twitter\.com [NC] 
+RewriteCond %{HTTP_REFERER} !^https?://(www\.)?discord\. [NC] 
+RewriteCond %{HTTP_REFERER} !^https?://(www\.)?whatsapp\.com [NC] 
+
+# BLOQUEAR AS EXTENSÕES (Protege WebP, PNG, JPG, etc.) 
+# Se o acesso não vier dos sites acima, o servidor retorna Erro 403 
+RewriteRule \.(jpg|jpeg|png|gif|svg|webp)$ - [F,NC]
+
