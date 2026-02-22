@@ -15,6 +15,32 @@ import GemasJoiasPage from './GemasJoiasPage';
 
 const TWITCH_CONTAINER_ID = 'twitch-embed-spacezone';
 
+const CLASS_DATA = [
+  { name: 'Viking', type: 'MELEE' },
+  { name: 'Pyromancer', type: 'MAGIC' },
+  { name: 'Marksman', type: 'RANGED' },
+  { name: 'Pirate', type: 'RANGED' },
+  { name: 'Nomad', type: 'MELEE' },
+  { name: 'Redneck', type: 'MELEE' },
+  { name: 'Necromancer', type: 'MAGIC' },
+  { name: 'Samurai', type: 'MELEE' },
+  { name: 'Paladin', type: 'MELEE' },
+  { name: 'Amazon', type: 'RANGED' },
+  { name: 'Demon Slayer', type: 'RANGED' },
+  { name: 'Demonspawn', type: 'MELEE' },
+  { name: 'Shaman', type: 'MAGIC' },
+  { name: 'White Mage', type: 'MAGIC' },
+  { name: 'Marauder', type: 'MELEE' },
+  { name: 'Plague Doctor', type: 'MAGIC' },
+  { name: 'Shield Lancer', type: 'MELEE' },
+  { name: 'Jötunn', type: 'MELEE' },
+  { name: 'Illusionist', type: 'MAGIC' },
+  { name: 'Exo', type: 'MELEE' },
+  { name: 'Butcher', type: 'MELEE' },
+  { name: 'Stormweaver', type: 'MAGIC' },
+  { name: 'Bard', type: 'MAGIC' },
+];
+
 const EXTRA_SHIELDS = [
   { id: 'archmagus-glyphward', name: 'Archmagus Glyphward', rarity: 'Satanic', image: 'https://herosiege.wiki.gg/images/Shields_Archmagus_Glyphward.png', data: { Tier: 'C', Level: 20, Resumo: 'Energy & Intelligence' } },
   { id: 'battle-mages-shield', name: "Battle Mage's Shield", rarity: 'Satanic', image: 'https://herosiege.wiki.gg/images/Shields_Battle_Mages_Shield.png', data: { Tier: 'A', Level: 58, Resumo: '+1 All Skills & FCR' } },
@@ -152,35 +178,8 @@ const NewDesign = ({ onBack, initialView = 'home' }) => {
   }, []);
 
   useEffect(() => {
-    // Close dropdown when navigating to another view
     setIsDbOpen(false);
   }, [currentView]);
-  
-  const CLASS_DATA = [
-      { name: "Viking", type: "MELEE" },
-      { name: "Pyromancer", type: "MAGIC" },
-      { name: "Marksman", type: "RANGED" },
-      { name: "Pirate", type: "RANGED" },
-      { name: "Nomad", type: "MELEE" },
-      { name: "Redneck", type: "MELEE" },
-      { name: "Necromancer", type: "MAGIC" },
-      { name: "Samurai", type: "MELEE" },
-      { name: "Paladin", type: "MELEE" },
-      { name: "Amazon", type: "RANGED" },
-      { name: "Demon Slayer", type: "RANGED" },
-      { name: "Demonspawn", type: "MELEE" },
-      { name: "Shaman", type: "MAGIC" },
-      { name: "White Mage", type: "MAGIC" },
-      { name: "Marauder", type: "MELEE" },
-      { name: "Plague Doctor", type: "MAGIC" },
-      { name: "Shield Lancer", type: "MELEE" },
-      { name: "Jötunn", type: "MELEE" },
-      { name: "Illusionist", type: "MAGIC" },
-      { name: "Exo", type: "MELEE" },
-      { name: "Butcher", type: "MELEE" },
-      { name: "Stormweaver", type: "MAGIC" },
-      { name: "Bard", type: "MAGIC" }
-  ];
 
   const filteredClasses = activeFilter === 'ALL' 
     ? CLASS_DATA 
@@ -2978,7 +2977,7 @@ const NewDesign = ({ onBack, initialView = 'home' }) => {
                   <div className="fixed inset-0 z-50">
                     <div className="absolute inset-0 bg-black/80" onClick={() => setNewBuildOpen(false)} />
                     <div className="absolute inset-0 flex items-center justify-center p-4">
-                      <div className="bg-[#151923] border border-white/10 rounded-sm shadow-xl max-w-4xl w-full max-h-[85vh] flex flex-col">
+                      <div className="bg-[#151923] border border-white/10 rounded-sm shadow-xl max-w-6xl w-full max-h-[85vh] flex flex-col">
                         <div className="flex items-center justify-between px-5 py-4 border-b border-white/10">
                           <div className="text-sm font-black text-white uppercase tracking-widest">
                             Nova Build
@@ -2992,204 +2991,206 @@ const NewDesign = ({ onBack, initialView = 'home' }) => {
                           </button>
                         </div>
                         <div className="p-5 overflow-y-auto custom-scrollbar">
-                          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                            <div className="space-y-4">
-                              <label className="block text-[11px] font-bold uppercase tracking-widest text-gray-400 mb-1">
+                          <div className="grid grid-cols-1 md:grid-cols-[minmax(0,1.8fr)_minmax(0,1fr)] gap-4">
+                            <div className="md:col-start-1 md:row-start-1">
+                              <div className="border border-white/10 bg-[#0f111a] p-4 space-y-4">
+                                <label className="block text-[11px] font-bold uppercase tracking-widest text-gray-400 mb-1">
                                 Título da Build
-                              </label>
-                              <input
-                                value={nbTitle}
-                                onChange={(e) => setNbTitle(e.target.value)}
-                                className="w-full bg-[#0f111a] border border-white/10 text-sm text-white px-3 py-2"
-                                placeholder="Ex.: Bard Solo Map Farm"
-                              />
-                              <label className="block text-[11px] font-bold uppercase tracking-widest text-gray-400 mb-1">
+                                </label>
+                                <input
+                                  value={nbTitle}
+                                  onChange={(e) => setNbTitle(e.target.value)}
+                                  className="w-full bg-[#0f111a] border border-white/10 text-sm text-white px-3 py-2"
+                                  placeholder="Ex.: Bard Solo Map Farm"
+                                />
+                                <label className="block text-[11px] font-bold uppercase tracking-widest text-gray-400 mb-1">
                                 Autor / Nickname
-                              </label>
-                              <input
-                                value={nbAuthor}
-                                onChange={(e) => setNbAuthor(e.target.value)}
-                                className="w-full bg-[#0f111a] border border-white/10 text-sm text-white px-3 py-2"
-                                placeholder="Seu nick"
-                              />
-                              <label className="block text-[11px] font-bold uppercase tracking-widest text-gray-400 mb-1">
+                                </label>
+                                <input
+                                  value={nbAuthor}
+                                  onChange={(e) => setNbAuthor(e.target.value)}
+                                  className="w-full bg-[#0f111a] border border-white/10 text-sm text-white px-3 py-2"
+                                  placeholder="Seu nick"
+                                />
+                                <label className="block text-[11px] font-bold uppercase tracking-widest text-gray-400 mb-1">
                                 Classe
-                              </label>
-                              <select
-                                value={nbClass}
-                                onChange={(e) => setNbClass(e.target.value)}
-                                className="w-full bg-[#0f111a] border border-white/10 text-sm text-white px-3 py-2"
-                              >
-                                <option value="">Selecione</option>
-                                {CLASS_DATA.map((c) => (
-                                  <option key={c.name} value={c.name}>{c.name}</option>
-                                ))}
-                              </select>
-                              <label className="block text-[11px] font-bold uppercase tracking-widest text-gray-400 mb-1">
+                                </label>
+                                <select
+                                  value={nbClass}
+                                  onChange={(e) => setNbClass(e.target.value)}
+                                  className="w-full bg-[#0f111a] border border-white/10 text-sm text-white px-3 py-2"
+                                >
+                                  <option value="">Selecione</option>
+                                  {CLASS_DATA.map((c) => (
+                                    <option key={c.name} value={c.name}>{c.name}</option>
+                                  ))}
+                                </select>
+                                <label className="block text-[11px] font-bold uppercase tracking-widest text-gray-400 mb-1">
                                 Tipo da Build
-                              </label>
-                              <select
-                                value={nbType}
-                                onChange={(e) => setNbType(e.target.value)}
-                                className="w-full bg-[#0f111a] border border-white/10 text-sm text-white px-3 py-2"
-                              >
-                                <option value="iniciante">Iniciante 🌱</option>
-                                <option value="avançada">Avançada 🛠️</option>
-                                <option value="final">Final 🏁</option>
-                              </select>
-                              <div className="text-[11px] font-bold uppercase tracking-widest text-gray-400">
-                                Distribuição de Pontos (Total: {NB_TOTAL}) · Restantes: {Math.max(0, NB_TOTAL - totalNbStats(nbStats))}
-                              </div>
-                              <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
-                                {[
-                                  { key: 'strength', label: 'Strength', color: '#92400e' },
-                                  { key: 'dexterity', label: 'Dexterity', color: '#22c55e' },
-                                  { key: 'intelligence', label: 'Intelligence', color: '#ec4899' },
-                                  { key: 'energy', label: 'Energy', color: '#0ea5e9' },
-                                  { key: 'armor', label: 'Armor', color: '#4b5563' },
-                                  { key: 'vitality', label: 'Vitality', color: '#ef4444' },
-                                ].map(({ key, label, color }) => {
-                                  const val = nbStats[key] || 0;
-                                  const remain = NB_TOTAL - totalNbStats(nbStats);
-                                  return (
-                                    <div
-                                      key={key}
-                                      className="border p-3 bg-[#0f111a]"
-                                      style={{ borderColor: color }}
-                                    >
-                                      <div className="flex items-center justify-between mb-2">
-                                        <div className="flex items-center gap-2">
-                                          <div className="w-6 h-6">
-                                            <svg
-                                              viewBox="0 0 24 24"
-                                              className="w-full h-full"
+                                </label>
+                                <select
+                                  value={nbType}
+                                  onChange={(e) => setNbType(e.target.value)}
+                                  className="w-full bg-[#0f111a] border border-white/10 text-sm text-white px-3 py-2"
+                                >
+                                  <option value="iniciante">Iniciante 🌱</option>
+                                  <option value="avançada">Avançada 🛠️</option>
+                                  <option value="final">Final 🏁</option>
+                                </select>
+                                <div className="text-[11px] font-bold uppercase tracking-widest text-gray-400">
+                                  Distribuição de Pontos (Total: {NB_TOTAL}) · Restantes: {Math.max(0, NB_TOTAL - totalNbStats(nbStats))}
+                                </div>
+                                <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
+                                  {[
+                                    { key: 'strength', label: 'Strength', color: '#92400e' },
+                                    { key: 'dexterity', label: 'Dexterity', color: '#22c55e' },
+                                    { key: 'intelligence', label: 'Intelligence', color: '#ec4899' },
+                                    { key: 'energy', label: 'Energy', color: '#0ea5e9' },
+                                    { key: 'armor', label: 'Armor', color: '#4b5563' },
+                                    { key: 'vitality', label: 'Vitality', color: '#ef4444' },
+                                  ].map(({ key, label, color }) => {
+                                    const val = nbStats[key] || 0;
+                                    const remain = NB_TOTAL - totalNbStats(nbStats);
+                                    return (
+                                      <div
+                                        key={key}
+                                        className="border p-3 bg-[#0f111a]"
+                                        style={{ borderColor: color }}
+                                      >
+                                        <div className="flex items-center justify-between mb-2">
+                                          <div className="flex items-center gap-2">
+                                            <div className="w-6 h-6">
+                                              <svg
+                                                viewBox="0 0 24 24"
+                                                className="w-full h-full"
+                                              >
+                                                <circle
+                                                  cx="12"
+                                                  cy="12"
+                                                  r="9"
+                                                  stroke={color}
+                                                  strokeWidth="1.5"
+                                                  fill="none"
+                                                />
+                                                <path
+                                                  d="M12 4 L14.59 9.26 L20.24 9.91 L15.88 13.64 L17.18 19.19 L12 16.2 L6.82 19.19 L8.12 13.64 L3.76 9.91 L9.41 9.26 Z"
+                                                  stroke={color}
+                                                  strokeWidth="1.4"
+                                                  fill="none"
+                                                  strokeLinejoin="round"
+                                                />
+                                              </svg>
+                                            </div>
+                                            <div
+                                              className="text-xs font-bold"
+                                              style={{ color }}
                                             >
-                                              <circle
-                                                cx="12"
-                                                cy="12"
-                                                r="9"
-                                                stroke={color}
-                                                strokeWidth="1.5"
-                                                fill="none"
-                                              />
-                                              <path
-                                                d="M12 4 L14.59 9.26 L20.24 9.91 L15.88 13.64 L17.18 19.19 L12 16.2 L6.82 19.19 L8.12 13.64 L3.76 9.91 L9.41 9.26 Z"
-                                                stroke={color}
-                                                strokeWidth="1.4"
-                                                fill="none"
-                                                strokeLinejoin="round"
-                                              />
-                                            </svg>
-                                          </div>
-                                          <div
-                                            className="text-xs font-bold"
-                                            style={{ color }}
-                                          >
-                                            {label}
+                                              {label}
+                                            </div>
                                           </div>
                                         </div>
-                                      </div>
-                                      <div className="flex items-center gap-2 text-[11px]">
-                                        <button
-                                          type="button"
-                                          className="px-2 py-1 border border-white/10 text-white hover:bg-white hover:text-black"
-                                          onClick={() =>
-                                            setNbStats((s) => ({
-                                              ...s,
-                                              [key]: Math.max(0, (s[key] || 0) - 1),
-                                            }))
-                                          }
-                                        >
-                                          −
-                                        </button>
-                                        <div className="flex-1 text-center text-white">{val}</div>
-                                        <button
-                                          type="button"
-                                          className="px-2 py-1 border border-white/10 text-white hover:bg-white hover:text-black disabled:opacity-40"
-                                          onClick={() =>
-                                            setNbStats((s) => ({
-                                              ...s,
-                                              [key]: (s[key] || 0) + 1,
-                                            }))
-                                          }
-                                          disabled={remain <= 0}
-                                        >
-                                          +1
-                                        </button>
-                                        <button
-                                          type="button"
-                                          className="px-2 py-1 border border-white/10 text-white hover:bg-white hover:text-black disabled:opacity-40"
-                                          onClick={() =>
-                                            setNbStats((s) => {
-                                              const current = s[key] || 0;
-                                              const toAdd = Math.min(10, NB_TOTAL - totalNbStats(s));
-                                              if (toAdd <= 0) return s;
-                                              return {
+                                        <div className="flex items-center gap-2 text-[11px]">
+                                          <button
+                                            type="button"
+                                            className="px-2 py-1 border border-white/10 text-white hover:bg-white hover:text-black"
+                                            onClick={() =>
+                                              setNbStats((s) => ({
                                                 ...s,
-                                                [key]: current + toAdd,
-                                              };
-                                            })
-                                          }
-                                          disabled={remain <= 0}
-                                        >
-                                          +10
-                                        </button>
+                                                [key]: Math.max(0, (s[key] || 0) - 1),
+                                              }))
+                                            }
+                                          >
+                                            −
+                                          </button>
+                                          <div className="flex-1 text-center text-white">{val}</div>
+                                          <button
+                                            type="button"
+                                            className="px-2 py-1 border border-white/10 text-white hover:bg-white hover:text-black disabled:opacity-40"
+                                            onClick={() =>
+                                              setNbStats((s) => ({
+                                                ...s,
+                                                [key]: (s[key] || 0) + 1,
+                                              }))
+                                            }
+                                            disabled={remain <= 0}
+                                          >
+                                            +1
+                                          </button>
+                                          <button
+                                            type="button"
+                                            className="px-2 py-1 border border-white/10 text-white hover:bg-white hover:text-black disabled:opacity-40"
+                                            onClick={() =>
+                                              setNbStats((s) => {
+                                                const current = s[key] || 0;
+                                                const toAdd = Math.min(10, NB_TOTAL - totalNbStats(s));
+                                                if (toAdd <= 0) return s;
+                                                return {
+                                                  ...s,
+                                                  [key]: current + toAdd,
+                                                };
+                                              })
+                                            }
+                                            disabled={remain <= 0}
+                                          >
+                                            +10
+                                          </button>
+                                        </div>
                                       </div>
-                                    </div>
-                                  );
-                                })}
+                                    );
+                                  })}
+                                </div>
+                                <label className="block text-[11px] font-bold uppercase tracking-widest text-gray-400 mb-1">
+                                  Conteúdo (opcional)
+                                </label>
+                                <div className="flex flex-wrap gap-2 mb-2">
+                                  {[
+                                    { s: '✅', bg: 'bg-emerald-600/20', fg: 'text-emerald-400' },
+                                    { s: '❌', bg: 'bg-red-600/20', fg: 'text-red-400' },
+                                    { s: '⭐', bg: 'bg-yellow-600/20', fg: 'text-yellow-400' },
+                                    { s: '⚠️', bg: 'bg-amber-600/20', fg: 'text-amber-400' },
+                                    { s: '🔥', bg: 'bg-orange-600/20', fg: 'text-orange-400' },
+                                    { s: '🛡️', bg: 'bg-slate-600/20', fg: 'text-slate-300' },
+                                    { s: '🗡️', bg: 'bg-rose-600/20', fg: 'text-rose-300' },
+                                    { s: '🧪', bg: 'bg-fuchsia-600/20', fg: 'text-fuchsia-300' },
+                                    { s: '💡', bg: 'bg-sky-600/20', fg: 'text-sky-300' },
+                                    { s: '📌', bg: 'bg-violet-600/20', fg: 'text-violet-300' },
+                                  ].map(({ s, bg, fg }) => (
+                                    <button
+                                      key={s}
+                                      type="button"
+                                      className={`px-2 py-1 text-[12px] rounded ${bg} ${fg} border border-white/10 hover:bg-white/10`}
+                                      onClick={() => {
+                                        const ta = nbContentRef.current;
+                                        if (ta && typeof ta.selectionStart === 'number') {
+                                          const start = ta.selectionStart;
+                                          const end = ta.selectionEnd;
+                                          const next = (nbContent || '');
+                                          const updated = next.slice(0, start) + s + next.slice(end);
+                                          setNbContent(updated);
+                                          setTimeout(() => {
+                                            ta.focus();
+                                            const pos = start + s.length;
+                                            ta.setSelectionRange(pos, pos);
+                                          }, 0);
+                                        } else {
+                                          setNbContent((v) => (v || '') + s);
+                                        }
+                                      }}
+                                      aria-label={`Inserir marcador ${s}`}
+                                      title={`Inserir marcador ${s}`}
+                                    >
+                                      {s}
+                                    </button>
+                                  ))}
+                                </div>
+                                <textarea
+                                  ref={nbContentRef}
+                                  value={nbContent}
+                                  onChange={(e) => setNbContent(e.target.value)}
+                                  className="w-full bg-[#0f111a] border border-white/10 text-sm text-white px-3 py-2 min-h-[120px]"
+                                  placeholder="Descreva os detalhes da build (itens, rotação, dicas)..."
+                                />
                               </div>
-                              <label className="block text-[11px] font-bold uppercase tracking-widest text-gray-400 mb-1">
-                                Conteúdo (opcional)
-                              </label>
-                            <div className="flex flex-wrap gap-2 mb-2">
-                              {[
-                                { s: '✅', bg: 'bg-emerald-600/20', fg: 'text-emerald-400' },
-                                { s: '❌', bg: 'bg-red-600/20', fg: 'text-red-400' },
-                                { s: '⭐', bg: 'bg-yellow-600/20', fg: 'text-yellow-400' },
-                                { s: '⚠️', bg: 'bg-amber-600/20', fg: 'text-amber-400' },
-                                { s: '🔥', bg: 'bg-orange-600/20', fg: 'text-orange-400' },
-                                { s: '🛡️', bg: 'bg-slate-600/20', fg: 'text-slate-300' },
-                                { s: '🗡️', bg: 'bg-rose-600/20', fg: 'text-rose-300' },
-                                { s: '🧪', bg: 'bg-fuchsia-600/20', fg: 'text-fuchsia-300' },
-                                { s: '💡', bg: 'bg-sky-600/20', fg: 'text-sky-300' },
-                                { s: '📌', bg: 'bg-violet-600/20', fg: 'text-violet-300' },
-                              ].map(({ s, bg, fg }) => (
-                                <button
-                                  key={s}
-                                  type="button"
-                                  className={`px-2 py-1 text-[12px] rounded ${bg} ${fg} border border-white/10 hover:bg-white/10`}
-                                  onClick={() => {
-                                    const ta = nbContentRef.current;
-                                    if (ta && typeof ta.selectionStart === 'number') {
-                                      const start = ta.selectionStart;
-                                      const end = ta.selectionEnd;
-                                      const next = (nbContent || '');
-                                      const updated = next.slice(0, start) + s + next.slice(end);
-                                      setNbContent(updated);
-                                      setTimeout(() => {
-                                        ta.focus();
-                                        const pos = start + s.length;
-                                        ta.setSelectionRange(pos, pos);
-                                      }, 0);
-                                    } else {
-                                      setNbContent((v) => (v || '') + s);
-                                    }
-                                  }}
-                                  aria-label={`Inserir marcador ${s}`}
-                                  title={`Inserir marcador ${s}`}
-                                >
-                                  {s}
-                                </button>
-                              ))}
-                            </div>
-                            <textarea
-                              ref={nbContentRef}
-                              value={nbContent}
-                              onChange={(e) => setNbContent(e.target.value)}
-                              className="w-full bg-[#0f111a] border border-white/10 text-sm text-white px-3 py-2 min-h-[120px]"
-                              placeholder="Descreva os detalhes da build (itens, rotação, dicas)..."
-                            />
                             </div>
                             <div className="md:col-start-2 md:row-start-1 md:self-start">
                               {(() => {
@@ -3248,7 +3249,7 @@ const NewDesign = ({ onBack, initialView = 'home' }) => {
                                           <span className="text-[9px] uppercase tracking-widest text-gray-400 mb-0.5">
                                             Build
                                           </span>
-                                          <span className={`px-2 py-0.5 rounded-full font-semibold uppercase tracking-widest ${badgeClass}`}>
+                                          <span className={`px-2 py-0.5 rounded-full font-semibold uppercase tracking-widest text-[10px] ${badgeClass}`}>
                                             <span className="mr-1">{badgeIcon}</span>
                                             {badgeLabel}
                                           </span>

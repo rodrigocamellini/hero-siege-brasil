@@ -156,10 +156,22 @@ function PainelStyles() {
     .painel-modal-backdrop { position:absolute; inset:0; background:rgba(15,23,42,.6); backdrop-filter:blur(10px); }
     .painel-modal-content { position:relative; z-index:1; width:100%; max-width:520px; max-height:80vh; background:#ffffff; border-radius:20px; border:1px solid #e5e7eb; padding:16px 18px; box-shadow:0 24px 70px rgba(15,23,42,.25); display:flex; flex-direction:column; }
     .painel-modal-content.small { max-width:420px; }
+    .painel-modal-content.wide { max-width:1200px; }
     .painel-modal-header { display:flex; justify-content:space-between; align-items:center; margin-bottom:8px; }
     .painel-modal-title { font-size:13px; font-weight:800; letter-spacing:.16em; text-transform:uppercase; color:#6b7280; }
     .painel-modal-close { border-radius:999px; width:26px; height:26px; display:grid; place-items:center; border:1px solid #e5e7eb; background:#f9fafb; color:#374151; cursor:pointer; }
     .painel-modal-body { margin-top:4px; overflow:auto; }
+    .painel-build-modal-grid { display:grid; grid-template-columns:minmax(0,1fr) 320px; gap:16px; align-items:start; }
+    .painel-build-form { min-width:0; }
+    .painel-build-preview { background:#ffffff; border:1px solid #e5e7eb; border-radius:16px; padding:14px; overflow:auto; max-height:65vh; }
+    .painel-build-preview-header { display:flex; align-items:center; justify-content:space-between; gap:8px; margin-bottom:6px; }
+    .painel-build-preview-title { font-size:16px; font-weight:900; letter-spacing:.04em; color:#0f172a; }
+    .painel-build-preview-meta { font-size:11px; color:#6b7280; margin-bottom:10px; }
+    .painel-build-type-tag { display:inline-flex; align-items:center; gap:6px; font-size:10px; text-transform:uppercase; letter-spacing:.12em; color:#334155; padding:4px 8px; border-radius:999px; background:#f1f5f9; border:1px solid #e5e7eb; }
+    .painel-build-preview-content { font-size:13px; color:#334155; line-height:1.5; }
+    @media (max-width: 900px) {
+      .painel-build-modal-grid { grid-template-columns: 1fr; }
+    }
     .painel-login-container { min-height:100vh; display:flex; align-items:center; justify-content:center; padding:24px; }
     .painel-login-card { width:100%; max-width: 420px; background:#151923; border: 1px solid rgba(255,255,255,.06); padding: 28px; box-sizing: border-box; color:#e5e7eb; }
     .painel-login-brand { display:flex; align-items:center; gap:10px; margin-bottom: 18px; }
@@ -863,43 +875,57 @@ function PainelForum() {
 
       <div className={`painel-modal ${modalOpen ? '' : 'hidden'}`}>
         <div className="painel-modal-backdrop" onClick={() => setModalOpen(false)} />
-        <div className="painel-modal-content">
+        <div className="painel-modal-content wide">
           <div className="painel-modal-header">
             <div className="painel-modal-title">{editDoc ? 'Editar Build' : 'Nova Build'}</div>
             <button type="button" className="painel-modal-close" onClick={() => setModalOpen(false)}>×</button>
           </div>
           <div className="painel-modal-body">
-            <label className="painel-login-label">Título</label>
-            <input className="painel-input" value={title} onChange={(e) => setTitle(e.target.value)} />
-            <label className="painel-login-label" style={{ marginTop: 8 }}>Autor</label>
-            <input className="painel-input" value={author} onChange={(e) => setAuthor(e.target.value)} />
-            <label className="painel-login-label" style={{ marginTop: 8 }}>Classe</label>
-            <select className="painel-select" value={className} onChange={(e) => setClassName(e.target.value)}>
-              <option value="">Selecione</option>
-              {KNOWN_CLASSES.map((c) => <option key={c} value={c}>{c}</option>)}
-            </select>
-            <label className="painel-login-label" style={{ marginTop: 8 }}>Tipo da Build</label>
-            <select className="painel-select" value={buildType} onChange={(e) => setBuildType(e.target.value)}>
-              <option value="">(nenhum / manual nas tags)</option>
-              <option value="iniciante">Iniciante</option>
-              <option value="avançada">Avançada</option>
-              <option value="final">Final</option>
-            </select>
-            <label className="painel-login-label" style={{ marginTop: 8 }}>Conteúdo (HTML)</label>
-            <textarea className="painel-textarea" value={contentHtml} onChange={(e) => setContentHtml(e.target.value)} placeholder="<p>...</p>" />
-            <label className="painel-login-label" style={{ marginTop: 8 }}>Tags (separadas por vírgula)</label>
-            <input className="painel-input" value={tags} onChange={(e) => setTags(e.target.value)} placeholder="ex.: season 9, viking, endgame" />
-            <label className="painel-login-label" style={{ marginTop: 8 }}>Status</label>
-            <select className="painel-select" value={status} onChange={(e) => setStatus(e.target.value)}>
-              <option value="draft">Rascunho</option>
-              <option value="pending">Pendente</option>
-              <option value="published">Publicado</option>
-            </select>
-            <div className="painel-row" style={{ marginTop: 12, justifyContent: 'flex-end' }}>
-              <button type="button" className="painel-button" onClick={clearForm}>Limpar</button>
-              <button type="button" className="painel-button" onClick={handleSave}>Salvar</button>
+            <div className="painel-build-modal-grid">
+              <div className="painel-build-form">
+                <label className="painel-login-label">Título</label>
+                <input className="painel-input" value={title} onChange={(e) => setTitle(e.target.value)} />
+                <label className="painel-login-label" style={{ marginTop: 8 }}>Autor</label>
+                <input className="painel-input" value={author} onChange={(e) => setAuthor(e.target.value)} />
+                <label className="painel-login-label" style={{ marginTop: 8 }}>Classe</label>
+                <select className="painel-select" value={className} onChange={(e) => setClassName(e.target.value)}>
+                  <option value="">Selecione</option>
+                  {KNOWN_CLASSES.map((c) => <option key={c} value={c}>{c}</option>)}
+                </select>
+                <label className="painel-login-label" style={{ marginTop: 8 }}>Tipo da Build</label>
+                <select className="painel-select" value={buildType} onChange={(e) => setBuildType(e.target.value)}>
+                  <option value="">(nenhum / manual nas tags)</option>
+                  <option value="iniciante">Iniciante</option>
+                  <option value="avançada">Avançada</option>
+                  <option value="final">Final</option>
+                </select>
+                <label className="painel-login-label" style={{ marginTop: 8 }}>Conteúdo (HTML)</label>
+                <textarea className="painel-textarea" value={contentHtml} onChange={(e) => setContentHtml(e.target.value)} placeholder="<p>...</p>" />
+                <label className="painel-login-label" style={{ marginTop: 8 }}>Tags (separadas por vírgula)</label>
+                <input className="painel-input" value={tags} onChange={(e) => setTags(e.target.value)} placeholder="ex.: season 9, viking, endgame" />
+                <label className="painel-login-label" style={{ marginTop: 8 }}>Status</label>
+                <select className="painel-select" value={status} onChange={(e) => setStatus(e.target.value)}>
+                  <option value="draft">Rascunho</option>
+                  <option value="pending">Pendente</option>
+                  <option value="published">Publicado</option>
+                </select>
+                <div className="painel-row" style={{ marginTop: 12, justifyContent: 'flex-end' }}>
+                  <button type="button" className="painel-button" onClick={clearForm}>Limpar</button>
+                  <button type="button" className="painel-button" onClick={handleSave}>Salvar</button>
+                </div>
+                <div className="painel-muted" style={{ marginTop: 6 }}>{msg}</div>
+              </div>
+              <div className="painel-build-preview">
+                <div className="painel-build-preview-header">
+                  <div className="painel-build-preview-title">{title || '(sem título)'}</div>
+                  {buildType ? <span className="painel-build-type-tag">{buildType}</span> : null}
+                </div>
+                <div className="painel-build-preview-meta">
+                  {(className || '(classe)')} • {(author || '(autor)')}
+                </div>
+                <div className="painel-build-preview-content" dangerouslySetInnerHTML={{ __html: contentHtml || '' }} />
+              </div>
             </div>
-            <div className="painel-muted" style={{ marginTop: 6 }}>{msg}</div>
           </div>
         </div>
       </div>
