@@ -3,7 +3,7 @@ import { useNavigate, useParams } from 'react-router-dom';
 import { db } from './firebase';
 import { doc, getDoc, collection, getDocs, addDoc, serverTimestamp, query, where, orderBy, onSnapshot } from 'firebase/firestore';
 import BlogComments from './BlogComments';
-import RelicsView from './RelicsView';
+import RelicsView, { PASSIVE_RELICS, normalizeRelicImageUrl } from './RelicsView';
 import ClassesView from './ClassesView';
 import ItemsView from './ItemsView';
 import RunesView from './RunesView';
@@ -14,6 +14,14 @@ import ChavesPage from './ChavesPage';
 import GemasJoiasPage from './GemasJoiasPage';
 
 const TWITCH_CONTAINER_ID = 'twitch-embed-spacezone';
+
+const relicImageFor = (rel) => {
+  if (rel && rel.img) return normalizeRelicImageUrl(rel.img);
+  const safeName = String(rel?.name || '')
+    .replace(/ /g, '_')
+    .replace(/'/g, '%27');
+  return `https://herosiege.wiki.gg/images/Relics_${safeName}.png`;
+};
 
 const CLASS_DATA = [
   { name: 'Viking', type: 'MELEE' },
@@ -235,12 +243,19 @@ const NewDesign = ({ onBack, initialView = 'home' }) => {
     vitality: 0,
   });
   const NB_TOTAL = 400;
+  const [nbRelics, setNbRelics] = useState([null, null, null, null, null]);
+  const [nbRelicPickerIndex, setNbRelicPickerIndex] = useState(null);
   const [homepageMode, setHomepageMode] = useState('fixed');
   const [homepageFeaturedClass, setHomepageFeaturedClass] = useState(null);
   const [homepageRandomIndex, setHomepageRandomIndex] = useState(() =>
     CLASS_DATA.length ? Math.floor(Math.random() * CLASS_DATA.length) : 0
   );
   const [homepageRotationSeconds, setHomepageRotationSeconds] = useState(15);
+
+  const relicOptions = useMemo(
+    () => PASSIVE_RELICS.map((r) => ({ name: r.name, img: relicImageFor(r) })),
+    []
+  );
 
   useEffect(() => {
     if (typeof document === 'undefined' || typeof window === 'undefined') return;
@@ -2902,9 +2917,23 @@ const NewDesign = ({ onBack, initialView = 'home' }) => {
                               { key: 'armor', label: 'Armor', color: '#4b5563' },
                               { key: 'vitality', label: 'Vitality', color: '#ef4444' },
                             ].filter(({ key }) => (Number(stats?.[key]) || 0) > 0);
+                            const relicSlots = Array.isArray(selectedBuild?.relics) ? selectedBuild.relics : [];
+                            const relicItems = relicSlots
+                              .map((name, idx) => {
+                                if (!name) return null;
+                                const base = PASSIVE_RELICS.find((r) => r.name === name);
+                                if (!base) return null;
+                                return {
+                                  key: `${name}-${idx}`,
+                                  name,
+                                  img: relicImageFor(base),
+                                  quest: idx === 4,
+                                };
+                              })
+                              .filter(Boolean);
                             return (
                               <>
-                                {(badgeLabel || statItems.length > 0) && (
+                                {(badgeLabel || statItems.length > 0 || relicItems.length > 0) && (
                                   <div className="mb-4 space-y-3">
                                     {badgeLabel && (
                                       <div className="flex items-center justify-between">
@@ -2951,6 +2980,32 @@ const NewDesign = ({ onBack, initialView = 'home' }) => {
                                             <span className="ml-auto text-xs text-gray-300">{stats[key]}</span>
                                           </div>
                                         ))}
+                                      </div>
+                                    )}
+                                    {relicItems.length > 0 && (
+                                      <div>
+                                        <div className="text-[11px] uppercase tracking-widest text-gray-400 mb-2">
+                                          Relíquias
+                                        </div>
+                                        <div className="flex flex-wrap gap-2">
+                                          {relicItems.map((rel) => (
+                                            <div
+                                              key={rel.key}
+                                              className={`flex items-center gap-2 border px-2 py-1 ${
+                                                rel.quest ? 'border-red-500/60 bg-red-900/20' : 'border-white/10 bg-black/30'
+                                              }`}
+                                            >
+                                              <img
+                                                src={rel.img}
+                                                alt={rel.name}
+                                                className="w-5 h-5 object-contain"
+                                              />
+                                              <span className="text-[11px] text-gray-200">
+                                                {rel.name}
+                                              </span>
+                                            </div>
+                                          ))}
+                                        </div>
                                       </div>
                                     )}
                                   </div>
@@ -3139,6 +3194,90 @@ const NewDesign = ({ onBack, initialView = 'home' }) => {
                                     );
                                   })}
                                 </div>
+                                <div className="mt-4">
+                                  <div className="text-[11px] font-bold uppercase tracking-widest text-gray-400 mb-2">
+                                    Relíquias
+                                  </div>
+                                  <div className="flex flex-wrap gap-2">
+                                    {nbRelics.map((name, idx) => {
+                                      const isQuestSlot = idx === 4;
+                                      const rel = name ? PASSIVE_RELICS.find((r) => r.name === name) : null;
+                                      const img = rel ? relicImageFor(rel) : null;
+                                      const borderColor = isQuestSlot ? 'border-red-500/60' : 'border-white/20';
+                                      const bgColor = isQuestSlot ? 'bg-red-900/30' : 'bg-black/30';
+                                      return (
+                                        <button
+                                          key={idx}
+                                          type="button"
+                                          className={`w-20 h-20 flex flex-col items-center justify-center border ${borderColor} ${bgColor} text-[10px] text-gray-300 hover:border-amber-400 hover:bg-black/60`}
+                                          onClick={() => setNbRelicPickerIndex(idx)}
+                                        >
+                                          {img ? (
+                                            <>
+                                              <img src={img} alt={name} className="w-8 h-8 object-contain mb-1" />
+                                              <span className="px-1 text-[9px] leading-tight text-center line-clamp-2">
+                                                {name}
+                                              </span>
+                                            </>
+                                          ) : (
+                                            <span className="text-xs text-gray-500">
+                                              {isQuestSlot ? 'Relíquia de Quest' : 'Selecionar'}
+                                            </span>
+                                          )}
+                                        </button>
+                                      );
+                                    })}
+                                  </div>
+                                  {nbRelicPickerIndex !== null && (
+                                    <div className="mt-2 border border-white/10 bg-[#0b0d16] max-h-64 overflow-y-auto custom-scrollbar">
+                                      <div className="flex items-center justify-between px-3 py-2 border-b border-white/10 text-[11px] text-gray-400">
+                                        <span>Selecionar relíquia para o slot {nbRelicPickerIndex + 1}</span>
+                                        <button
+                                          type="button"
+                                          className="text-[10px] px-2 py-0.5 border border-white/20 rounded hover:bg-white hover:text-black"
+                                          onClick={() => setNbRelicPickerIndex(null)}
+                                        >
+                                          Fechar
+                                        </button>
+                                      </div>
+                                      <button
+                                        type="button"
+                                        className="w-full flex items-center gap-3 px-3 py-2 text-xs text-gray-300 hover:bg-white/10 border-b border-white/5"
+                                        onClick={() => {
+                                          setNbRelics((prev) => {
+                                            const next = prev.slice();
+                                            next[nbRelicPickerIndex] = null;
+                                            return next;
+                                          });
+                                          setNbRelicPickerIndex(null);
+                                        }}
+                                      >
+                                        <div className="w-7 h-7 flex items-center justify-center border border-white/20 text-[13px]">
+                                          ×
+                                        </div>
+                                        <span>Nenhuma relíquia</span>
+                                      </button>
+                                      {relicOptions.map((rel) => (
+                                        <button
+                                          key={rel.name}
+                                          type="button"
+                                          className="w-full flex items-center gap-3 px-3 py-2 text-xs text-gray-200 hover:bg-white/10 border-b border-white/5"
+                                          onClick={() => {
+                                            setNbRelics((prev) => {
+                                              const next = prev.slice();
+                                              next[nbRelicPickerIndex] = rel.name;
+                                              return next;
+                                            });
+                                            setNbRelicPickerIndex(null);
+                                          }}
+                                        >
+                                          <img src={rel.img} alt={rel.name} className="w-7 h-7 object-contain" />
+                                          <span>{rel.name}</span>
+                                        </button>
+                                      ))}
+                                    </div>
+                                  )}
+                                </div>
                                 <label className="block text-[11px] font-bold uppercase tracking-widest text-gray-400 mb-1">
                                   Conteúdo (opcional)
                                 </label>
@@ -3222,6 +3361,20 @@ const NewDesign = ({ onBack, initialView = 'home' }) => {
                                 ].filter(({ key }) => (Number(stats?.[key]) || 0) > 0);
                                 const cls = nbClass || '';
                                 const img = cls ? classImagePath(cls, 'webp') : '';
+                                const relicSlots = Array.isArray(nbRelics) ? nbRelics : [];
+                                const relicItems = relicSlots
+                                  .map((name, idx) => {
+                                    if (!name) return null;
+                                    const base = PASSIVE_RELICS.find((r) => r.name === name);
+                                    if (!base) return null;
+                                    return {
+                                      key: `${name}-${idx}`,
+                                      name,
+                                      img: relicImageFor(base),
+                                      quest: idx === 4,
+                                    };
+                                  })
+                                  .filter(Boolean);
                                 return (
                                   <div className="border border-white/10 bg-[#0f111a] p-4">
                                     <div className="text-sm font-black text-white uppercase tracking-widest">
@@ -3256,7 +3409,7 @@ const NewDesign = ({ onBack, initialView = 'home' }) => {
                                         </div>
                                       )}
                                     </div>
-                                    {(badgeLabel || statItems.length > 0) && (
+                                    {(badgeLabel || statItems.length > 0 || relicItems.length > 0) && (
                                       <div className="mt-4 space-y-3">
                                         {statItems.length > 0 && (
                                           <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
@@ -3272,6 +3425,32 @@ const NewDesign = ({ onBack, initialView = 'home' }) => {
                                                 <span className="ml-auto text-xs text-gray-300">{stats[key]}</span>
                                               </div>
                                             ))}
+                                          </div>
+                                        )}
+                                        {relicItems.length > 0 && (
+                                          <div>
+                                            <div className="text-[11px] uppercase tracking-widest text-gray-400 mb-2">
+                                              Relíquias
+                                            </div>
+                                            <div className="flex flex-wrap gap-2">
+                                              {relicItems.map((rel) => (
+                                                <div
+                                                  key={rel.key}
+                                                  className={`flex items-center gap-2 border px-2 py-1 ${
+                                                    rel.quest ? 'border-red-500/60 bg-red-900/20' : 'border-white/10 bg-black/30'
+                                                  }`}
+                                                >
+                                                  <img
+                                                    src={rel.img}
+                                                    alt={rel.name}
+                                                    className="w-5 h-5 object-contain"
+                                                  />
+                                                  <span className="text-[11px] text-gray-200">
+                                                    {rel.name}
+                                                  </span>
+                                                </div>
+                                              ))}
+                                            </div>
                                           </div>
                                         )}
                                       </div>
@@ -3318,6 +3497,7 @@ const NewDesign = ({ onBack, initialView = 'home' }) => {
                                     status: 'pending',
                                     content_html: contentHtml,
                                     stats: { ...nbStats, total: NB_TOTAL },
+                                    relics: Array.isArray(nbRelics) ? nbRelics.map((r) => (r || null)) : [null, null, null, null, null],
                                     createdAt: serverTimestamp(),
                                     updatedAt: serverTimestamp(),
                                   });
@@ -3335,6 +3515,7 @@ const NewDesign = ({ onBack, initialView = 'home' }) => {
                                     armor: 0,
                                     vitality: 0,
                                   });
+                                  setNbRelics([null, null, null, null, null]);
                                 } catch {
                                   // silencioso
                                 }

@@ -1,5 +1,6 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import app, { db } from './firebase';
+import { PASSIVE_RELICS, normalizeRelicImageUrl } from './RelicsView';
 import {
   getAuth,
   onAuthStateChanged,
@@ -617,6 +618,22 @@ function PainelForum() {
   const [confirmOpen, setConfirmOpen] = useState(false);
   const [pendingDelete, setPendingDelete] = useState(null);
   const [confirmLabel, setConfirmLabel] = useState('');
+  const [relics, setRelics] = useState([null, null, null, null, null]);
+  const [relicPickerIndex, setRelicPickerIndex] = useState(null);
+
+  const relicOptions = useMemo(
+    () => PASSIVE_RELICS.map((r) => {
+      const baseUrl = r.img
+        ? normalizeRelicImageUrl(r.img)
+        : normalizeRelicImageUrl(
+            `https://herosiege.wiki.gg/images/Relics_${String(r.name || '')
+              .replace(/ /g, '_')
+              .replace(/'/g, '%27')}.png`
+          );
+      return { name: r.name, img: baseUrl };
+    }),
+    []
+  );
 
   const statusLabel = (rawStatus) => {
     const s = rawStatus || 'draft';
@@ -662,6 +679,7 @@ function PainelForum() {
     setBuildType('');
     setStatus('draft');
     setMsg('');
+    setRelics([null, null, null, null, null]);
   };
 
   const openNew = () => {
@@ -692,6 +710,12 @@ function PainelForum() {
     } else {
       setBuildType('');
     }
+    const docRelics = Array.isArray(docObj.relics) ? docObj.relics : [];
+    const nextRelics = [null, null, null, null, null];
+    for (let i = 0; i < nextRelics.length; i += 1) {
+      nextRelics[i] = docRelics[i] || null;
+    }
+    setRelics(nextRelics);
     setStatus(docObj.status || 'draft');
     setMsg(`Editando: ${docObj.title || docObj.id}`);
     setModalOpen(true);
@@ -732,6 +756,7 @@ function PainelForum() {
       tags: nextTags,
       status: status || 'draft',
       updatedAt: serverTimestamp(),
+      relics: Array.isArray(relics) ? relics.map((r) => (r || null)) : [null, null, null, null, null],
     };
     try {
       if (editDoc && editDoc.id) {
@@ -909,6 +934,82 @@ function PainelForum() {
                   <option value="pending">Pendente</option>
                   <option value="published">Publicado</option>
                 </select>
+                <div style={{ marginTop: 8 }}>
+                  <label className="painel-login-label">Relíquias</label>
+                  <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+                    {relics.map((name, idx) => {
+                      const isQuestSlot = idx === 4;
+                      const opt = name ? relicOptions.find((r) => r.name === name) : null;
+                      const border = isQuestSlot ? '1px solid rgba(239,68,68,.6)' : '1px solid #e5e7eb';
+                      const bg = isQuestSlot ? 'rgba(239,68,68,.08)' : '#f9fafb';
+                      return (
+                        <button
+                          key={idx}
+                          type="button"
+                          onClick={() => setRelicPickerIndex(idx)}
+                          style={{
+                            width: 90, height: 90, border, background: bg, display: 'flex',
+                            flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
+                            padding: 6, cursor: 'pointer'
+                          }}
+                          title={isQuestSlot ? 'Slot de relíquia via quest' : 'Selecionar relíquia'}
+                        >
+                          {opt ? (
+                            <>
+                              <img src={opt.img} alt={opt.name} style={{ width: 28, height: 28, objectFit: 'contain', marginBottom: 6 }} />
+                              <span style={{ fontSize: 10, textAlign: 'center', color: '#374151' }}>{opt.name}</span>
+                            </>
+                          ) : (
+                            <span style={{ fontSize: 11, color: '#6b7280', textAlign: 'center' }}>
+                              {isQuestSlot ? 'Relíquia (Quest)' : 'Selecionar'}
+                            </span>
+                          )}
+                        </button>
+                      );
+                    })}
+                  </div>
+                  {relicPickerIndex !== null && (
+                    <div style={{ marginTop: 8, border: '1px solid #e5e7eb', background: '#ffffff', maxHeight: 240, overflow: 'auto' }}>
+                      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '6px 10px', borderBottom: '1px solid #e5e7eb', fontSize: 12, color: '#6b7280' }}>
+                        <span>Selecionar relíquia para o slot {relicPickerIndex + 1}</span>
+                        <button type="button" className="painel-modal-close" onClick={() => setRelicPickerIndex(null)}>×</button>
+                      </div>
+                      <button
+                        type="button"
+                        style={{ width: '100%', display: 'flex', alignItems: 'center', gap: 8, padding: '8px 10px', fontSize: 12, color: '#374151', borderBottom: '1px solid #f3f4f6' }}
+                        onClick={() => {
+                          setRelics((prev) => {
+                            const next = prev.slice();
+                            next[relicPickerIndex] = null;
+                            return next;
+                          });
+                          setRelicPickerIndex(null);
+                        }}
+                      >
+                        <div style={{ width: 24, height: 24, display: 'grid', placeItems: 'center', border: '1px solid #e5e7eb' }}>×</div>
+                        <span>Nenhuma relíquia</span>
+                      </button>
+                      {relicOptions.map((r) => (
+                        <button
+                          key={r.name}
+                          type="button"
+                          style={{ width: '100%', display: 'flex', alignItems: 'center', gap: 8, padding: '8px 10px', fontSize: 12, color: '#111827', borderBottom: '1px solid #f3f4f6' }}
+                          onClick={() => {
+                            setRelics((prev) => {
+                              const next = prev.slice();
+                              next[relicPickerIndex] = r.name;
+                              return next;
+                            });
+                            setRelicPickerIndex(null);
+                          }}
+                        >
+                          <img src={r.img} alt={r.name} style={{ width: 24, height: 24, objectFit: 'contain' }} />
+                          <span>{r.name}</span>
+                        </button>
+                      ))}
+                    </div>
+                  )}
+                </div>
                 <div className="painel-row" style={{ marginTop: 12, justifyContent: 'flex-end' }}>
                   <button type="button" className="painel-button" onClick={clearForm}>Limpar</button>
                   <button type="button" className="painel-button" onClick={handleSave}>Salvar</button>
@@ -924,6 +1025,24 @@ function PainelForum() {
                   {(className || '(classe)')} • {(author || '(autor)')}
                 </div>
                 <div className="painel-build-preview-content" dangerouslySetInnerHTML={{ __html: contentHtml || '' }} />
+                {relics.some((r) => r) ? (
+                  <div style={{ marginTop: 8 }}>
+                    <div className="painel-login-label" style={{ marginBottom: 6 }}>Relíquias</div>
+                    <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+                      {relics.map((name, idx) => {
+                        if (!name) return null;
+                        const opt = relicOptions.find((r) => r.name === name);
+                        const isQuest = idx === 4;
+                        return (
+                          <div key={`${name}-${idx}`} style={{ display: 'flex', alignItems: 'center', gap: 6, border: isQuest ? '1px solid rgba(239,68,68,.6)' : '1px solid #e5e7eb', padding: '4px 6px', background: isQuest ? 'rgba(239,68,68,.06)' : '#f9fafb' }}>
+                            <img src={opt?.img} alt={name} style={{ width: 18, height: 18, objectFit: 'contain' }} />
+                            <span style={{ fontSize: 11 }}>{name}</span>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
+                ) : null}
               </div>
             </div>
           </div>

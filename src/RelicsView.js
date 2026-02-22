@@ -1,6 +1,6 @@
 import React, { useMemo, useState } from 'react';
 
-const PASSIVE_RELICS = [
+export const PASSIVE_RELICS = [
   { name: 'Barbed Shield', stats: ['Dmg Returned'], l1: ['10%'], l5: ['60%'], l10: ['200%'] },
   { name: 'Bonsai Tree', stats: ['Vitality', 'Magic Find'], l1: ['+2', '2%'], l5: ['+10', '10%'], l10: ['+20', '20%'] },
   { name: 'Bracer of Life', stats: ['Replenish Life'], l1: ['5%'], l5: ['25%'], l10: ['50%'] },
@@ -45,7 +45,7 @@ const PASSIVE_RELICS = [
   { name: 'Whip', stats: ['Atk Speed', 'Add Phys Dmg'], l1: ['3%', '+5'], l5: ['15%', '+25'], l10: ['30%', '+50'] }
 ];
 
-const normalizeImageUrl = (url) => {
+export const normalizeRelicImageUrl = (url) => {
   if (!url || typeof url !== 'string') return '';
   return url.replace(/^http:/i, 'https:');
 };
@@ -90,7 +90,7 @@ const RelicsView = () => {
   };
 
   const imgFor = (rel) => {
-    if (rel.img) return normalizeImageUrl(rel.img);
+    if (rel.img) return normalizeRelicImageUrl(rel.img);
     const safeName = String(rel.name || '')
       .replace(/ /g, '_')
       .replace(/'/g, '%27');
@@ -175,4 +175,3 @@ const RelicsView = () => {
 };
 
 export default RelicsView;
-
