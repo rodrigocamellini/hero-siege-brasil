@@ -941,6 +941,7 @@ function PainelHomepage() {
   const [tierMsg, setTierMsg] = useState('');
   const [fullOpen, setFullOpen] = useState(false);
   const [randomPreviewIndex, setRandomPreviewIndex] = useState(() => (classes.length ? Math.floor(Math.random() * classes.length) : 0));
+  const [rotationSeconds, setRotationSeconds] = useState(15);
 
   useEffect(() => {
     const ref = doc(db, 'config', 'homepage');
@@ -948,6 +949,11 @@ function PainelHomepage() {
       const d = snap.data() || {};
       setSelected(d.featuredClass || null);
       setMode(d.mode || 'fixed');
+       if (typeof d.rotationSeconds === 'number' && d.rotationSeconds > 0) {
+         setRotationSeconds(d.rotationSeconds);
+       } else {
+         setRotationSeconds(15);
+       }
     });
     return () => unsub();
   }, []);
@@ -955,8 +961,17 @@ function PainelHomepage() {
   useEffect(() => {
     if (mode !== 'random') return;
     if (!classes.length) return;
-    setRandomPreviewIndex(Math.floor(Math.random() * classes.length));
-  }, [mode, classes.length]);
+    const computeIndex = () => {
+      const intervalMs = Math.max(5, rotationSeconds || 15) * 1000;
+      const bucket = Math.floor(Date.now() / intervalMs);
+      const idx = bucket % classes.length;
+      setRandomPreviewIndex(idx);
+    };
+    computeIndex();
+    const intervalMs = Math.max(5, rotationSeconds || 15) * 1000;
+    const id = setInterval(computeIndex, intervalMs);
+    return () => clearInterval(id);
+  }, [mode, classes.length, rotationSeconds]);
 
   useEffect(() => {
     const ref = doc(db, 'config', 'tierlist');
@@ -975,14 +990,18 @@ function PainelHomepage() {
     return () => unsub();
   }, []);
 
-  const save = async (nextSelected, nextMode, prevSelected, prevMode) => {
+  const save = async (nextSelected, nextMode, prevSelected, prevMode, nextRotationSeconds) => {
     const ref = doc(db, 'config', 'homepage');
     setSaving(true);
     setStatus('Salvando...');
     try {
+      const rotation = typeof nextRotationSeconds === 'number' && nextRotationSeconds > 0
+        ? nextRotationSeconds
+        : rotationSeconds;
       await setDoc(ref, {
         featuredClass: nextMode === 'fixed' ? nextSelected : null,
         mode: nextMode,
+        rotationSeconds: rotation,
         updatedAt: serverTimestamp(),
       }, { merge: true });
       setStatus('Configuração salva.');
@@ -1210,7 +1229,7 @@ function PainelHomepage() {
             <div className="painel-homepage-preview-info">
               <div style={{ fontWeight: 700, marginBottom: 6 }}>{activeLabel}</div>
               <div>
-                Quando o modo aleatório estiver ativo, a homepage irá alternar automaticamente entre as classes a cada 30 segundos.
+                Quando o modo aleatório estiver ativo, a homepage irá alternar automaticamente entre as classes.
               </div>
             </div>
           </div>
@@ -1233,6 +1252,34 @@ function PainelHomepage() {
             >
               Modo aleatório
             </button>
+          </div>
+          <div style={{ marginTop: 16, fontSize: 11, color: '#9ca3af' }}>
+            Tempo de rotação (segundos)
+          </div>
+          <div style={{ marginTop: 4 }}>
+            <input
+              type="number"
+              min={5}
+              max={300}
+              step={5}
+              value={rotationSeconds}
+              onChange={(e) => {
+                const raw = parseInt(e.target.value, 10);
+                const next = Number.isNaN(raw) ? 15 : Math.min(300, Math.max(5, raw));
+                setRotationSeconds(next);
+                save(selected, mode, selected, mode, next);
+              }}
+              style={{
+                width: 120,
+                padding: '6px 10px',
+                borderRadius: 6,
+                border: '1px solid #4b5563',
+                background: '#020617',
+                color: '#e5e7eb',
+                fontSize: 13,
+              }}
+              disabled={saving}
+            />
           </div>
           <div style={{ marginTop: 24, fontSize: 11, textTransform: 'uppercase', letterSpacing: '.18em', color: '#9ca3af' }}>
             Selecione a classe destacada

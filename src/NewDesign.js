@@ -116,6 +116,13 @@ const NewDesign = ({ onBack, initialView = 'home' }) => {
   });
   const NB_TOTAL = 400;
 
+  const [homepageMode, setHomepageMode] = useState('fixed');
+  const [homepageFeaturedClass, setHomepageFeaturedClass] = useState(null);
+  const [homepageRandomIndex, setHomepageRandomIndex] = useState(() =>
+    CLASS_DATA.length ? Math.floor(Math.random() * CLASS_DATA.length) : 0
+  );
+  const [homepageRotationSeconds, setHomepageRotationSeconds] = useState(15);
+
   useEffect(() => {
     if (typeof document === 'undefined' || typeof window === 'undefined') return;
     let title = 'Hero Siege Brasil | Wiki, Itens e Builds em Português';
@@ -250,6 +257,36 @@ const NewDesign = ({ onBack, initialView = 'home' }) => {
     return () => unsub();
   }, []);
 
+  useEffect(() => {
+    const ref = doc(db, 'config', 'homepage');
+    const unsub = onSnapshot(ref, (snap) => {
+      const d = snap.data() || {};
+      setHomepageMode(d.mode || 'fixed');
+      setHomepageFeaturedClass(d.featuredClass || null);
+      if (typeof d.rotationSeconds === 'number' && d.rotationSeconds > 0) {
+        setHomepageRotationSeconds(d.rotationSeconds);
+      } else {
+        setHomepageRotationSeconds(15);
+      }
+    });
+    return () => unsub();
+  }, []);
+
+  useEffect(() => {
+    if (homepageMode !== 'random') return;
+    if (!CLASS_DATA.length) return;
+    const computeIndex = () => {
+      const intervalMs = Math.max(5, homepageRotationSeconds || 15) * 1000;
+      const bucket = Math.floor(Date.now() / intervalMs);
+      const idx = bucket % CLASS_DATA.length;
+      setHomepageRandomIndex(idx);
+    };
+    computeIndex();
+    const intervalMs = Math.max(5, homepageRotationSeconds || 15) * 1000;
+    const id = setInterval(computeIndex, intervalMs);
+    return () => clearInterval(id);
+  }, [homepageMode, homepageRotationSeconds]);
+
   const sanitizeAndNormalizeHtml = (html) => {
     if (!html) return '';
     if (typeof html !== 'string') return '';
@@ -260,6 +297,15 @@ const NewDesign = ({ onBack, initialView = 'home' }) => {
     if (!selectedBuild || !selectedBuild.content_html) return '';
     return sanitizeAndNormalizeHtml(selectedBuild.content_html);
   }, [selectedBuild]);
+
+  const heroClassName = useMemo(() => {
+    if (homepageMode === 'fixed' && homepageFeaturedClass) return homepageFeaturedClass;
+    if (homepageMode === 'random') {
+      const fromList = CLASS_DATA[homepageRandomIndex] || CLASS_DATA[0];
+      return fromList ? fromList.name : 'Viking';
+    }
+    return homepageFeaturedClass || 'Viking';
+  }, [homepageMode, homepageFeaturedClass, homepageRandomIndex]);
 
   useEffect(() => {
     const ref = collection(db, 'builds');
@@ -2039,48 +2085,48 @@ const NewDesign = ({ onBack, initialView = 'home' }) => {
       {/* Hero Section */}
       {currentView === 'home' && (
         <header className="relative h-[600px] overflow-hidden flex items-center">
-            <div className="absolute inset-0 z-0">
-                <img 
-                    src="https://herosiege.wiki.gg/images/c/c5/Viking_SkinID_1.png" 
-                    alt="Background" 
-                    className="w-full h-full object-cover opacity-20 scale-110 blur-sm"
-                />
-                <div className="absolute inset-0 bg-gradient-to-t from-[#0f111a] via-[#0f111a]/80 to-transparent"></div>
-                <div className="absolute inset-0 bg-gradient-to-r from-[#0f111a] via-transparent to-[#0f111a]"></div>
+          <div className="absolute inset-0 z-0">
+            <img
+              src={imageFor(heroClassName)}
+              alt={heroClassName}
+              className="w-full h-full object-cover opacity-20 scale-110 blur-sm"
+            />
+            <div className="absolute inset-0 bg-gradient-to-t from-[#0f111a] via-[#0f111a]/80 to-transparent" />
+            <div className="absolute inset-0 bg-gradient-to-r from-[#0f111a] via-transparent to-[#0f111a]" />
+          </div>
+
+          <div className="relative z-10 max-w-7xl mx-auto px-6 w-full grid grid-cols-1 md:grid-cols-2 gap-12 items-center">
+            <div>
+              <span className="inline-block py-1 px-3 border border-orange-500/30 bg-orange-500/10 text-orange-500 text-xs font-bold uppercase tracking-widest mb-6 rounded-sm">
+                Season 9 Updated
+              </span>
+              <h1 className="text-6xl md:text-8xl font-black text-white italic leading-[0.9] mb-6 tracking-tighter">
+                ESCOLHA <br />
+                <span className="text-transparent bg-clip-text bg-gradient-to-r from-red-500 to-orange-600 pr-2">SEU HERÓI</span>
+              </h1>
+              <p className="text-gray-400 text-lg max-w-md leading-relaxed mb-10 border-l-2 border-red-600 pl-6">
+                Explore todas as classes, builds e segredos de Hero Siege. A base de dados definitiva para a comunidade brasileira.
+              </p>
+              <div className="flex gap-4">
+                <button className="bg-white text-black font-black uppercase px-8 py-4 text-sm hover:bg-gray-200 transition-colors">
+                  Ver Tier List
+                </button>
+                <button className="border border-white/20 text-white font-black uppercase px-8 py-4 text-sm hover:bg-white/5 transition-colors">
+                  Patch Notes
+                </button>
+              </div>
             </div>
-            
-            <div className="relative z-10 max-w-7xl mx-auto px-6 w-full grid grid-cols-1 md:grid-cols-2 gap-12 items-center">
-                <div>
-                    <span className="inline-block py-1 px-3 border border-orange-500/30 bg-orange-500/10 text-orange-500 text-xs font-bold uppercase tracking-widest mb-6 rounded-sm">
-                        Season 9 Updated
-                    </span>
-                    <h1 className="text-6xl md:text-8xl font-black text-white italic leading-[0.9] mb-6 tracking-tighter">
-                        ESCOLHA <br/>
-                        <span className="text-transparent bg-clip-text bg-gradient-to-r from-red-500 to-orange-600 pr-2">SEU HERÓI</span>
-                    </h1>
-                    <p className="text-gray-400 text-lg max-w-md leading-relaxed mb-10 border-l-2 border-red-600 pl-6">
-                        Explore todas as classes, builds e segredos de Hero Siege. A base de dados definitiva para a comunidade brasileira.
-                    </p>
-                    <div className="flex gap-4">
-                        <button className="bg-white text-black font-black uppercase px-8 py-4 text-sm hover:bg-gray-200 transition-colors">
-                            Ver Tier List
-                        </button>
-                        <button className="border border-white/20 text-white font-black uppercase px-8 py-4 text-sm hover:bg-white/5 transition-colors">
-                            Patch Notes
-                        </button>
-                    </div>
-                </div>
-                
-                {/* Featured Hero Image (Floating) */}
-                <div className="hidden md:block relative">
-                     <div className="absolute inset-0 bg-red-500/20 blur-[100px] rounded-full"></div>
-                     <img 
-                        src="https://herosiege.wiki.gg/images/Samurai.png" 
-                        alt="Featured Hero" 
-                        className="relative z-10 w-full max-w-lg mx-auto drop-shadow-[0_20px_50px_rgba(0,0,0,0.5)] transform hover:scale-105 transition-transform duration-700"
-                     />
-                </div>
+
+            {/* Featured Hero Image (Floating) */}
+            <div className="hidden md:block relative">
+              <div className="absolute inset-0 bg-red-500/20 blur-[100px] rounded-full" />
+              <img
+                src={imageFor(heroClassName)}
+                alt={heroClassName}
+                className="relative z-10 w-full max-w-lg mx-auto drop-shadow-[0_20px_50px_rgba(0,0,0,0.5)] transform hover:scale-105 transition-transform duration-700"
+              />
             </div>
+          </div>
         </header>
       )}
 

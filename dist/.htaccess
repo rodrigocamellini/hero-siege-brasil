@@ -22,3 +22,9 @@ RewriteCond %{HTTP_REFERER} !^https?://(www\.)?whatsapp\.com [NC]
 # Se o acesso não vier dos sites acima, o servidor retorna Erro 403 
 RewriteRule \.(jpg|jpeg|png|gif|svg|webp)$ - [F,NC]
 
+# 3. SPA FALLBACK PARA ROTAS DO REACT (/, /painel, /classes, etc.)
+# Se não for arquivo nem diretório físico, entrega index.html para o React Router tratar
+RewriteCond %{REQUEST_FILENAME} !-f
+RewriteCond %{REQUEST_FILENAME} !-d
+RewriteCond %{REQUEST_URI} !\.(jpg|jpeg|png|gif|svg|webp|css|js|ico|txt|xml|json|map)$ [NC]
+RewriteRule ^ index.html [L]
