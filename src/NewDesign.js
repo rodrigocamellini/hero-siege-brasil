@@ -12,6 +12,8 @@ import MercenariosPage from './MercenariosPage';
 import MineracaoPage from './MineracaoPage';
 import ChavesPage from './ChavesPage';
 
+const TWITCH_CONTAINER_ID = 'twitch-embed-spacezone';
+
 const NewDesign = ({ onBack, initialView = 'home' }) => {
   const navigate = useNavigate();
   const { postId } = useParams();
@@ -30,6 +32,66 @@ const NewDesign = ({ onBack, initialView = 'home' }) => {
     return () => {
       document.removeEventListener('mousedown', handleClickOutside);
     };
+  }, []);
+
+  useEffect(() => {
+    if (typeof window === 'undefined' || typeof document === 'undefined') return;
+    const init = () => {
+      if (!window.Twitch || !window.Twitch.Embed) return;
+      if (window.__hsbTwitchInitialized) return;
+      window.__hsbTwitchInitialized = true;
+      const container = document.getElementById(TWITCH_CONTAINER_ID);
+      if (!container) return;
+      container.innerHTML = '';
+      const parentHost = window.location.hostname || 'herosiegebrasil.com.br';
+      const parent = ['herosiegebrasil.com.br', 'www.herosiegebrasil.com.br'];
+      if (!parent.includes(parentHost)) parent.push(parentHost);
+      try {
+        const embed = new window.Twitch.Embed(TWITCH_CONTAINER_ID, {
+          width: '100%',
+          height: '100%',
+          channel: 'spacezonetv',
+          parent,
+          layout: 'video',
+          autoplay: true,
+          muted: false,
+        });
+        embed.addEventListener(window.Twitch.Embed.VIDEO_READY, () => {
+          const player = embed.getPlayer();
+          if (!player) {
+            setTwitchOnline(false);
+            return;
+          }
+          if (typeof player.addEventListener === 'function') {
+            try {
+              player.addEventListener(window.Twitch.Player.PLAY, () => setTwitchOnline(true));
+              player.addEventListener(window.Twitch.Player.OFFLINE, () => setTwitchOnline(false));
+            } catch {
+            }
+          } else {
+            setTwitchOnline(false);
+          }
+          try {
+            if (typeof player.getPaused === 'function') {
+              setTwitchOnline(!player.getPaused());
+            }
+          } catch {
+          }
+        });
+      } catch {
+      }
+    };
+    const existing = document.querySelector('script[src="https://embed.twitch.tv/embed/v1.js"]');
+    if (existing) {
+      if (window.Twitch && window.Twitch.Embed) init();
+      else existing.addEventListener('load', init, { once: true });
+      return;
+    }
+    const script = document.createElement('script');
+    script.src = 'https://embed.twitch.tv/embed/v1.js';
+    script.async = true;
+    script.addEventListener('load', init, { once: true });
+    document.body.appendChild(script);
   }, []);
 
   useEffect(() => {
@@ -101,6 +163,7 @@ const NewDesign = ({ onBack, initialView = 'home' }) => {
   const [selectedBuild, setSelectedBuild] = useState(null);
   const [buildModalOpen, setBuildModalOpen] = useState(false);
   const [newBuildOpen, setNewBuildOpen] = useState(false);
+  const [twitchOnline, setTwitchOnline] = useState(null);
   const [nbTitle, setNbTitle] = useState('');
   const [nbAuthor, setNbAuthor] = useState('');
   const [nbClass, setNbClass] = useState('');
@@ -116,7 +179,6 @@ const NewDesign = ({ onBack, initialView = 'home' }) => {
     vitality: 0,
   });
   const NB_TOTAL = 400;
-
   const [homepageMode, setHomepageMode] = useState('fixed');
   const [homepageFeaturedClass, setHomepageFeaturedClass] = useState(null);
   const [homepageRandomIndex, setHomepageRandomIndex] = useState(() =>
@@ -3416,6 +3478,58 @@ const NewDesign = ({ onBack, initialView = 'home' }) => {
                         />
                         <span className="absolute right-3 top-3 text-gray-600">🔍</span>
                     </div>
+                </div>
+
+                <div
+                  className={`bg-[#151923] border ${
+                    twitchOnline === null
+                      ? 'border-white/5'
+                      : twitchOnline
+                      ? 'border-[#00ff41]/40'
+                      : 'border-[#ff3e3e]/40'
+                  } rounded-sm overflow-hidden`}
+                >
+                  <div className="flex items-center justify-between px-4 py-2 bg-black/40 border-b border-white/10">
+                    <div className="flex items-center gap-2">
+                      <span
+                        className={`inline-block rounded-full w-2.5 h-2.5 ${
+                          twitchOnline === null
+                            ? 'bg-gray-500'
+                            : twitchOnline
+                            ? 'bg-[#00ff41] shadow-[0_0_8px_#00ff41]'
+                            : 'bg-[#ff3e3e] shadow-[0_0_8px_#ff3e3e]'
+                        }`}
+                      />
+                      <span
+                        className={`text-[11px] font-bold uppercase tracking-widest ${
+                          twitchOnline === null
+                            ? 'text-gray-300'
+                            : twitchOnline
+                            ? 'text-[#00ff41]'
+                            : 'text-[#ff3e3e]'
+                        }`}
+                      >
+                        {twitchOnline === null ? 'Verificando...' : twitchOnline ? 'Ao vivo' : 'Offline'}
+                      </span>
+                    </div>
+                    <a
+                      href="https://twitch.tv/spacezonetv"
+                      target="_blank"
+                      rel="noreferrer"
+                      className="flex items-center gap-1 text-[11px] text-gray-300 hover:text-white transition-colors"
+                    >
+                      <svg className="w-4 h-4" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+                        <path d="M6 0L1.714 4.286v15.428h5.143V24l4.286-4.286h3.428L22.286 12V0H6zm14.571 11.143l-3.428 3.428h-3.429l-3 3v-3H6.857V1.714h13.714v9.429zM11.571 4.714h1.715v5.143H11.57V4.714zm4.715 0H18v5.143h-1.714V4.714z" />
+                      </svg>
+                      <span>twitch.tv/spacezonetv</span>
+                    </a>
+                  </div>
+                  <div className="relative" style={{ paddingBottom: '56.25%', height: 0, background: '#000' }}>
+                    <div
+                      id={TWITCH_CONTAINER_ID}
+                      style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%' }}
+                    />
+                  </div>
                 </div>
 
                 <div className="bg-[#151923] p-6 border border-white/5 text-center relative overflow-hidden group">
