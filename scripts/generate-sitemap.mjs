@@ -167,6 +167,7 @@ async function main() {
     { loc: `${BASE_URL}/chaos-tower`, lastmod: today, changefreq: 'weekly', priority: 0.7 },
     { loc: `${BASE_URL}/mercenarios`, lastmod: today, changefreq: 'weekly', priority: 0.7 },
     { loc: `${BASE_URL}/mineracao`, lastmod: today, changefreq: 'weekly', priority: 0.7 },
+    { loc: `${BASE_URL}/chaves`, lastmod: today, changefreq: 'weekly', priority: 0.7 },
     { loc: `${BASE_URL}/quests`, lastmod: today, changefreq: 'weekly', priority: 0.5 },
     { loc: `${BASE_URL}/builder`, lastmod: today, changefreq: 'weekly', priority: 0.7 },
     { loc: `${BASE_URL}/contato`, lastmod: today, changefreq: 'weekly', priority: 0.6 },

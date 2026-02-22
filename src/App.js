@@ -17,6 +17,7 @@ function App() {
       <Route path="/chaos-tower" element={<NewDesign initialView="chaosTower" />} />
       <Route path="/mercenarios" element={<NewDesign initialView="mercenaries" />} />
       <Route path="/mineracao" element={<NewDesign initialView="mining" />} />
+      <Route path="/chaves" element={<NewDesign initialView="keys" />} />
       <Route path="/builder" element={<NewDesign initialView="builder" />} />
       <Route path="/contato" element={<NewDesign initialView="contact" />} />
       <Route path="/blog" element={<NewDesign initialView="blog" />} />

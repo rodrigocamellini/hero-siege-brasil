@@ -10,6 +10,7 @@ import RunesView from './RunesView';
 import ChaosTowerPage from './ChaosTowerPage';
 import MercenariosPage from './MercenariosPage';
 import MineracaoPage from './MineracaoPage';
+import ChavesPage from './ChavesPage';
 
 const NewDesign = ({ onBack, initialView = 'home' }) => {
   const navigate = useNavigate();
@@ -133,6 +134,7 @@ const NewDesign = ({ onBack, initialView = 'home' }) => {
     else if (currentView === 'chaosTower') title = 'Chaos Tower | Hero Siege Brasil';
     else if (currentView === 'mercenaries') title = 'Mercenários | Hero Siege Brasil';
     else if (currentView === 'mining') title = 'Mineração | Hero Siege Brasil';
+    else if (currentView === 'keys') title = 'Chaves | Hero Siege Brasil';
     else if (currentView === 'quests') title = 'Quests | Hero Siege Brasil';
     else if (currentView === 'builder') {
       const cls = builderClass || 'Viking';
@@ -154,6 +156,7 @@ const NewDesign = ({ onBack, initialView = 'home' }) => {
     else if (currentView === 'chaosTower') path = '/chaos-tower';
     else if (currentView === 'mercenaries') path = '/mercenarios';
     else if (currentView === 'mining') path = '/mineracao';
+    else if (currentView === 'keys') path = '/chaves';
     else if (currentView === 'quests') path = '/quests';
     else if (currentView === 'builder') path = '/builder';
     else if (currentView === 'contact') path = '/contato';
@@ -2062,6 +2065,12 @@ const NewDesign = ({ onBack, initialView = 'home' }) => {
                   Mercenários
                 </button>
                 <button
+                  onClick={() => { navigateToView('keys'); setIsDbOpen(false); }}
+                  className={`block w-full text-left px-4 py-2 text-xs font-bold uppercase tracking-widest hover:bg-white/5 ${currentView === 'keys' ? 'text-orange-500' : 'text-gray-400 hover:text-white'}`}
+                >
+                  Chaves
+                </button>
+                <button
                   onClick={() => { navigateToView('quests'); setIsDbOpen(false); }}
                   className={`block w-full text-left px-4 py-2 text-xs font-bold uppercase tracking-widest hover:bg-white/5 ${currentView === 'quests' ? 'text-orange-500' : 'text-gray-400 hover:text-white'}`}
                 >
@@ -3196,6 +3205,10 @@ const NewDesign = ({ onBack, initialView = 'home' }) => {
 
                 {(currentView === 'mining') && (
                   <MineracaoPage />
+                )}
+
+                {(currentView === 'keys') && (
+                  <ChavesPage />
                 )}
 
                 {(currentView === 'quests') && (
