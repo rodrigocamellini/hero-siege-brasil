@@ -11,6 +11,7 @@ import ChaosTowerPage from './ChaosTowerPage';
 import MercenariosPage from './MercenariosPage';
 import MineracaoPage from './MineracaoPage';
 import ChavesPage from './ChavesPage';
+import GemasJoiasPage from './GemasJoiasPage';
 
 const TWITCH_CONTAINER_ID = 'twitch-embed-spacezone';
 
@@ -254,6 +255,7 @@ const NewDesign = ({ onBack, initialView = 'home' }) => {
     else if (currentView === 'mining') title = 'Mineração | Hero Siege Brasil';
     else if (currentView === 'keys') title = 'Chaves | Hero Siege Brasil';
     else if (currentView === 'quests') title = 'Quests | Hero Siege Brasil';
+    else if (currentView === 'gems') title = 'Gemas e Jóias | Hero Siege Brasil';
     else if (currentView === 'builder') {
       const cls = builderClass || 'Viking';
       title = `Builder ${cls} | Hero Siege Brasil`;
@@ -276,6 +278,7 @@ const NewDesign = ({ onBack, initialView = 'home' }) => {
     else if (currentView === 'mining') path = '/mineracao';
     else if (currentView === 'keys') path = '/chaves';
     else if (currentView === 'quests') path = '/quests';
+    else if (currentView === 'gems') path = '/gems';
     else if (currentView === 'builder') path = '/builder';
     else if (currentView === 'contact') path = '/contato';
     else if (currentView === 'blog') {
@@ -2225,6 +2228,12 @@ const NewDesign = ({ onBack, initialView = 'home' }) => {
                 >
                   Mineração
                 </button>
+                <button
+                  onClick={() => { navigateToView('gems'); setIsDbOpen(false); }}
+                  className={`block w-full text-left px-4 py-2 text-xs font-bold uppercase tracking-widest hover:bg-white/5 ${currentView === 'gems' ? 'text-orange-500' : 'text-gray-400 hover:text-white'}`}
+                >
+                  Gemas e Jóias
+                </button>
               </div>
             </div>
             <button onClick={() => { setSelectedBlogPost(null); navigateToView('blog'); }} className={`transition-colors ${currentView === 'blog' ? 'text-orange-500' : 'hover:text-white'}`}>Blog</button>
@@ -3352,6 +3361,10 @@ const NewDesign = ({ onBack, initialView = 'home' }) => {
 
                 {(currentView === 'keys') && (
                   <ChavesPage />
+                )}
+
+                {(currentView === 'gems') && (
+                  <GemasJoiasPage />
                 )}
 
                 {(currentView === 'quests') && (
