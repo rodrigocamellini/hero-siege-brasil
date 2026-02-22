@@ -183,7 +183,16 @@ const ItemsView = ({
             </div>
           )}
           {(() => {
-            const clean = itemsList.filter((it) => it.name && !it.name.includes('●'));
+            const isShieldCategory = (() => {
+              const id = String(selectedItemCategory.id || '').trim().toLowerCase();
+              const title = String(selectedItemCategory.title || '').trim().toLowerCase();
+              return id === 'shield' || id === 'shields' || title === 'shield' || title === 'shields';
+            })();
+            const clean = itemsList.filter((it) => {
+              if (!it.name || it.name.includes('●')) return false;
+              if (isShieldCategory && !it.rarity) return false;
+              return true;
+            });
             const byRarity = {};
             clean.forEach((it) => {
               const key = it.rarity || 'Sem raridade';
@@ -334,4 +343,3 @@ const ItemsView = ({
 };
 
 export default ItemsView;
-

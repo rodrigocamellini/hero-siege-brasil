@@ -1,8 +1,29 @@
+import React from 'react';
 import { render, screen } from '@testing-library/react';
 import App from './App';
 
-test('renders learn react link', () => {
+jest.mock(
+  'react-router-dom',
+  () => {
+    const React = require('react');
+    return {
+      Routes: ({ children }) => React.createElement('div', null, children),
+      Route: ({ element }) => element,
+      Navigate: () => null,
+    };
+  },
+  { virtual: true }
+);
+
+jest.mock('./NewDesign', () => {
+  const React = require('react');
+  return function NewDesign() {
+    return React.createElement('div', null, 'Hero Siege Brasil');
+  };
+});
+
+test('renderiza layout principal da aplicação', () => {
   render(<App />);
-  const linkElement = screen.getByText(/learn react/i);
-  expect(linkElement).toBeInTheDocument();
+  const elements = screen.getAllByText(/Hero Siege Brasil/i);
+  expect(elements.length).toBeGreaterThan(0);
 });
