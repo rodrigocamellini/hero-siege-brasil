@@ -3,7 +3,7 @@ import { useNavigate, useParams } from 'react-router-dom';
 import { db } from './firebase';
 import { doc, getDoc, collection, getDocs, addDoc, serverTimestamp, query, where, orderBy, onSnapshot } from 'firebase/firestore';
 import BlogComments from './BlogComments';
-import RelicsView, { PASSIVE_RELICS, normalizeRelicImageUrl } from './RelicsView';
+import RelicsView, { PASSIVE_RELICS, EXTRA_RELICS, normalizeRelicImageUrl } from './RelicsView';
 import ClassesView from './ClassesView';
 import ItemsView from './ItemsView';
 import RunesView from './RunesView';
@@ -113,6 +113,7 @@ const NewDesign = ({ onBack, initialView = 'home' }) => {
   const [activeFilter, setActiveFilter] = useState('ALL');
   const [isDbOpen, setIsDbOpen] = useState(false);
   const dbMenuRef = useRef(null);
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   useEffect(() => {
     const handleClickOutside = (e) => {
@@ -246,6 +247,10 @@ const NewDesign = ({ onBack, initialView = 'home' }) => {
   const NB_TOTAL = 400;
   const [nbRelics, setNbRelics] = useState([null, null, null, null, null]);
   const [nbRelicPickerIndex, setNbRelicPickerIndex] = useState(null);
+  const [nbPotions, setNbPotions] = useState([null, null, null, null]);
+  const [nbPotionPickerIndex, setNbPotionPickerIndex] = useState(null);
+  const [nbMercenary, setNbMercenary] = useState('');
+  const [potionOptions, setPotionOptions] = useState([]);
   const [homepageMode, setHomepageMode] = useState('fixed');
   const [homepageFeaturedClass, setHomepageFeaturedClass] = useState(null);
   const [homepageRandomIndex, setHomepageRandomIndex] = useState(() =>
@@ -253,10 +258,36 @@ const NewDesign = ({ onBack, initialView = 'home' }) => {
   );
   const [homepageRotationSeconds, setHomepageRotationSeconds] = useState(15);
 
-  const relicOptions = useMemo(
-    () => PASSIVE_RELICS.map((r) => ({ name: r.name, img: relicImageFor(r) })),
-    []
-  );
+  const relicOptions = useMemo(() => {
+    const base = [...PASSIVE_RELICS, ...EXTRA_RELICS];
+    const seen = new Set();
+    const merged = [];
+    for (const r of base) {
+      const nm = r?.name;
+      if (!nm || seen.has(nm)) continue;
+      seen.add(nm);
+      merged.push({ name: nm, img: relicImageFor(r) });
+    }
+    merged.sort((a, b) => (a.name || '').localeCompare(b.name || ''));
+    return merged;
+  }, []);
+
+  useEffect(() => {
+    const loadPotions = async () => {
+      try {
+        const colRef = collection(db, 'item_categories', 'potions', 'items');
+        const snap = await getDocs(colRef);
+        const list = [];
+        snap.forEach((s) => list.push({ id: s.id, ...s.data() }));
+        list.sort((a, b) => (a.name || '').localeCompare(b.name || ''));
+        setPotionOptions(list);
+      } catch (e) {
+        console.error('Erro carregando poções', e);
+        setPotionOptions([]);
+      }
+    };
+    loadPotions();
+  }, []);
 
   useEffect(() => {
     if (typeof document === 'undefined' || typeof window === 'undefined') return;
@@ -2167,6 +2198,7 @@ const NewDesign = ({ onBack, initialView = 'home' }) => {
             onClick={() => {
               setSelectedBlogPost(null);
               navigateToView('home');
+              setMobileMenuOpen(false);
             }}
           >
             <img
@@ -2176,95 +2208,343 @@ const NewDesign = ({ onBack, initialView = 'home' }) => {
               style={{ imageRendering: 'auto' }}
             />
           </div>
-          <div className="hidden md:flex items-center gap-8 text-sm font-bold uppercase tracking-widest text-gray-400">
-            <button onClick={() => navigateToView('home')} className={`transition-colors ${currentView === 'home' ? 'text-orange-500' : 'hover:text-white'}`}>Home</button>
-            <div
-              className="relative"
-              ref={dbMenuRef}
-              onMouseEnter={() => setIsDbOpen(true)}
-              onMouseLeave={() => setIsDbOpen(false)}
+          <div className="flex items-center gap-4">
+            <button
+              type="button"
+              className="md:hidden inline-flex items-center justify-center w-9 h-9 rounded border border-white/20 text-gray-200 hover:bg-white/10"
+              onClick={() => setMobileMenuOpen((v) => !v)}
             >
+              <span className="sr-only">Abrir menu</span>
+              <span className="flex flex-col gap-[3px]">
+                <span className="block w-5 h-[2px] bg-current" />
+                <span className="block w-5 h-[2px] bg-current" />
+                <span className="block w-5 h-[2px] bg-current" />
+              </span>
+            </button>
+            <div className="hidden md:flex items-center gap-8 text-sm font-bold uppercase tracking-widest text-gray-400">
               <button
-                type="button"
-                onClick={() => setIsDbOpen(v => !v)}
-                className={`transition-colors ${['classes','items','relics','quests'].includes(currentView) || isDbOpen ? 'text-orange-500' : 'hover:text-white'}`}
+                onClick={() => navigateToView('home')}
+                className={`transition-colors ${currentView === 'home' ? 'text-orange-500' : 'hover:text-white'}`}
               >
-                DataBase
+                Home
               </button>
-              <div className={`absolute left-0 top-full w-44 bg-[#0b0d14] border border-white/10 rounded shadow-xl py-2 ${isDbOpen ? 'opacity-100 pointer-events-auto' : 'opacity-0 pointer-events-none'} transition`}>
+              <div
+                className="relative"
+                ref={dbMenuRef}
+                onMouseEnter={() => setIsDbOpen(true)}
+                onMouseLeave={() => setIsDbOpen(false)}
+              >
                 <button
-                  onClick={() => { navigateToView('classes'); setIsDbOpen(false); }}
-                  className={`block w-full text-left px-4 py-2 text-xs font-bold uppercase tracking-widest hover:bg-white/5 ${currentView === 'classes' ? 'text-orange-500' : 'text-gray-400 hover:text-white'}`}
+                  type="button"
+                  onClick={() => setIsDbOpen((v) => !v)}
+                  className={`transition-colors ${
+                    ['classes', 'items', 'relics', 'quests'].includes(currentView) || isDbOpen
+                      ? 'text-orange-500'
+                      : 'hover:text-white'
+                  }`}
                 >
-                  Classes
+                  DataBase
                 </button>
-                <button
-                  onClick={() => { navigateToView('items'); setIsDbOpen(false); }}
-                  className={`block w-full text-left px-4 py-2 text-xs font-bold uppercase tracking-widest hover:bg-white/5 ${currentView === 'items' ? 'text-orange-500' : 'text-gray-400 hover:text-white'}`}
+                <div
+                  className={`absolute left-0 top-full w-44 bg-[#0b0d14] border border-white/10 rounded shadow-xl py-2 ${
+                    isDbOpen ? 'opacity-100 pointer-events-auto' : 'opacity-0 pointer-events-none'
+                  } transition`}
                 >
-                  Items
-                </button>
-                <button
-                  onClick={() => { navigateToView('runes'); setIsDbOpen(false); }}
-                  className={`block w-full text-left px-4 py-2 text-xs font-bold uppercase tracking-widest hover:bg-white/5 ${currentView === 'runes' ? 'text-orange-500' : 'text-gray-400 hover:text-white'}`}
-                >
-                  Runas
-                </button>
-                <button
-                  onClick={() => { navigateToView('relics'); setIsDbOpen(false); }}
-                  className={`block w-full text-left px-4 py-2 text-xs font-bold uppercase tracking-widest hover:bg-white/5 ${currentView === 'relics' ? 'text-orange-500' : 'text-gray-400 hover:text-white'}`}
-                >
-                  Relíquias
-                </button>
-                <button
-                  onClick={() => { navigateToView('chaosTower'); setIsDbOpen(false); }}
-                  className={`block w-full text-left px-4 py-2 text-xs font-bold uppercase tracking-widest hover:bg-white/5 ${currentView === 'chaosTower' ? 'text-orange-500' : 'text-gray-400 hover:text-white'}`}
-                >
-                  Chaos Tower
-                </button>
-                <button
-                  onClick={() => { navigateToView('mercenaries'); setIsDbOpen(false); }}
-                  className={`block w-full text-left px-4 py-2 text-xs font-bold uppercase tracking-widest hover:bg-white/5 ${currentView === 'mercenaries' ? 'text-orange-500' : 'text-gray-400 hover:text-white'}`}
-                >
-                  Mercenários
-                </button>
-                <button
-                  onClick={() => { navigateToView('keys'); setIsDbOpen(false); }}
-                  className={`block w-full text-left px-4 py-2 text-xs font-bold uppercase tracking-widest hover:bg-white/5 ${currentView === 'keys' ? 'text-orange-500' : 'text-gray-400 hover:text-white'}`}
-                >
-                  Chaves
-                </button>
-                <button
-                  onClick={() => { navigateToView('quests'); setIsDbOpen(false); }}
-                  className={`block w-full text-left px-4 py-2 text-xs font-bold uppercase tracking-widest hover:bg-white/5 ${currentView === 'quests' ? 'text-orange-500' : 'text-gray-400 hover:text-white'}`}
-                >
-                  Quests
-                </button>
-                <button
-                  onClick={() => { navigateToView('mining'); setIsDbOpen(false); }}
-                  className={`block w-full text-left px-4 py-2 text-xs font-bold uppercase tracking-widest hover:bg-white/5 ${currentView === 'mining' ? 'text-orange-500' : 'text-gray-400 hover:text-white'}`}
-                >
-                  Mineração
-                </button>
-                <button
-                  onClick={() => { navigateToView('gems'); setIsDbOpen(false); }}
-                  className={`block w-full text-left px-4 py-2 text-xs font-bold uppercase tracking-widest hover:bg-white/5 ${currentView === 'gems' ? 'text-orange-500' : 'text-gray-400 hover:text-white'}`}
-                >
-                  Gemas e Jóias
-                </button>
-                <button
-                  onClick={() => { navigateToView('charms'); setIsDbOpen(false); }}
-                  className={`block w-full text-left px-4 py-2 text-xs font-bold uppercase tracking-widest hover:bg-white/5 ${currentView === 'charms' ? 'text-orange-500' : 'text-gray-400 hover:text-white'}`}
-                >
-                  Charms
-                </button>
+                  <button
+                    onClick={() => {
+                      navigateToView('classes');
+                      setIsDbOpen(false);
+                    }}
+                    className={`block w-full text-left px-4 py-2 text-xs font-bold uppercase tracking-widest hover:bg-white/5 ${
+                      currentView === 'classes' ? 'text-orange-500' : 'text-gray-400 hover:text-white'
+                    }`}
+                  >
+                    Classes
+                  </button>
+                  <button
+                    onClick={() => {
+                      navigateToView('items');
+                      setIsDbOpen(false);
+                    }}
+                    className={`block w-full text-left px-4 py-2 text-xs font-bold uppercase tracking-widest hover:bg-white/5 ${
+                      currentView === 'items' ? 'text-orange-500' : 'text-gray-400 hover:text-white'
+                    }`}
+                  >
+                    Items
+                  </button>
+                  <button
+                    onClick={() => {
+                      navigateToView('runes');
+                      setIsDbOpen(false);
+                    }}
+                    className={`block w-full text-left px-4 py-2 text-xs font-bold uppercase tracking-widest hover:bg-white/5 ${
+                      currentView === 'runes' ? 'text-orange-500' : 'text-gray-400 hover:text-white'
+                    }`}
+                  >
+                    Runas
+                  </button>
+                  <button
+                    onClick={() => {
+                      navigateToView('relics');
+                      setIsDbOpen(false);
+                    }}
+                    className={`block w-full text-left px-4 py-2 text-xs font-bold uppercase tracking-widest hover:bg-white/5 ${
+                      currentView === 'relics' ? 'text-orange-500' : 'text-gray-400 hover:text-white'
+                    }`}
+                  >
+                    Relíquias
+                  </button>
+                  <button
+                    onClick={() => {
+                      navigateToView('chaosTower');
+                      setIsDbOpen(false);
+                    }}
+                    className={`block w-full text-left px-4 py-2 text-xs font-bold uppercase tracking-widest hover:bg-white/5 ${
+                      currentView === 'chaosTower' ? 'text-orange-500' : 'text-gray-400 hover:text-white'
+                    }`}
+                  >
+                    Chaos Tower
+                  </button>
+                  <button
+                    onClick={() => {
+                      navigateToView('mercenaries');
+                      setIsDbOpen(false);
+                    }}
+                    className={`block w-full text-left px-4 py-2 text-xs font-bold uppercase tracking-widest hover:bg-white/5 ${
+                      currentView === 'mercenaries' ? 'text-orange-500' : 'text-gray-400 hover:text-white'
+                    }`}
+                  >
+                    Mercenários
+                  </button>
+                  <button
+                    onClick={() => {
+                      navigateToView('keys');
+                      setIsDbOpen(false);
+                    }}
+                    className={`block w-full text-left px-4 py-2 text-xs font-bold uppercase tracking-widest hover:bg-white/5 ${
+                      currentView === 'keys' ? 'text-orange-500' : 'text-gray-400 hover:text-white'
+                    }`}
+                  >
+                    Chaves
+                  </button>
+                  <button
+                    onClick={() => {
+                      navigateToView('quests');
+                      setIsDbOpen(false);
+                    }}
+                    className={`block w-full text-left px-4 py-2 text-xs font-bold uppercase tracking-widest hover:bg-white/5 ${
+                      currentView === 'quests' ? 'text-orange-500' : 'text-gray-400 hover:text-white'
+                    }`}
+                  >
+                    Quests
+                  </button>
+                  <button
+                    onClick={() => {
+                      navigateToView('mining');
+                      setIsDbOpen(false);
+                    }}
+                    className={`block w-full text-left px-4 py-2 text-xs font-bold uppercase tracking-widest hover:bg-white/5 ${
+                      currentView === 'mining' ? 'text-orange-500' : 'text-gray-400 hover:text-white'
+                    }`}
+                  >
+                    Mineração
+                  </button>
+                  <button
+                    onClick={() => {
+                      navigateToView('gems');
+                      setIsDbOpen(false);
+                    }}
+                    className={`block w-full text-left px-4 py-2 text-xs font-bold uppercase tracking-widest hover:bg-white/5 ${
+                      currentView === 'gems' ? 'text-orange-500' : 'text-gray-400 hover:text-white'
+                    }`}
+                  >
+                    Gemas e Jóias
+                  </button>
+                  <button
+                    onClick={() => {
+                      navigateToView('charms');
+                      setIsDbOpen(false);
+                    }}
+                    className={`block w-full text-left px-4 py-2 text-xs font-bold uppercase tracking-widest hover:bg-white/5 ${
+                      currentView === 'charms' ? 'text-orange-500' : 'text-gray-400 hover:text-white'
+                    }`}
+                  >
+                    Charms
+                  </button>
+                </div>
               </div>
+              <button
+                onClick={() => {
+                  setSelectedBlogPost(null);
+                  navigateToView('blog');
+                }}
+                className={`transition-colors ${currentView === 'blog' ? 'text-orange-500' : 'hover:text-white'}`}
+              >
+                Blog
+              </button>
+              <button
+                onClick={() => navigateToView('builder')}
+                className={`transition-colors ${currentView === 'builder' ? 'text-orange-500' : 'hover:text-white'}`}
+              >
+                Builder
+              </button>
+              <button
+                onClick={() => navigateToView('contact')}
+                className={`transition-colors ${currentView === 'contact' ? 'text-orange-500' : 'hover:text-white'}`}
+              >
+                Contatos
+              </button>
             </div>
-            <button onClick={() => { setSelectedBlogPost(null); navigateToView('blog'); }} className={`transition-colors ${currentView === 'blog' ? 'text-orange-500' : 'hover:text-white'}`}>Blog</button>
-            <button onClick={() => navigateToView('builder')} className={`transition-colors ${currentView === 'builder' ? 'text-orange-500' : 'hover:text-white'}`}>Builder</button>
-            <button onClick={() => navigateToView('contact')} className={`transition-colors ${currentView === 'contact' ? 'text-orange-500' : 'hover:text-white'}`}>Contatos</button>
           </div>
         </div>
+        {mobileMenuOpen && (
+          <div className="md:hidden border-t border-white/10 bg-[#0b0d14]">
+            <div className="max-w-7xl mx-auto px-6 py-3 text-xs font-bold uppercase tracking-widest text-gray-300 space-y-1">
+              <button
+                className={`block w-full text-left py-1 ${currentView === 'home' ? 'text-orange-500' : ''}`}
+                onClick={() => {
+                  navigateToView('home');
+                  setMobileMenuOpen(false);
+                }}
+              >
+                Home
+              </button>
+              <button
+                className={`block w-full text-left py-1 ${
+                  ['classes', 'items', 'runes', 'relics', 'chaosTower', 'mercenaries', 'keys', 'mining', 'gems', 'charms', 'quests'].includes(
+                    currentView
+                  )
+                    ? 'text-orange-500'
+                    : ''
+                }`}
+                onClick={() => {
+                  navigateToView('classes');
+                  setMobileMenuOpen(false);
+                }}
+              >
+                Classes
+              </button>
+              <button
+                className="block w-full text-left py-1"
+                onClick={() => {
+                  navigateToView('items');
+                  setMobileMenuOpen(false);
+                }}
+              >
+                Items
+              </button>
+              <button
+                className="block w-full text-left py-1"
+                onClick={() => {
+                  navigateToView('runes');
+                  setMobileMenuOpen(false);
+                }}
+              >
+                Runas
+              </button>
+              <button
+                className="block w-full text-left py-1"
+                onClick={() => {
+                  navigateToView('relics');
+                  setMobileMenuOpen(false);
+                }}
+              >
+                Relíquias
+              </button>
+              <button
+                className="block w-full text-left py-1"
+                onClick={() => {
+                  navigateToView('chaosTower');
+                  setMobileMenuOpen(false);
+                }}
+              >
+                Chaos Tower
+              </button>
+              <button
+                className="block w-full text-left py-1"
+                onClick={() => {
+                  navigateToView('mercenaries');
+                  setMobileMenuOpen(false);
+                }}
+              >
+                Mercenários
+              </button>
+              <button
+                className="block w-full text-left py-1"
+                onClick={() => {
+                  navigateToView('keys');
+                  setMobileMenuOpen(false);
+                }}
+              >
+                Chaves
+              </button>
+              <button
+                className="block w-full text-left py-1"
+                onClick={() => {
+                  navigateToView('quests');
+                  setMobileMenuOpen(false);
+                }}
+              >
+                Quests
+              </button>
+              <button
+                className="block w-full text-left py-1"
+                onClick={() => {
+                  navigateToView('mining');
+                  setMobileMenuOpen(false);
+                }}
+              >
+                Mineração
+              </button>
+              <button
+                className="block w-full text-left py-1"
+                onClick={() => {
+                  navigateToView('gems');
+                  setMobileMenuOpen(false);
+                }}
+              >
+                Gemas e Jóias
+              </button>
+              <button
+                className="block w-full text-left py-1"
+                onClick={() => {
+                  navigateToView('charms');
+                  setMobileMenuOpen(false);
+                }}
+              >
+                Charms
+              </button>
+              <button
+                className={`block w-full text-left py-1 ${currentView === 'blog' ? 'text-orange-500' : ''}`}
+                onClick={() => {
+                  setSelectedBlogPost(null);
+                  navigateToView('blog');
+                  setMobileMenuOpen(false);
+                }}
+              >
+                Blog
+              </button>
+              <button
+                className={`block w-full text-left py-1 ${currentView === 'builder' ? 'text-orange-500' : ''}`}
+                onClick={() => {
+                  navigateToView('builder');
+                  setMobileMenuOpen(false);
+                }}
+              >
+                Builder
+              </button>
+              <button
+                className={`block w-full text-left py-1 ${currentView === 'contact' ? 'text-orange-500' : ''}`}
+                onClick={() => {
+                  navigateToView('contact');
+                  setMobileMenuOpen(false);
+                }}
+              >
+                Contatos
+              </button>
+            </div>
+          </div>
+        )}
       </nav>
 
       {/* Hero Section */}
@@ -2941,60 +3221,111 @@ const NewDesign = ({ onBack, initialView = 'home' }) => {
                                 };
                               })
                               .filter(Boolean);
+                            const potionSlots = Array.isArray(selectedBuild?.potions) ? selectedBuild.potions : [];
+                            const potionItems = potionSlots
+                              .map((name, idx) => {
+                                if (!name) return null;
+                                const base = potionOptions.find((p) => p.name === name);
+                                if (!base) {
+                                  return {
+                                    key: `${name}-${idx}`,
+                                    name,
+                                    img: null,
+                                  };
+                                }
+                                return {
+                                  key: `${name}-${idx}`,
+                                  name,
+                                  img: base.image || base.img || null,
+                                };
+                              })
+                              .filter(Boolean);
+                            const mercenaryId = selectedBuild?.mercenary || null;
+                            const mercenaryInfo = (() => {
+                              if (!mercenaryId) return null;
+                              const all = [
+                                {
+                                  id: 'knight',
+                                  name: 'Knight',
+                                  image: 'https://static.wikia.nocookie.net/herosiege/images/f/f0/Melee_Mercenary.gif'
+                                },
+                                {
+                                  id: 'archer',
+                                  name: 'Archer',
+                                  image: 'https://static.wikia.nocookie.net/herosiege/images/d/d9/Ranged_Mercenary.gif'
+                                },
+                                {
+                                  id: 'magister',
+                                  name: 'Magister',
+                                  image: 'https://static.wikia.nocookie.net/herosiege/images/b/be/Spell_Mercenary.gif'
+                                }
+                              ];
+                              return all.find((m) => m.id === mercenaryId) || null;
+                            })();
                             return (
                               <>
-                                {(badgeLabel || statItems.length > 0 || relicItems.length > 0) && (
-                                  <div className="mb-4 space-y-3">
-                                    {badgeLabel && (
-                                      <div className="flex items-center justify-between">
-                                        <div className="flex items-center gap-2">
-                                          {(() => {
-                                            const cls = selectedBuild?.className || selectedBuild?.heroClass || '';
-                                            if (!cls) return <div className="w-10 h-10 border border-white/10 rounded flex items-center justify-center text-gray-500">?</div>;
-                                            const img = classImagePath(cls, 'webp');
-                                            return (
-                                              <>
-                                                <img
-                                                  src={img}
-                                                  alt={cls}
-                                                  onError={(e) => { e.currentTarget.src = '/images/herosiege.png'; }}
-                                                  className="w-10 h-10 object-contain border border-white/10 rounded"
-                                                />
-                                                <div className="text-sm text-gray-200">{cls}</div>
-                                              </>
-                                            );
-                                          })()}
-                                        </div>
+                                {(badgeLabel || statItems.length > 0 || relicItems.length > 0 || potionItems.length > 0 || mercenaryInfo) && (
+                                  <div className="mb-4 border border-white/10 bg-black/30 rounded-sm p-4 space-y-4">
+                                    <div className="flex items-center justify-between border-b border-white/10 pb-3">
+                                      <div className="flex items-center gap-2">
+                                        {(() => {
+                                          const cls = selectedBuild?.className || selectedBuild?.heroClass || '';
+                                          if (!cls) return <div className="w-10 h-10 border border-white/10 rounded flex items-center justify-center text-gray-500">?</div>;
+                                          const img = classImagePath(cls, 'webp');
+                                          return (
+                                            <>
+                                              <img
+                                                src={img}
+                                                alt={cls}
+                                                onError={(e) => { e.currentTarget.src = '/images/herosiege.png'; }}
+                                                className="w-10 h-10 object-contain border border-white/10 rounded"
+                                              />
+                                              <div className="flex flex-col">
+                                                <span className="text-[10px] uppercase tracking-widest text-yellow-400">
+                                                  Classe
+                                                </span>
+                                                <span className="text-sm text-gray-200">{cls}</span>
+                                              </div>
+                                            </>
+                                          );
+                                        })()}
+                                      </div>
+                                      {badgeLabel && (
                                         <div className="flex flex-col items-end">
-                                          <span className="text-[9px] uppercase tracking-widest text-gray-400 mb-0.5">
-                                            Build
+                                          <span className="text-[9px] uppercase tracking-widest text-yellow-400 mb-0.5">
+                                            Tipo da Build
                                           </span>
-                                          <span className={`px-2 py-0.5 rounded-full font-semibold uppercase tracking-widest ${badgeClass}`}>
+                                          <span className={`px-2 py-0.5 rounded-full font-semibold uppercase tracking-widest text-[10px] ${badgeClass}`}>
                                             <span className="mr-1">{badgeIcon}</span>
                                             {badgeLabel}
                                           </span>
                                         </div>
-                                      </div>
-                                    )}
+                                      )}
+                                    </div>
                                     {statItems.length > 0 && (
-                                      <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
-                                        {statItems.map(({ key, label, color }) => (
-                                          <div key={key} className="flex items-center gap-2 border px-2 py-1" style={{ borderColor: color }}>
-                                            <div className="w-5 h-5">
-                                              <svg viewBox="0 0 24 24" className="w-full h-full">
-                                                <circle cx="12" cy="12" r="9" stroke={color} strokeWidth="1.5" fill="none" />
-                                                <path d="M12 4 L14.59 9.26 L20.24 9.91 L15.88 13.64 L17.18 19.19 L12 16.2 L6.82 19.19 L8.12 13.64 L3.76 9.91 L9.41 9.26 Z" stroke={color} strokeWidth="1.4" fill="none" strokeLinejoin="round" />
-                                              </svg>
+                                      <div>
+                                        <div className="text-[11px] uppercase tracking-widest text-yellow-400 mb-2">
+                                          Atributos
+                                        </div>
+                                        <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+                                          {statItems.map(({ key, label, color }) => (
+                                            <div key={key} className="flex items-center gap-2 border px-2 py-1" style={{ borderColor: color }}>
+                                              <div className="w-5 h-5">
+                                                <svg viewBox="0 0 24 24" className="w-full h-full">
+                                                  <circle cx="12" cy="12" r="9" stroke={color} strokeWidth="1.5" fill="none" />
+                                                  <path d="M12 4 L14.59 9.26 L20.24 9.91 L15.88 13.64 L17.18 19.19 L12 16.2 L6.82 19.19 L8.12 13.64 L3.76 9.91 L9.41 9.26 Z" stroke={color} strokeWidth="1.4" fill="none" strokeLinejoin="round" />
+                                                </svg>
+                                              </div>
+                                              <span className="text-xs" style={{ color }}>{label}</span>
+                                              <span className="ml-auto text-xs text-gray-300">{stats[key]}</span>
                                             </div>
-                                            <span className="text-xs" style={{ color }}>{label}</span>
-                                            <span className="ml-auto text-xs text-gray-300">{stats[key]}</span>
-                                          </div>
-                                        ))}
+                                          ))}
+                                        </div>
                                       </div>
                                     )}
                                     {relicItems.length > 0 && (
                                       <div>
-                                        <div className="text-[11px] uppercase tracking-widest text-gray-400 mb-2">
+                                        <div className="text-[11px] uppercase tracking-widest text-yellow-400 mb-2">
                                           Relíquias
                                         </div>
                                         <div className="flex flex-wrap gap-2">
@@ -3002,7 +3333,7 @@ const NewDesign = ({ onBack, initialView = 'home' }) => {
                                             <div
                                               key={rel.key}
                                               className={`flex items-center gap-2 border px-2 py-1 ${
-                                                rel.quest ? 'border-red-500/60 bg-red-900/20' : 'border-white/10 bg-black/30'
+                                                rel.quest ? 'border-red-500/60 bg-red-900/20' : 'border-white/10 bg-black/40'
                                               }`}
                                             >
                                               <img
@@ -3018,16 +3349,75 @@ const NewDesign = ({ onBack, initialView = 'home' }) => {
                                         </div>
                                       </div>
                                     )}
+                                    {potionItems.length > 0 && (
+                                      <div>
+                                        <div className="text-[11px] uppercase tracking-widest text-yellow-400 mb-2">
+                                          Poções
+                                        </div>
+                                        <div className="flex flex-wrap gap-2">
+                                          {potionItems.map((pot) => (
+                                            <div
+                                              key={pot.key}
+                                              className="flex items-center gap-2 border px-2 py-1 border-white/10 bg-black/40"
+                                            >
+                                              {pot.img ? (
+                                                <img
+                                                  src={pot.img}
+                                                  alt={pot.name}
+                                                  className="w-5 h-5 object-contain"
+                                                />
+                                              ) : (
+                                                <div className="w-5 h-5 flex items-center justify-center border border-white/20 text-[10px] text-gray-400">
+                                                  ?
+                                                </div>
+                                              )}
+                                              <span className="text-[11px] text-gray-200">
+                                                {pot.name}
+                                              </span>
+                                            </div>
+                                          ))}
+                                        </div>
+                                      </div>
+                                    )}
+                                    {mercenaryInfo && (
+                                      <div>
+                                        <div className="text-[11px] uppercase tracking-widest text-yellow-400 mb-2">
+                                          Mercenário
+                                        </div>
+                                        <div className="flex flex-wrap gap-2">
+                                          <div className="flex items-center gap-2 border px-2 py-1 border-white/10 bg-black/40">
+                                            <img
+                                              src={mercenaryInfo.image}
+                                              alt={mercenaryInfo.name}
+                                              className="w-5 h-5 object-contain"
+                                            />
+                                            <span className="text-[11px] text-gray-200">
+                                              {mercenaryInfo.name}
+                                            </span>
+                                          </div>
+                                        </div>
+                                      </div>
+                                    )}
                                   </div>
                                 )}
                                 {buildModalContentHtml ? (
-                                  <div
-                                    className="prose prose-invert prose-sm max-w-none"
-                                    dangerouslySetInnerHTML={{ __html: buildModalContentHtml }}
-                                  />
+                                  <div className="border-t border-white/10 pt-4 mt-4">
+                                    <div className="text-[11px] uppercase tracking-widest text-yellow-400 mb-2">
+                                      Conteúdo detalhado
+                                    </div>
+                                    <div
+                                      className="prose prose-invert prose-sm max-w-none"
+                                      dangerouslySetInnerHTML={{ __html: buildModalContentHtml }}
+                                    />
+                                  </div>
                                 ) : (
-                                  <div className="text-gray-500 text-sm">
-                                    Nenhum conteúdo detalhado foi cadastrado para esta build.
+                                  <div className="border-t border-white/10 pt-4 mt-4">
+                                    <div className="text-[11px] uppercase tracking-widest text-yellow-400 mb-2">
+                                      Conteúdo detalhado
+                                    </div>
+                                    <div className="text-gray-500 text-sm">
+                                      Nenhum conteúdo detalhado foi cadastrado para esta build.
+                                    </div>
                                   </div>
                                 )}
                               </>
@@ -3044,7 +3434,7 @@ const NewDesign = ({ onBack, initialView = 'home' }) => {
                     <div className="absolute inset-0 flex items-center justify-center p-4">
                       <div className="bg-[#151923] border border-white/10 rounded-sm shadow-xl max-w-6xl w-full max-h-[85vh] flex flex-col">
                         <div className="flex items-center justify-between px-5 py-4 border-b border-white/10">
-                          <div className="text-sm font-black text-white uppercase tracking-widest">
+                          <div className="text-sm font-black text-yellow-400 uppercase tracking-widest">
                             Nova Build
                           </div>
                           <button
@@ -3059,8 +3449,8 @@ const NewDesign = ({ onBack, initialView = 'home' }) => {
                           <div className="grid grid-cols-1 md:grid-cols-[minmax(0,1.8fr)_minmax(0,1fr)] gap-4">
                             <div className="md:col-start-1 md:row-start-1">
                               <div className="border border-white/10 bg-[#0f111a] p-4 space-y-4">
-                                <label className="block text-[11px] font-bold uppercase tracking-widest text-gray-400 mb-1">
-                                Título da Build
+                                <label className="block text-[11px] font-bold uppercase tracking-widest text-yellow-400 mb-1">
+                                  Título da Build
                                 </label>
                                 <input
                                   value={nbTitle}
@@ -3068,8 +3458,8 @@ const NewDesign = ({ onBack, initialView = 'home' }) => {
                                   className="w-full bg-[#0f111a] border border-white/10 text-sm text-white px-3 py-2"
                                   placeholder="Ex.: Bard Solo Map Farm"
                                 />
-                                <label className="block text-[11px] font-bold uppercase tracking-widest text-gray-400 mb-1">
-                                Autor / Nickname
+                                <label className="block text-[11px] font-bold uppercase tracking-widest text-yellow-400 mb-1">
+                                  Autor / Nickname
                                 </label>
                                 <input
                                   value={nbAuthor}
@@ -3077,8 +3467,8 @@ const NewDesign = ({ onBack, initialView = 'home' }) => {
                                   className="w-full bg-[#0f111a] border border-white/10 text-sm text-white px-3 py-2"
                                   placeholder="Seu nick"
                                 />
-                                <label className="block text-[11px] font-bold uppercase tracking-widest text-gray-400 mb-1">
-                                Classe
+                                <label className="block text-[11px] font-bold uppercase tracking-widest text-yellow-400 mb-1">
+                                  Classe
                                 </label>
                                 <select
                                   value={nbClass}
@@ -3090,8 +3480,8 @@ const NewDesign = ({ onBack, initialView = 'home' }) => {
                                     <option key={c.name} value={c.name}>{c.name}</option>
                                   ))}
                                 </select>
-                                <label className="block text-[11px] font-bold uppercase tracking-widest text-gray-400 mb-1">
-                                Tipo da Build
+                                <label className="block text-[11px] font-bold uppercase tracking-widest text-yellow-400 mb-1">
+                                  Tipo da Build
                                 </label>
                                 <select
                                   value={nbType}
@@ -3102,7 +3492,7 @@ const NewDesign = ({ onBack, initialView = 'home' }) => {
                                   <option value="avançada">Avançada 🛠️</option>
                                   <option value="final">Final 🏁</option>
                                 </select>
-                                <div className="text-[11px] font-bold uppercase tracking-widest text-gray-400">
+                                <div className="text-[11px] font-bold uppercase tracking-widest text-yellow-400">
                                   Distribuição de Pontos (Total: {NB_TOTAL}) · Restantes: {Math.max(0, NB_TOTAL - totalNbStats(nbStats))}
                                 </div>
                                 <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
@@ -3205,7 +3595,7 @@ const NewDesign = ({ onBack, initialView = 'home' }) => {
                                   })}
                                 </div>
                                 <div className="mt-4">
-                                  <div className="text-[11px] font-bold uppercase tracking-widest text-gray-400 mb-2">
+                                  <div className="text-[11px] font-bold uppercase tracking-widest text-yellow-400 mb-2">
                                     Relíquias
                                   </div>
                                   <div className="flex flex-wrap gap-2">
@@ -3288,7 +3678,135 @@ const NewDesign = ({ onBack, initialView = 'home' }) => {
                                     </div>
                                   )}
                                 </div>
-                                <label className="block text-[11px] font-bold uppercase tracking-widest text-gray-400 mb-1">
+                                <div className="mt-4">
+                                  <div className="text-[11px] font-bold uppercase tracking-widest text-yellow-400 mb-2">
+                                    Poções
+                                  </div>
+                                  <div className="flex flex-wrap gap-2">
+                                    {nbPotions.map((name, idx) => {
+                                      const pot = name ? potionOptions.find((p) => p.name === name) : null;
+                                      const img = pot ? pot.image || pot.img : null;
+                                      return (
+                                        <button
+                                          key={idx}
+                                          type="button"
+                                          className="w-20 h-20 flex flex-col items-center justify-center border border-white/20 bg-black/30 text-[10px] text-gray-300 hover:border-amber-400 hover:bg-black/60"
+                                          onClick={() => setNbPotionPickerIndex(idx)}
+                                        >
+                                          {img ? (
+                                            <>
+                                              <img src={img} alt={name} className="w-8 h-8 object-contain mb-1" />
+                                              <span className="px-1 text-[9px] leading-tight text-center line-clamp-2">
+                                                {name}
+                                              </span>
+                                            </>
+                                          ) : (
+                                            <span className="text-xs text-gray-500">
+                                              Selecionar
+                                            </span>
+                                          )}
+                                        </button>
+                                      );
+                                    })}
+                                  </div>
+                                  {nbPotionPickerIndex !== null && (
+                                    <div className="mt-2 border border-white/10 bg-[#0b0d16] max-h-64 overflow-y-auto custom-scrollbar">
+                                      <div className="flex items-center justify-between px-3 py-2 border-b border-white/10 text-[11px] text-gray-400">
+                                        <span>Selecionar poção para o slot {nbPotionPickerIndex + 1}</span>
+                                        <button
+                                          type="button"
+                                          className="text-[10px] px-2 py-0.5 border border-white/20 rounded hover:bg-white hover:text-black"
+                                          onClick={() => setNbPotionPickerIndex(null)}
+                                        >
+                                          Fechar
+                                        </button>
+                                      </div>
+                                      <button
+                                        type="button"
+                                        className="w-full flex items-center gap-3 px-3 py-2 text-xs text-gray-300 hover:bg-white/10 border-b border-white/5"
+                                        onClick={() => {
+                                          setNbPotions((prev) => {
+                                            const next = prev.slice();
+                                            next[nbPotionPickerIndex] = null;
+                                            return next;
+                                          });
+                                          setNbPotionPickerIndex(null);
+                                        }}
+                                      >
+                                        <div className="w-7 h-7 flex items-center justify-center border border-white/20 text-[13px]">
+                                          ×
+                                        </div>
+                                        <span>Nenhuma poção</span>
+                                      </button>
+                                      {potionOptions.map((pot) => (
+                                        <button
+                                          key={pot.id}
+                                          type="button"
+                                          className="w-full flex items-center gap-3 px-3 py-2 text-xs text-gray-200 hover:bg-white/10 border-b border-white/5"
+                                          onClick={() => {
+                                            setNbPotions((prev) => {
+                                              const next = prev.slice();
+                                              next[nbPotionPickerIndex] = pot.name;
+                                              return next;
+                                            });
+                                            setNbPotionPickerIndex(null);
+                                          }}
+                                        >
+                                          {pot.image || pot.img ? (
+                                            <img src={pot.image || pot.img} alt={pot.name} className="w-7 h-7 object-contain" />
+                                          ) : (
+                                            <div className="w-7 h-7 flex items-center justify-center border border-white/20 text-[11px]">
+                                              ?
+                                            </div>
+                                          )}
+                                          <span>{pot.name}</span>
+                                        </button>
+                                      ))}
+                                    </div>
+                                  )}
+                                </div>
+                                <div className="mt-4">
+                                  <div className="text-[11px] font-bold uppercase tracking-widest text-yellow-400 mb-2">
+                                    Mercenário
+                                  </div>
+                                  <div className="flex flex-wrap gap-2">
+                                    {[
+                                      {
+                                        id: 'knight',
+                                        name: 'Knight',
+                                        image: 'https://static.wikia.nocookie.net/herosiege/images/f/f0/Melee_Mercenary.gif'
+                                      },
+                                      {
+                                        id: 'archer',
+                                        name: 'Archer',
+                                        image: 'https://static.wikia.nocookie.net/herosiege/images/d/d9/Ranged_Mercenary.gif'
+                                      },
+                                      {
+                                        id: 'magister',
+                                        name: 'Magister',
+                                        image: 'https://static.wikia.nocookie.net/herosiege/images/b/be/Spell_Mercenary.gif'
+                                      }
+                                    ].map((m) => {
+                                      const selected = nbMercenary === m.id;
+                                      return (
+                                        <button
+                                          key={m.id}
+                                          type="button"
+                                          className={`w-28 h-24 flex flex-col items-center justify-center border text-[10px] ${
+                                            selected ? 'border-amber-400 bg-black/60 text-white' : 'border-white/20 bg-black/30 text-gray-300'
+                                          } hover:border-amber-400`}
+                                          onClick={() => setNbMercenary(selected ? '' : m.id)}
+                                        >
+                                          <img src={m.image} alt={m.name} className="w-10 h-10 object-contain mb-1" />
+                                          <span className="px-1 text-[10px] leading-tight text-center">
+                                            {m.name}
+                                          </span>
+                                        </button>
+                                      );
+                                    })}
+                                  </div>
+                                </div>
+                                <label className="block text-[11px] font-bold uppercase tracking-widest text-yellow-400 mb-1">
                                   Conteúdo (opcional)
                                 </label>
                                 <div className="flex flex-wrap gap-2 mb-2">
@@ -3385,6 +3903,46 @@ const NewDesign = ({ onBack, initialView = 'home' }) => {
                                     };
                                   })
                                   .filter(Boolean);
+                                const potionSlots = Array.isArray(nbPotions) ? nbPotions : [];
+                                const potionItems = potionSlots
+                                  .map((name, idx) => {
+                                    if (!name) return null;
+                                    const base = potionOptions.find((p) => p.name === name);
+                                    if (!base) {
+                                      return {
+                                        key: `${name}-${idx}`,
+                                        name,
+                                        img: null,
+                                      };
+                                    }
+                                    return {
+                                      key: `${name}-${idx}`,
+                                      name,
+                                      img: base.image || base.img || null,
+                                    };
+                                  })
+                                  .filter(Boolean);
+                                const mercInfo = (() => {
+                                  if (!nbMercenary) return null;
+                                  const all = [
+                                    {
+                                      id: 'knight',
+                                      name: 'Knight',
+                                      image: 'https://static.wikia.nocookie.net/herosiege/images/f/f0/Melee_Mercenary.gif'
+                                    },
+                                    {
+                                      id: 'archer',
+                                      name: 'Archer',
+                                      image: 'https://static.wikia.nocookie.net/herosiege/images/d/d9/Ranged_Mercenary.gif'
+                                    },
+                                    {
+                                      id: 'magister',
+                                      name: 'Magister',
+                                      image: 'https://static.wikia.nocookie.net/herosiege/images/b/be/Spell_Mercenary.gif'
+                                    }
+                                  ];
+                                  return all.find((m) => m.id === nbMercenary) || null;
+                                })();
                                 return (
                                   <div className="border border-white/10 bg-[#0f111a] p-4">
                                     <div className="text-sm font-black text-white uppercase tracking-widest">
@@ -3419,29 +3977,34 @@ const NewDesign = ({ onBack, initialView = 'home' }) => {
                                         </div>
                                       )}
                                     </div>
-                                    {(badgeLabel || statItems.length > 0 || relicItems.length > 0) && (
+                                    {(badgeLabel || statItems.length > 0 || relicItems.length > 0 || potionItems.length > 0 || mercInfo) && (
                                       <div className="mt-4 space-y-3">
                                         {statItems.length > 0 && (
-                                          <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
-                                            {statItems.map(({ key, label, color }) => (
-                                              <div key={key} className="flex items-center gap-2 border px-2 py-1" style={{ borderColor: color }}>
-                                                <div className="w-5 h-5">
-                                                  <svg viewBox="0 0 24 24" className="w-full h-full">
-                                                    <circle cx="12" cy="12" r="9" stroke={color} strokeWidth="1.5" fill="none" />
-                                                    <path d="M12 4 L14.59 9.26 L20.24 9.91 L15.88 13.64 L17.18 19.19 L12 16.2 L6.82 19.19 L8.12 13.64 L3.76 9.91 L9.41 9.26 Z" stroke={color} strokeWidth="1.4" fill="none" strokeLinejoin="round" />
-                                                  </svg>
+                                          <div>
+                                            <div className="text-[11px] uppercase tracking-widest text-yellow-400 mb-2">
+                                              Atributos
+                                            </div>
+                                            <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+                                              {statItems.map(({ key, label, color }) => (
+                                                <div key={key} className="flex items-center gap-2 border px-2 py-1" style={{ borderColor: color }}>
+                                                  <div className="w-5 h-5">
+                                                    <svg viewBox="0 0 24 24" className="w-full h-full">
+                                                      <circle cx="12" cy="12" r="9" stroke={color} strokeWidth="1.5" fill="none" />
+                                                      <path d="M12 4 L14.59 9.26 L20.24 9.91 L15.88 13.64 L17.18 19.19 L12 16.2 L6.82 19.19 L8.12 13.64 L3.76 9.91 L9.41 9.26 Z" stroke={color} strokeWidth="1.4" fill="none" strokeLinejoin="round" />
+                                                    </svg>
+                                                  </div>
+                                                  <span className="text-xs" style={{ color }}>{label}</span>
+                                                  <span className="ml-auto text-xs text-gray-300">{stats[key]}</span>
                                                 </div>
-                                                <span className="text-xs" style={{ color }}>{label}</span>
-                                                <span className="ml-auto text-xs text-gray-300">{stats[key]}</span>
-                                              </div>
-                                            ))}
+                                              ))}
+                                            </div>
                                           </div>
                                         )}
                                         {relicItems.length > 0 && (
                                           <div>
-                                            <div className="text-[11px] uppercase tracking-widest text-gray-400 mb-2">
-                                              Relíquias
-                                            </div>
+                                  <div className="text-[11px] uppercase tracking-widest text-yellow-400 mb-2">
+                                    Relíquias
+                                  </div>
                                             <div className="flex flex-wrap gap-2">
                                               {relicItems.map((rel) => (
                                                 <div
@@ -3460,6 +4023,55 @@ const NewDesign = ({ onBack, initialView = 'home' }) => {
                                                   </span>
                                                 </div>
                                               ))}
+                                            </div>
+                                          </div>
+                                        )}
+                                        {potionItems.length > 0 && (
+                                          <div>
+                                  <div className="text-[11px] uppercase tracking-widest text-yellow-400 mb-2">
+                                    Poções
+                                  </div>
+                                            <div className="flex flex-wrap gap-2">
+                                              {potionItems.map((pot) => (
+                                                <div
+                                                  key={pot.key}
+                                                  className="flex items-center gap-2 border px-2 py-1 border-white/10 bg-black/30"
+                                                >
+                                                  {pot.img ? (
+                                                    <img
+                                                      src={pot.img}
+                                                      alt={pot.name}
+                                                      className="w-5 h-5 object-contain"
+                                                    />
+                                                  ) : (
+                                                    <div className="w-5 h-5 flex items-center justify-center border border-white/20 text-[10px] text-gray-400">
+                                                      ?
+                                                    </div>
+                                                  )}
+                                                  <span className="text-[11px] text-gray-200">
+                                                    {pot.name}
+                                                  </span>
+                                                </div>
+                                              ))}
+                                            </div>
+                                          </div>
+                                        )}
+                                        {mercInfo && (
+                                          <div>
+                                  <div className="text-[11px] uppercase tracking-widest text-yellow-400 mb-2">
+                                    Mercenário
+                                  </div>
+                                            <div className="flex flex-wrap gap-2">
+                                              <div className="flex items-center gap-2 border px-2 py-1 border-white/10 bg-black/30">
+                                                <img
+                                                  src={mercInfo.image}
+                                                  alt={mercInfo.name}
+                                                  className="w-5 h-5 object-contain"
+                                                />
+                                                <span className="text-[11px] text-gray-200">
+                                                  {mercInfo.name}
+                                                </span>
+                                              </div>
                                             </div>
                                           </div>
                                         )}
@@ -3508,6 +4120,8 @@ const NewDesign = ({ onBack, initialView = 'home' }) => {
                                     content_html: contentHtml,
                                     stats: { ...nbStats, total: NB_TOTAL },
                                     relics: Array.isArray(nbRelics) ? nbRelics.map((r) => (r || null)) : [null, null, null, null, null],
+                                    potions: Array.isArray(nbPotions) ? nbPotions.map((p) => (p || null)) : [null, null, null, null],
+                                    mercenary: nbMercenary || null,
                                     createdAt: serverTimestamp(),
                                     updatedAt: serverTimestamp(),
                                   });
@@ -3526,8 +4140,9 @@ const NewDesign = ({ onBack, initialView = 'home' }) => {
                                     vitality: 0,
                                   });
                                   setNbRelics([null, null, null, null, null]);
+                                  setNbPotions([null, null, null, null]);
+                                  setNbMercenary('');
                                 } catch {
-                                  // silencioso
                                 }
                               }}
                             >

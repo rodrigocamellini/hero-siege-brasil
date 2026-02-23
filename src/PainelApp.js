@@ -1,6 +1,6 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import app, { db } from './firebase';
-import { PASSIVE_RELICS, normalizeRelicImageUrl } from './RelicsView';
+import { PASSIVE_RELICS, EXTRA_RELICS, normalizeRelicImageUrl } from './RelicsView';
 import {
   getAuth,
   onAuthStateChanged,
@@ -620,20 +620,47 @@ function PainelForum() {
   const [confirmLabel, setConfirmLabel] = useState('');
   const [relics, setRelics] = useState([null, null, null, null, null]);
   const [relicPickerIndex, setRelicPickerIndex] = useState(null);
+  const [potions, setPotions] = useState([null, null, null, null]);
+  const [potionPickerIndex, setPotionPickerIndex] = useState(null);
+  const [potionOptions, setPotionOptions] = useState([]);
+  const [mercenary, setMercenary] = useState('');
 
-  const relicOptions = useMemo(
-    () => PASSIVE_RELICS.map((r) => {
-      const baseUrl = r.img
+  const relicOptions = useMemo(() => {
+    const base = [...PASSIVE_RELICS, ...EXTRA_RELICS];
+    const seen = new Set();
+    const merged = [];
+    base.forEach((r) => {
+      const name = r && r.name;
+      if (!name || seen.has(name)) return;
+      seen.add(name);
+      const imgUrl = r.img
         ? normalizeRelicImageUrl(r.img)
         : normalizeRelicImageUrl(
-            `https://herosiege.wiki.gg/images/Relics_${String(r.name || '')
+            `https://herosiege.wiki.gg/images/Relics_${String(name || '')
               .replace(/ /g, '_')
               .replace(/'/g, '%27')}.png`
           );
-      return { name: r.name, img: baseUrl };
-    }),
-    []
-  );
+      merged.push({ name, img: imgUrl });
+    });
+    merged.sort((a, b) => (a.name || '').localeCompare(b.name || ''));
+    return merged;
+  }, []);
+
+  useEffect(() => {
+    const loadPotions = async () => {
+      try {
+        const colRef = collection(db, 'item_categories', 'potions', 'items');
+        const snap = await getDocs(colRef);
+        const list = [];
+        snap.forEach((s) => list.push({ id: s.id, ...s.data() }));
+        list.sort((a, b) => (a.name || '').localeCompare(b.name || ''));
+        setPotionOptions(list);
+      } catch (e) {
+        setPotionOptions([]);
+      }
+    };
+    loadPotions();
+  }, []);
 
   const statusLabel = (rawStatus) => {
     const s = rawStatus || 'draft';
@@ -680,6 +707,8 @@ function PainelForum() {
     setStatus('draft');
     setMsg('');
     setRelics([null, null, null, null, null]);
+    setPotions([null, null, null, null]);
+    setMercenary('');
   };
 
   const openNew = () => {
@@ -716,6 +745,13 @@ function PainelForum() {
       nextRelics[i] = docRelics[i] || null;
     }
     setRelics(nextRelics);
+    const docPotions = Array.isArray(docObj.potions) ? docObj.potions : [];
+    const nextPotions = [null, null, null, null];
+    for (let i = 0; i < nextPotions.length; i += 1) {
+      nextPotions[i] = docPotions[i] || null;
+    }
+    setPotions(nextPotions);
+    setMercenary(docObj.mercenary || '');
     setStatus(docObj.status || 'draft');
     setMsg(`Editando: ${docObj.title || docObj.id}`);
     setModalOpen(true);
@@ -757,6 +793,8 @@ function PainelForum() {
       status: status || 'draft',
       updatedAt: serverTimestamp(),
       relics: Array.isArray(relics) ? relics.map((r) => (r || null)) : [null, null, null, null, null],
+      potions: Array.isArray(potions) ? potions.map((p) => (p || null)) : [null, null, null, null],
+      mercenary: mercenary || null,
     };
     try {
       if (editDoc && editDoc.id) {
@@ -1009,6 +1047,130 @@ function PainelForum() {
                       ))}
                     </div>
                   )}
+                  <div style={{ marginTop: 16 }}>
+                    <label className="painel-login-label">Poções</label>
+                    <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+                      {potions.map((name, idx) => {
+                        const opt = name ? potionOptions.find((p) => p.name === name) : null;
+                        const border = '1px solid #e5e7eb';
+                        const bg = '#f9fafb';
+                        return (
+                          <button
+                            key={idx}
+                            type="button"
+                            onClick={() => setPotionPickerIndex(idx)}
+                            style={{
+                              width: 90, height: 90, border, background: bg, display: 'flex',
+                              flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
+                              padding: 6, cursor: 'pointer'
+                            }}
+                            title="Selecionar poção"
+                          >
+                            {opt ? (
+                              <>
+                                <img src={opt.image || opt.img} alt={opt.name} style={{ width: 28, height: 28, objectFit: 'contain', marginBottom: 6 }} />
+                                <span style={{ fontSize: 10, textAlign: 'center', color: '#374151' }}>{opt.name}</span>
+                              </>
+                            ) : (
+                              <span style={{ fontSize: 11, color: '#6b7280', textAlign: 'center' }}>
+                                Selecionar
+                              </span>
+                            )}
+                          </button>
+                        );
+                      })}
+                    </div>
+                    {potionPickerIndex !== null && (
+                      <div style={{ marginTop: 8, border: '1px solid #e5e7eb', background: '#ffffff', maxHeight: 240, overflow: 'auto' }}>
+                        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '6px 10px', borderBottom: '1px solid #e5e7eb', fontSize: 12, color: '#6b7280' }}>
+                          <span>Selecionar poção para o slot {potionPickerIndex + 1}</span>
+                          <button type="button" className="painel-modal-close" onClick={() => setPotionPickerIndex(null)}>×</button>
+                        </div>
+                        <button
+                          type="button"
+                          style={{ width: '100%', display: 'flex', alignItems: 'center', gap: 8, padding: '8px 10px', fontSize: 12, color: '#374151', borderBottom: '1px solid #f3f4f6' }}
+                          onClick={() => {
+                            setPotions((prev) => {
+                              const next = prev.slice();
+                              next[potionPickerIndex] = null;
+                              return next;
+                            });
+                            setPotionPickerIndex(null);
+                          }}
+                        >
+                          <div style={{ width: 24, height: 24, display: 'grid', placeItems: 'center', border: '1px solid #e5e7eb' }}>×</div>
+                          <span>Nenhuma poção</span>
+                        </button>
+                        {potionOptions.map((p) => (
+                          <button
+                            key={p.id}
+                            type="button"
+                            style={{ width: '100%', display: 'flex', alignItems: 'center', gap: 8, padding: '8px 10px', fontSize: 12, color: '#111827', borderBottom: '1px solid #f3f4f6' }}
+                            onClick={() => {
+                              setPotions((prev) => {
+                                const next = prev.slice();
+                                next[potionPickerIndex] = p.name;
+                                return next;
+                              });
+                              setPotionPickerIndex(null);
+                            }}
+                          >
+                            {(p.image || p.img) && (
+                              <img src={p.image || p.img} alt={p.name} style={{ width: 24, height: 24, objectFit: 'contain' }} />
+                            )}
+                            <span>{p.name}</span>
+                          </button>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                  <div style={{ marginTop: 16 }}>
+                    <label className="painel-login-label">Mercenário</label>
+                    <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+                      {[
+                        {
+                          id: 'knight',
+                          name: 'Knight',
+                          image: 'https://static.wikia.nocookie.net/herosiege/images/f/f0/Melee_Mercenary.gif'
+                        },
+                        {
+                          id: 'archer',
+                          name: 'Archer',
+                          image: 'https://static.wikia.nocookie.net/herosiege/images/d/d9/Ranged_Mercenary.gif'
+                        },
+                        {
+                          id: 'magister',
+                          name: 'Magister',
+                          image: 'https://static.wikia.nocookie.net/herosiege/images/b/be/Spell_Mercenary.gif'
+                        }
+                      ].map((m) => {
+                        const selected = mercenary === m.id;
+                        return (
+                          <button
+                            key={m.id}
+                            type="button"
+                            onClick={() => setMercenary(selected ? '' : m.id)}
+                            style={{
+                              width: 110,
+                              height: 90,
+                              border: selected ? '1px solid #f59e0b' : '1px solid #e5e7eb',
+                              background: selected ? '#fff7ed' : '#f9fafb',
+                              display: 'flex',
+                              flexDirection: 'column',
+                              alignItems: 'center',
+                              justifyContent: 'center',
+                              padding: 6,
+                              cursor: 'pointer'
+                            }}
+                            title={m.name}
+                          >
+                            <img src={m.image} alt={m.name} style={{ width: 32, height: 32, objectFit: 'contain', marginBottom: 6 }} />
+                            <span style={{ fontSize: 11, textAlign: 'center', color: '#374151' }}>{m.name}</span>
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </div>
                 </div>
                 <div className="painel-row" style={{ marginTop: 12, justifyContent: 'flex-end' }}>
                   <button type="button" className="painel-button" onClick={clearForm}>Limpar</button>
@@ -1040,6 +1202,59 @@ function PainelForum() {
                           </div>
                         );
                       })}
+                    </div>
+                  </div>
+                ) : null}
+                {potions.some((p) => p) ? (
+                  <div style={{ marginTop: 8 }}>
+                    <div className="painel-login-label" style={{ marginBottom: 6 }}>Poções</div>
+                    <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+                      {potions.map((name, idx) => {
+                        if (!name) return null;
+                        const opt = potionOptions.find((p) => p.name === name);
+                        return (
+                          <div key={`${name}-${idx}`} style={{ display: 'flex', alignItems: 'center', gap: 6, border: '1px solid #e5e7eb', padding: '4px 6px', background: '#f9fafb' }}>
+                            {(opt?.image || opt?.img) && (
+                              <img src={opt.image || opt.img} alt={name} style={{ width: 18, height: 18, objectFit: 'contain' }} />
+                            )}
+                            <span style={{ fontSize: 11 }}>{name}</span>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
+                ) : null}
+                {mercenary ? (
+                  <div style={{ marginTop: 8 }}>
+                    <div className="painel-login-label" style={{ marginBottom: 6 }}>Mercenário</div>
+                    <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+                      {(() => {
+                        const all = [
+                          {
+                            id: 'knight',
+                            name: 'Knight',
+                            image: 'https://static.wikia.nocookie.net/herosiege/images/f/f0/Melee_Mercenary.gif'
+                          },
+                          {
+                            id: 'archer',
+                            name: 'Archer',
+                            image: 'https://static.wikia.nocookie.net/herosiege/images/d/d9/Ranged_Mercenary.gif'
+                          },
+                          {
+                            id: 'magister',
+                            name: 'Magister',
+                            image: 'https://static.wikia.nocookie.net/herosiege/images/b/be/Spell_Mercenary.gif'
+                          }
+                        ];
+                        const info = all.find((m) => m.id === mercenary);
+                        if (!info) return null;
+                        return (
+                          <div style={{ display: 'flex', alignItems: 'center', gap: 6, border: '1px solid #e5e7eb', padding: '4px 6px', background: '#f9fafb' }}>
+                            <img src={info.image} alt={info.name} style={{ width: 18, height: 18, objectFit: 'contain' }} />
+                            <span style={{ fontSize: 11 }}>{info.name}</span>
+                          </div>
+                        );
+                      })()}
                     </div>
                   </div>
                 ) : null}
