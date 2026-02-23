@@ -12,6 +12,7 @@ import MercenariosPage from './MercenariosPage';
 import MineracaoPage from './MineracaoPage';
 import ChavesPage from './ChavesPage';
 import GemasJoiasPage from './GemasJoiasPage';
+import CharmsPage from './CharmsPage';
 
 const TWITCH_CONTAINER_ID = 'twitch-embed-spacezone';
 
@@ -270,6 +271,7 @@ const NewDesign = ({ onBack, initialView = 'home' }) => {
     else if (currentView === 'keys') title = 'Chaves | Hero Siege Brasil';
     else if (currentView === 'quests') title = 'Quests | Hero Siege Brasil';
     else if (currentView === 'gems') title = 'Gemas e Jóias | Hero Siege Brasil';
+    else if (currentView === 'charms') title = 'Charms | Hero Siege Brasil';
     else if (currentView === 'builder') {
       const cls = builderClass || 'Viking';
       title = `Builder ${cls} | Hero Siege Brasil`;
@@ -293,6 +295,7 @@ const NewDesign = ({ onBack, initialView = 'home' }) => {
     else if (currentView === 'keys') path = '/chaves';
     else if (currentView === 'quests') path = '/quests';
     else if (currentView === 'gems') path = '/gems';
+    else if (currentView === 'charms') path = '/charms';
     else if (currentView === 'builder') path = '/builder';
     else if (currentView === 'contact') path = '/contato';
     else if (currentView === 'blog') {
@@ -609,6 +612,7 @@ const NewDesign = ({ onBack, initialView = 'home' }) => {
     else if (view === 'mercenaries') navigate('/mercenarios');
     else if (view === 'mining') navigate('/mineracao');
     else if (view === 'quests') navigate('/quests');
+    else if (view === 'charms') navigate('/charms');
     else if (view === 'builder') navigate('/builder');
     else if (view === 'contact') navigate('/contato');
     else if (view === 'blog') navigate('/blog');
@@ -2248,6 +2252,12 @@ const NewDesign = ({ onBack, initialView = 'home' }) => {
                 >
                   Gemas e Jóias
                 </button>
+                <button
+                  onClick={() => { navigateToView('charms'); setIsDbOpen(false); }}
+                  className={`block w-full text-left px-4 py-2 text-xs font-bold uppercase tracking-widest hover:bg-white/5 ${currentView === 'charms' ? 'text-orange-500' : 'text-gray-400 hover:text-white'}`}
+                >
+                  Charms
+                </button>
               </div>
             </div>
             <button onClick={() => { setSelectedBlogPost(null); navigateToView('blog'); }} className={`transition-colors ${currentView === 'blog' ? 'text-orange-500' : 'hover:text-white'}`}>Blog</button>
@@ -3547,6 +3557,10 @@ const NewDesign = ({ onBack, initialView = 'home' }) => {
 
                 {(currentView === 'gems') && (
                   <GemasJoiasPage />
+                )}
+
+                {(currentView === 'charms') && (
+                  <CharmsPage />
                 )}
 
                 {(currentView === 'quests') && (
