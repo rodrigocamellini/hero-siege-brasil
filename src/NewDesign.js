@@ -16,6 +16,8 @@ import CharmsPage from './CharmsPage';
 
 const TWITCH_CONTAINER_ID = 'twitch-embed-spacezone';
 
+const ALL_RELICS = [...PASSIVE_RELICS, ...EXTRA_RELICS];
+
 const relicImageFor = (rel) => {
   if (rel && rel.img) return normalizeRelicImageUrl(rel.img);
   const safeName = String(rel?.name || '')
@@ -25,6 +27,7 @@ const relicImageFor = (rel) => {
 };
 
 const CLASS_DATA = [
+  { name: 'Prophet', type: 'MAGIC', destacado: true },
   { name: 'Viking', type: 'MELEE' },
   { name: 'Pyromancer', type: 'MAGIC' },
   { name: 'Marksman', type: 'RANGED' },
@@ -253,9 +256,12 @@ const NewDesign = ({ onBack, initialView = 'home' }) => {
   const [potionOptions, setPotionOptions] = useState([]);
   const [homepageMode, setHomepageMode] = useState('fixed');
   const [homepageFeaturedClass, setHomepageFeaturedClass] = useState(null);
-  const [homepageRandomIndex, setHomepageRandomIndex] = useState(() =>
-    CLASS_DATA.length ? Math.floor(Math.random() * CLASS_DATA.length) : 0
-  );
+  const [homepageRandomIndex, setHomepageRandomIndex] = useState(() => {
+    // If there is a Prophet class (new), we want it to be the first one shown when in random mode
+    const prophetIndex = CLASS_DATA.findIndex(c => c.name === 'Prophet');
+    if (prophetIndex >= 0) return prophetIndex;
+    return CLASS_DATA.length ? Math.floor(Math.random() * CLASS_DATA.length) : 0;
+  });
   const [homepageRotationSeconds, setHomepageRotationSeconds] = useState(15);
 
   const relicOptions = useMemo(() => {
@@ -2851,7 +2857,11 @@ const NewDesign = ({ onBack, initialView = 'home' }) => {
                         </button>
                       </div>
                       <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
-                        {CLASS_DATA.map((c) => {
+                        {[...CLASS_DATA].sort((a, b) => {
+                          if (a.name === 'Prophet') return 1;
+                          if (b.name === 'Prophet') return -1;
+                          return 0;
+                        }).map((c) => {
                           const selected = forumSelectedClass === c.name;
                           const slug = slugifyClass(c.name);
                           const count = buildCountsByForum[slug] || 0;
@@ -2894,6 +2904,11 @@ const NewDesign = ({ onBack, initialView = 'home' }) => {
                                 </div>
                               </div>
                               <div className="mt-2 flex items-end justify-end text-[10px] text-gray-500">
+                                {c.name === 'Prophet' && (
+                                  <span className="mr-2 px-2 py-0.5 rounded-full bg-purple-500/20 text-purple-400 font-semibold animate-pulse">
+                                    Nova Classe
+                                  </span>
+                                )}
                                 {selected && (
                                   <span className="px-2 py-0.5 rounded-full bg-orange-500/20 text-orange-400 font-semibold">
                                     Aberto
@@ -3211,7 +3226,7 @@ const NewDesign = ({ onBack, initialView = 'home' }) => {
                             const relicItems = relicSlots
                               .map((name, idx) => {
                                 if (!name) return null;
-                                const base = PASSIVE_RELICS.find((r) => r.name === name);
+                                const base = ALL_RELICS.find((r) => r.name === name);
                                 if (!base) return null;
                                 return {
                                   key: `${name}-${idx}`,
@@ -3601,7 +3616,7 @@ const NewDesign = ({ onBack, initialView = 'home' }) => {
                                   <div className="flex flex-wrap gap-2">
                                     {nbRelics.map((name, idx) => {
                                       const isQuestSlot = idx === 4;
-                                      const rel = name ? PASSIVE_RELICS.find((r) => r.name === name) : null;
+                                      const rel = name ? ALL_RELICS.find((r) => r.name === name) : null;
                                       const img = rel ? relicImageFor(rel) : null;
                                       const borderColor = isQuestSlot ? 'border-red-500/60' : 'border-white/20';
                                       const bgColor = isQuestSlot ? 'bg-red-900/30' : 'bg-black/30';
@@ -3893,7 +3908,7 @@ const NewDesign = ({ onBack, initialView = 'home' }) => {
                                 const relicItems = relicSlots
                                   .map((name, idx) => {
                                     if (!name) return null;
-                                    const base = PASSIVE_RELICS.find((r) => r.name === name);
+                                    const base = ALL_RELICS.find((r) => r.name === name);
                                     if (!base) return null;
                                     return {
                                       key: `${name}-${idx}`,

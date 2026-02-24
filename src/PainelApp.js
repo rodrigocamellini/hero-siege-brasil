@@ -1,6 +1,7 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import app, { db } from './firebase';
 import { PASSIVE_RELICS, EXTRA_RELICS, normalizeRelicImageUrl } from './RelicsView';
+import { CHARM_DB } from './CharmsPage';
 import {
   getAuth,
   onAuthStateChanged,
@@ -24,6 +25,7 @@ const ALLOWED_EMAIL = 'rodrigo@dev.com';
 const ALLOWED_UID = 'hfsHCehqYgen7OAfXUYl58fEPo02';
 
 const KNOWN_CLASSES = [
+  'Prophet',
   'Viking',
   'Pyromancer',
   'Marksman',
@@ -623,6 +625,8 @@ function PainelForum() {
   const [potions, setPotions] = useState([null, null, null, null]);
   const [potionPickerIndex, setPotionPickerIndex] = useState(null);
   const [potionOptions, setPotionOptions] = useState([]);
+  const [charms, setCharms] = useState([]);
+  const [charmPickerIndex, setCharmPickerIndex] = useState(null);
   const [mercenary, setMercenary] = useState('');
 
   const relicOptions = useMemo(() => {
@@ -708,6 +712,7 @@ function PainelForum() {
     setMsg('');
     setRelics([null, null, null, null, null]);
     setPotions([null, null, null, null]);
+    setCharms([]);
     setMercenary('');
   };
 
@@ -751,6 +756,7 @@ function PainelForum() {
       nextPotions[i] = docPotions[i] || null;
     }
     setPotions(nextPotions);
+    setCharms(Array.isArray(docObj.charms) ? docObj.charms : []);
     setMercenary(docObj.mercenary || '');
     setStatus(docObj.status || 'draft');
     setMsg(`Editando: ${docObj.title || docObj.id}`);
@@ -794,6 +800,7 @@ function PainelForum() {
       updatedAt: serverTimestamp(),
       relics: Array.isArray(relics) ? relics.map((r) => (r || null)) : [null, null, null, null, null],
       potions: Array.isArray(potions) ? potions.map((p) => (p || null)) : [null, null, null, null],
+      charms: Array.isArray(charms) ? charms : [],
       mercenary: mercenary || null,
     };
     try {
@@ -1125,6 +1132,103 @@ function PainelForum() {
                     )}
                   </div>
                   <div style={{ marginTop: 16 }}>
+                    <label className="painel-login-label">Charms</label>
+                    <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+                      {[...charms, null].map((name, idx) => {
+                        const isAddSlot = !name;
+                        const charm = (name && Array.isArray(CHARM_DB)) ? CHARM_DB.find((c) => c.name === name) : null;
+                        
+                        let borderColor = '#e5e7eb';
+                        let bgColor = '#f9fafb';
+                        
+                        if (charm) {
+                          const r = (charm.rarity || '').toUpperCase();
+                          if (r === 'SATANIC') { borderColor = '#dc2626'; bgColor = '#fef2f2'; }
+                          else if (r.includes('SET')) { borderColor = '#16a34a'; bgColor = '#f0fdf4'; }
+                          else if (r === 'ANGELIC') { borderColor = '#0ea5e9'; bgColor = '#f0f9ff'; }
+                          else if (r === 'MYTHIC') { borderColor = '#9333ea'; bgColor = '#faf5ff'; }
+                          else if (r === 'LEGENDARY') { borderColor = '#d97706'; bgColor = '#fffbeb'; }
+                          else if (r === 'RARE') { borderColor = '#ca8a04'; bgColor = '#fefce8'; }
+                          else if (r === 'MAGIC') { borderColor = '#2563eb'; bgColor = '#eff6ff'; }
+                        }
+
+                        return (
+                          <button
+                            key={idx}
+                            type="button"
+                            onClick={() => setCharmPickerIndex(idx)}
+                            style={{
+                              width: 90, height: 90, border: isAddSlot ? '1px dashed #e5e7eb' : `1px solid ${borderColor}`, background: bgColor, display: 'flex',
+                              flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
+                              padding: 6, cursor: 'pointer', position: 'relative'
+                            }}
+                            title={isAddSlot ? 'Adicionar Charm' : charm?.name}
+                          >
+                            {charm ? (
+                              <>
+                                <img 
+                                  src={`https://herosiege.wiki.gg/images/${charm.file}`} 
+                                  alt={charm.name} 
+                                  style={{ width: 28, height: 28, objectFit: 'contain', marginBottom: 6 }} 
+                                />
+                                <span style={{ fontSize: 10, textAlign: 'center', color: '#374151', lineHeight: 1.1 }}>{charm.name}</span>
+                              </>
+                            ) : (
+                              <span style={{ fontSize: 18, color: '#9ca3af', fontWeight: 'bold' }}>+</span>
+                            )}
+                          </button>
+                        );
+                      })}
+                    </div>
+                    {charmPickerIndex !== null && (
+                      <div style={{ marginTop: 8, border: '1px solid #e5e7eb', background: '#ffffff', maxHeight: 240, overflow: 'auto' }}>
+                        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '6px 10px', borderBottom: '1px solid #e5e7eb', fontSize: 12, color: '#6b7280' }}>
+                          <span>{charmPickerIndex < charms.length ? 'Trocar Charm' : 'Adicionar Charm'}</span>
+                          <button type="button" className="painel-modal-close" onClick={() => setCharmPickerIndex(null)}>×</button>
+                        </div>
+                        {charmPickerIndex < charms.length && (
+                          <button
+                            type="button"
+                            style={{ width: '100%', display: 'flex', alignItems: 'center', gap: 8, padding: '8px 10px', fontSize: 12, color: '#ef4444', borderBottom: '1px solid #f3f4f6' }}
+                            onClick={() => {
+                              setCharms((prev) => {
+                                const next = [...prev];
+                                next.splice(charmPickerIndex, 1);
+                                return next;
+                              });
+                              setCharmPickerIndex(null);
+                            }}
+                          >
+                            <div style={{ width: 24, height: 24, display: 'grid', placeItems: 'center', border: '1px solid #e5e7eb' }}>×</div>
+                            <span>Remover Charm</span>
+                          </button>
+                        )}
+                        {(Array.isArray(CHARM_DB) ? CHARM_DB : []).map((c) => (
+                          <button
+                            key={c.name}
+                            type="button"
+                            style={{ width: '100%', display: 'flex', alignItems: 'center', gap: 8, padding: '8px 10px', fontSize: 12, color: '#111827', borderBottom: '1px solid #f3f4f6' }}
+                            onClick={() => {
+                              setCharms((prev) => {
+                                const next = [...prev];
+                                if (charmPickerIndex < next.length) {
+                                  next[charmPickerIndex] = c.name;
+                                } else {
+                                  next.push(c.name);
+                                }
+                                return next;
+                              });
+                              setCharmPickerIndex(null);
+                            }}
+                          >
+                            <img src={`https://herosiege.wiki.gg/images/${c.file}`} alt={c.name} style={{ width: 24, height: 24, objectFit: 'contain' }} />
+                            <span>{c.name}</span>
+                          </button>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                  <div style={{ marginTop: 16 }}>
                     <label className="painel-login-label">Mercenário</label>
                     <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
                       {[
@@ -1217,6 +1321,35 @@ function PainelForum() {
                             {(opt?.image || opt?.img) && (
                               <img src={opt.image || opt.img} alt={name} style={{ width: 18, height: 18, objectFit: 'contain' }} />
                             )}
+                            <span style={{ fontSize: 11 }}>{name}</span>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
+                ) : null}
+                {charms.length > 0 ? (
+                  <div style={{ marginTop: 8 }}>
+                    <div className="painel-login-label" style={{ marginBottom: 6 }}>Charms</div>
+                    <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+                      {charms.map((name, idx) => {
+                        const charm = CHARM_DB.find((c) => c.name === name);
+                        if (!charm) return null;
+                        
+                        let borderColor = '#e5e7eb';
+                        let bgColor = '#f9fafb';
+                        const r = (charm.rarity || '').toUpperCase();
+                        if (r === 'SATANIC') { borderColor = '#dc2626'; bgColor = '#fef2f2'; }
+                        else if (r.includes('SET')) { borderColor = '#16a34a'; bgColor = '#f0fdf4'; }
+                        else if (r === 'ANGELIC') { borderColor = '#0ea5e9'; bgColor = '#f0f9ff'; }
+                        else if (r === 'MYTHIC') { borderColor = '#9333ea'; bgColor = '#faf5ff'; }
+                        else if (r === 'LEGENDARY') { borderColor = '#d97706'; bgColor = '#fffbeb'; }
+                        else if (r === 'RARE') { borderColor = '#ca8a04'; bgColor = '#fefce8'; }
+                        else if (r === 'MAGIC') { borderColor = '#2563eb'; bgColor = '#eff6ff'; }
+
+                        return (
+                          <div key={`${name}-${idx}`} style={{ display: 'flex', alignItems: 'center', gap: 6, border: `1px solid ${borderColor}`, padding: '4px 6px', background: bgColor }}>
+                            <img src={`https://herosiege.wiki.gg/images/${charm.file}`} alt={name} style={{ width: 18, height: 18, objectFit: 'contain' }} />
                             <span style={{ fontSize: 11 }}>{name}</span>
                           </div>
                         );

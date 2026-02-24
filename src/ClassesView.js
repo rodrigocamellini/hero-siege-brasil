@@ -64,6 +64,11 @@ const ClassesView = ({
             onClick={() => onSelectClass(c.name)}
             className="group relative h-64 bg-[#151923] border border-white/5 overflow-hidden cursor-pointer hover:border-red-500/50 transition-all duration-300"
           >
+            {c.destacado && (
+              <div className="absolute top-2 right-2 z-30 bg-purple-600 text-white text-[10px] font-bold px-2 py-1 rounded uppercase tracking-wider shadow-lg animate-pulse">
+                Nova Classe
+              </div>
+            )}
             <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-transparent to-transparent z-10" />
             <img
               src={classImagePath(c.name)}

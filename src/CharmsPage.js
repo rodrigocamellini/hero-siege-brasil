@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 
-const CHARM_DB = [
+export const CHARM_DB = [
   {
     name: "Crow's Feather",
     size: [1, 1],
