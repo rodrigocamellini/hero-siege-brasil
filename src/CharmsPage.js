@@ -5,7 +5,7 @@ export const CHARM_DB = [
     name: "Crow's Feather",
     size: [1, 1],
     rarity: 'SATANIC',
-    file: 'Charms_Crows_Feather.png',
+    file: 'charms/Charms_Crows_Feather.png',
     tier: 'D',
     level: '1',
     stats: [
@@ -18,7 +18,7 @@ export const CHARM_DB = [
     name: "Viking's Glyphed Rune",
     size: [1, 1],
     rarity: 'SATANIC',
-    file: 'Charms_Vikings_Glyphed_Rune.png',
+    file: 'charms/Charms_Vikings_Glyphed_Rune.png',
     tier: 'S',
     level: '60',
     stats: [
@@ -31,7 +31,7 @@ export const CHARM_DB = [
     name: 'Beetle of Life',
     size: [1, 1],
     rarity: 'SATANIC',
-    file: 'Charms_Beetle_of_Life.png',
+    file: 'charms/Charms_Beetle_of_Life.png',
     tier: 'S',
     level: '60',
     stats: [
@@ -46,7 +46,7 @@ export const CHARM_DB = [
     name: 'Aztec Coin',
     size: [1, 1],
     rarity: 'SATANIC',
-    file: 'Charms_Aztec_Coin.png',
+    file: 'charms/Charms_Aztec_Coin.png',
     tier: 'S',
     level: '61',
     stats: [
@@ -61,7 +61,7 @@ export const CHARM_DB = [
     name: "Raider's Torch",
     size: [1, 1],
     rarity: 'SATANIC',
-    file: 'Charms_Raiders_Torch.png',
+    file: 'charms/Charms_Raiders_Torch.png',
     tier: 'S',
     level: '61',
     stats: [
@@ -74,7 +74,7 @@ export const CHARM_DB = [
     name: "Satan's Chalice",
     size: [1, 1],
     rarity: 'SATANIC',
-    file: 'Charms_Satans_Chalice.png',
+    file: 'charms/Charms_Satans_Chalice.png',
     tier: 'S',
     level: '62',
     stats: [
@@ -87,7 +87,7 @@ export const CHARM_DB = [
     name: 'Moonshard',
     size: [1, 1],
     rarity: 'SATANIC',
-    file: 'Charms_Moonshard.png',
+    file: 'charms/Charms_Moonshard.png',
     tier: 'S',
     level: '63',
     stats: [
@@ -99,7 +99,7 @@ export const CHARM_DB = [
     name: "Adventurer's Quiver",
     size: [1, 1],
     rarity: 'SATANIC',
-    file: 'Charms_Adventurers_Quiver.png',
+    file: 'charms/Charms_Adventurers_Quiver.png',
     tier: 'S',
     level: '64',
     stats: [
@@ -111,7 +111,7 @@ export const CHARM_DB = [
     name: 'Eye of Skadi',
     size: [1, 1],
     rarity: 'SATANIC',
-    file: 'Charms_Eye_of_Skadi.png',
+    file: 'charms/Charms_Eye_of_Skadi.png',
     tier: 'S',
     level: '65',
     stats: [
@@ -123,7 +123,7 @@ export const CHARM_DB = [
     name: 'Wind Token',
     size: [1, 1],
     rarity: 'SATANIC',
-    file: 'Charms_Wind_Token.png',
+    file: 'charms/Charms_Wind_Token.png',
     tier: 'S',
     level: '65',
     stats: [
@@ -135,7 +135,7 @@ export const CHARM_DB = [
     name: 'Apple of Evolution',
     size: [1, 1],
     rarity: 'SATANIC',
-    file: 'Charms_Apple_of_Evolution.png',
+    file: 'charms/Charms_Apple_of_Evolution.png',
     tier: 'S',
     level: '65',
     stats: [
@@ -147,7 +147,7 @@ export const CHARM_DB = [
     name: 'Witches Claw',
     size: [1, 2],
     rarity: 'SATANIC',
-    file: 'Charms_Witches_Claw.png',
+    file: 'charms/Charms_Witches_Claw.png',
     tier: 'S',
     level: '65',
     stats: [
@@ -160,7 +160,7 @@ export const CHARM_DB = [
     name: 'Solar Charm',
     size: [1, 1],
     rarity: 'SATANIC',
-    file: 'Charms_Solar_Charm.png',
+    file: 'charms/Charms_Solar_Charm.png',
     tier: 'S',
     level: '67',
     stats: [
@@ -172,7 +172,7 @@ export const CHARM_DB = [
     name: 'Bag of Unknown Riches',
     size: [1, 1],
     rarity: 'SATANIC',
-    file: 'Charms_Bag_of_Unknown_Riches.png',
+    file: 'charms/Charms_Bag_of_Unknown_Riches.png',
     tier: 'S',
     level: '68',
     stats: [
@@ -186,7 +186,7 @@ export const CHARM_DB = [
     name: 'Annihilator',
     size: [1, 1],
     rarity: 'SATANIC',
-    file: 'Charms_Annihilator.png',
+    file: 'charms/Charms_Annihilator.png',
     tier: 'SS',
     level: '72',
     stats: [
@@ -200,7 +200,7 @@ export const CHARM_DB = [
     name: 'Spine Trophy',
     size: [1, 1],
     rarity: 'SATANIC',
-    file: 'Charms_Spine_Trophy.png',
+    file: 'charms/Charms_Spine_Trophy.png',
     tier: 'S',
     level: '74',
     stats: [
@@ -214,7 +214,7 @@ export const CHARM_DB = [
     name: "Jack's Pumpkin Spice",
     size: [1, 1],
     rarity: 'SATANIC',
-    file: 'Charms_Jacks_Pumpkin_Spice.png',
+    file: 'charms/Charms_Jacks_Pumpkin_Spice.png',
     tier: 'S',
     level: '75',
     stats: [
@@ -227,7 +227,7 @@ export const CHARM_DB = [
     name: 'Mark of the Black Knight',
     size: [1, 1],
     rarity: 'SATANIC',
-    file: 'Charms_Mark_of_the_Black_Knight.png',
+    file: 'charms/Charms_Mark_of_the_Black_Knight.png',
     tier: 'S',
     level: '77',
     stats: [
@@ -240,7 +240,7 @@ export const CHARM_DB = [
     name: "Cold Giant's Charm",
     size: [1, 1],
     rarity: 'SATANIC',
-    file: 'Charms_Cold_Giants_Charm.png',
+    file: 'charms/Charms_Cold_Giants_Charm.png',
     tier: 'S',
     level: '77',
     stats: [
@@ -252,7 +252,7 @@ export const CHARM_DB = [
     name: 'Hardened Steel Defender',
     size: [1, 1],
     rarity: 'SATANIC',
-    file: 'Charms_Hardened_Steel_Defender.png',
+    file: 'charms/Charms_Hardened_Steel_Defender.png',
     tier: 'S',
     level: '81',
     stats: [
@@ -264,7 +264,7 @@ export const CHARM_DB = [
     name: 'Shrunken Head',
     size: [1, 1],
     rarity: 'SATANIC',
-    file: 'Charms_Shrunken_Head.png',
+    file: 'charms/Charms_Shrunken_Head.png',
     tier: 'S',
     level: '83',
     stats: [
@@ -276,7 +276,7 @@ export const CHARM_DB = [
     name: "Anubis' Ankh Charm",
     size: [2, 3],
     rarity: 'SATANIC',
-    file: 'Charms_Anubis_Ankh_Charm.png',
+    file: 'charms/Charms_Anubis_Ankh_Charm.png',
     tier: 'S',
     level: '87',
     stats: [
@@ -289,7 +289,7 @@ export const CHARM_DB = [
     name: 'Plague Shot',
     size: [2, 1],
     rarity: 'SATANIC',
-    file: 'Charms_Plague_Shot.png',
+    file: 'charms/Charms_Plague_Shot.png',
     tier: 'SS',
     level: '92',
     stats: ['+[4-12] em [Booster Shot]']
@@ -298,7 +298,7 @@ export const CHARM_DB = [
     name: "Sassy's Dislocated Foot",
     size: [1, 3],
     rarity: 'SATANIC',
-    file: 'Charms_Sassys_Dislocated_Foot.png',
+    file: 'charms/Charms_Sassys_Dislocated_Foot.png',
     tier: 'SS',
     level: '100',
     stats: [
@@ -314,7 +314,7 @@ export const CHARM_DB = [
     name: 'Hello its me, Steve!',
     size: [2, 2],
     rarity: 'SET',
-    file: 'Charms_Hello_its_me%2C_Steve%21.png',
+    file: 'charms/Charms_Hello_its_me%2C_Steve%21.png',
     tier: 'S',
     level: '56',
     stats: ['+[12-25] em Todos os Atributos']
@@ -323,7 +323,7 @@ export const CHARM_DB = [
     name: 'Barrel of Explosives',
     size: [2, 2],
     rarity: 'SET',
-    file: 'Charms_Barrel_of_Explosives.png',
+    file: 'charms/Charms_Barrel_of_Explosives.png',
     tier: 'SS',
     level: '57',
     stats: ['Dano de Explosão aumentado em [15-40]%']
@@ -332,7 +332,7 @@ export const CHARM_DB = [
     name: 'The Detonator',
     size: [1, 2],
     rarity: 'SET',
-    file: 'Charms_The_Detonator.png',
+    file: 'charms/Charms_The_Detonator.png',
     tier: 'SS',
     level: '58',
     stats: ['+[3-8] em Habilidades de Explosão']
@@ -341,7 +341,7 @@ export const CHARM_DB = [
     name: "Death Lord's Zombie Head",
     size: [1, 1],
     rarity: 'SET',
-    file: 'Charms_Death_Lords_Zombie_Head.png',
+    file: 'charms/Charms_Death_Lords_Zombie_Head.png',
     tier: 'S',
     level: '62',
     stats: ['+[1-3] em Habilidade Aleatória']
@@ -350,7 +350,7 @@ export const CHARM_DB = [
     name: 'Heart of Agony',
     size: [1, 1],
     rarity: 'SET',
-    file: 'Charms_Heart_of_Agony.png',
+    file: 'charms/Charms_Heart_of_Agony.png',
     tier: 'S',
     level: '64',
     stats: ['+[1-3] em Habilidade Aleatória']
@@ -359,7 +359,7 @@ export const CHARM_DB = [
     name: "Redneck's Keychain",
     size: [1, 1],
     rarity: 'SET',
-    file: 'Charms_Rednecks_Keychain.png',
+    file: 'charms/Charms_Rednecks_Keychain.png',
     tier: 'S',
     level: '65',
     stats: ['+[1-3] em Habilidade Aleatória']
@@ -368,7 +368,7 @@ export const CHARM_DB = [
     name: 'Aztec Devil',
     size: [1, 1],
     rarity: 'SET',
-    file: 'Charms_Aztec_Devil.png',
+    file: 'charms/Charms_Aztec_Devil.png',
     tier: 'S',
     level: '65',
     stats: ['+[1-3] em Habilidade Aleatória']
@@ -377,7 +377,7 @@ export const CHARM_DB = [
     name: "Damien's Cage",
     size: [2, 2],
     rarity: 'SET',
-    file: 'Charms_Damiens_Cage.png',
+    file: 'charms/Charms_Damiens_Cage.png',
     tier: 'S',
     level: '65',
     stats: [
@@ -390,7 +390,7 @@ export const CHARM_DB = [
     name: "Marksman's Quiver",
     size: [1, 1],
     rarity: 'SET',
-    file: 'Charms_Marksmans_Quiver.png',
+    file: 'charms/Charms_Marksmans_Quiver.png',
     tier: 'S',
     level: '66',
     stats: ['+[1-3] em Habilidade Aleatória']
@@ -399,7 +399,7 @@ export const CHARM_DB = [
     name: "Doctor's Mask in a Jar",
     size: [1, 1],
     rarity: 'SET',
-    file: 'Charms_Doctors_Mask_in_a_Jar.png',
+    file: 'charms/Charms_Doctors_Mask_in_a_Jar.png',
     tier: 'S',
     level: '67',
     stats: ['+[1-3] em Habilidade Aleatória']
@@ -408,7 +408,7 @@ export const CHARM_DB = [
     name: "Pirate Captain's Flag",
     size: [2, 2],
     rarity: 'SET',
-    file: 'Charms_Pirate_Captains_Flag.png',
+    file: 'charms/Charms_Pirate_Captains_Flag.png',
     tier: 'S',
     level: '68',
     stats: ['+[1-3] em Habilidade Aleatória']
@@ -417,7 +417,7 @@ export const CHARM_DB = [
     name: 'Sacred Owl',
     size: [1, 3],
     rarity: 'SET',
-    file: 'Charms_Sacred_Owl.png',
+    file: 'charms/Charms_Sacred_Owl.png',
     tier: 'S',
     level: '68',
     stats: ['+[1-3] em Habilidade Aleatória']
@@ -426,7 +426,7 @@ export const CHARM_DB = [
     name: 'Flaming Coin',
     size: [1, 1],
     rarity: 'SET',
-    file: 'Charms_Flaming_Coin.png',
+    file: 'charms/Charms_Flaming_Coin.png',
     tier: 'S',
     level: '69',
     stats: ['+[1-3] to Random Skill']
@@ -435,7 +435,7 @@ export const CHARM_DB = [
     name: "Plunderer's Gunpowder Bag",
     size: [1, 1],
     rarity: 'SET',
-    file: 'Charms_Plunderers_Gunpowder_Bag.png',
+    file: 'charms/Charms_Plunderers_Gunpowder_Bag.png',
     tier: 'S',
     level: '72',
     stats: ['+[1-3] to Random Skill']
@@ -444,7 +444,7 @@ export const CHARM_DB = [
     name: "Champion's Signet",
     size: [1, 1],
     rarity: 'SET',
-    file: 'Charms_Champions_Signet.png',
+    file: 'charms/Charms_Champions_Signet.png',
     tier: 'S',
     level: '73',
     stats: ['+[1-3] to Random Skill']
@@ -453,7 +453,7 @@ export const CHARM_DB = [
     name: "Bone Conjurer's Trophy",
     size: [1, 1],
     rarity: 'SET',
-    file: 'Charms_Bone_Conjurers_Trophy.png',
+    file: 'charms/Charms_Bone_Conjurers_Trophy.png',
     tier: 'S',
     level: '74',
     stats: ['+[1-3] to Random Skill']
@@ -462,7 +462,7 @@ export const CHARM_DB = [
     name: "Zealot's Beads of Destruction",
     size: [1, 1],
     rarity: 'SET',
-    file: 'Charms_Zealots_Beads_of_Destruction.png',
+    file: 'charms/Charms_Zealots_Beads_of_Destruction.png',
     tier: 'S',
     level: '76',
     stats: ['+[1-3] to Random Skill']
@@ -471,7 +471,7 @@ export const CHARM_DB = [
     name: "Sheep King's Wool",
     size: [1, 1],
     rarity: 'SET',
-    file: 'Charms_Sheep_Kings_Wool.png',
+    file: 'charms/Charms_Sheep_Kings_Wool.png',
     tier: 'S',
     level: '77',
     stats: [
@@ -483,7 +483,7 @@ export const CHARM_DB = [
     name: "Engineer's Mini Drone",
     size: [1, 1],
     rarity: 'SET',
-    file: 'Charms_Engineers_Mini_Drone.png',
+    file: 'charms/Charms_Engineers_Mini_Drone.png',
     tier: 'S',
     level: '78',
     stats: ['+[1-3] em Habilidade Aleatória']
@@ -492,7 +492,7 @@ export const CHARM_DB = [
     name: "Abomination's Eye",
     size: [1, 1],
     rarity: 'SET',
-    file: 'Charms_Abominations_Eye.png',
+    file: 'charms/Charms_Abominations_Eye.png',
     tier: 'SS',
     level: '78',
     stats: [
@@ -504,7 +504,7 @@ export const CHARM_DB = [
     name: "Abomination's Brain",
     size: [1, 1],
     rarity: 'SET',
-    file: 'Charms_Abominations_Brain.png',
+    file: 'charms/Charms_Abominations_Brain.png',
     tier: 'SS',
     level: '84',
     stats: [
@@ -516,7 +516,7 @@ export const CHARM_DB = [
     name: 'Canopic Jar of Blood',
     size: [1, 2],
     rarity: 'SET',
-    file: 'Charms_Canopic_Jar_of_Blood.png',
+    file: 'charms/Charms_Canopic_Jar_of_Blood.png',
     tier: 'S',
     level: '85',
     stats: [
@@ -528,7 +528,7 @@ export const CHARM_DB = [
     name: "Traveler's Map Journal",
     size: [2, 1],
     rarity: 'SET',
-    file: 'Charms_Travelers_Map_Journal.png',
+    file: 'charms/Charms_Travelers_Map_Journal.png',
     tier: 'S',
     level: '89',
     stats: [
@@ -541,7 +541,7 @@ export const CHARM_DB = [
     name: 'Sundial of Ancient Worlds',
     size: [1, 1],
     rarity: 'SET',
-    file: 'Charms_Sundial_of_Ancient_Worlds.png',
+    file: 'charms/Charms_Sundial_of_Ancient_Worlds.png',
     tier: 'S',
     level: '91',
     stats: [
@@ -554,7 +554,7 @@ export const CHARM_DB = [
     name: "Gurag's Heart Charm",
     size: [2, 3],
     rarity: 'SET',
-    file: 'Charms_Gurags_Heart_Charm.png',
+    file: 'charms/Charms_Gurags_Heart_Charm.png',
     tier: 'S',
     level: '91',
     stats: [
@@ -567,7 +567,7 @@ export const CHARM_DB = [
     name: "Tal's Deathskull",
     size: [1, 1],
     rarity: 'SET',
-    file: 'Charms_Tals_Deathskull.png',
+    file: 'charms/Charms_Tals_Deathskull.png',
     tier: 'S',
     level: '92',
     stats: [
@@ -581,7 +581,7 @@ export const CHARM_DB = [
     name: "Abomination's Heart",
     size: [1, 2],
     rarity: 'SET',
-    file: 'Charms_Abominations_Heart.png',
+    file: 'charms/Charms_Abominations_Heart.png',
     tier: 'SS',
     level: '95',
     stats: [
@@ -593,7 +593,7 @@ export const CHARM_DB = [
     name: 'Tablet of Awakening',
     size: [2, 2],
     rarity: 'HEROIC',
-    file: 'Charms_Tablet_of_Awakening.png',
+    file: 'charms/Charms_Tablet_of_Awakening.png',
     tier: 'SS',
     level: '75',
     stats: ['Engastes (1-4)']
@@ -602,7 +602,7 @@ export const CHARM_DB = [
     name: "Tarethiel's Ancient Wisdom",
     size: [1, 1],
     rarity: 'HEROIC',
-    file: 'Charms_Tarethiels_Ancient_Wisdom.png',
+    file: 'charms/Charms_Tarethiels_Ancient_Wisdom.png',
     tier: 'SS',
     level: '96',
     stats: [
@@ -615,7 +615,7 @@ export const CHARM_DB = [
     name: 'Loaded Dice',
     size: [1, 1],
     rarity: 'HEROIC',
-    file: 'Charms_Loaded_Dice.png',
+    file: 'charms/Charms_Loaded_Dice.png',
     tier: 'SS',
     level: '99',
     stats: [
@@ -627,7 +627,7 @@ export const CHARM_DB = [
     name: 'Torch of Shadows',
     size: [1, 2],
     rarity: 'HEROIC',
-    file: 'Charms_Torch_of_Shadows.png',
+    file: 'charms/Charms_Torch_of_Shadows.png',
     tier: 'SS',
     level: '100',
     stats: [
@@ -642,7 +642,7 @@ export const CHARM_DB = [
     name: "Torstein's Anvil",
     size: [2, 2],
     rarity: 'HEROIC',
-    file: 'Charms_Torsteins_Anvil.png',
+    file: 'charms/Charms_Torsteins_Anvil.png',
     tier: 'SS',
     level: '100',
     stats: [
@@ -657,7 +657,7 @@ export const CHARM_DB = [
     name: 'Eye of Rakhul',
     size: [1, 1],
     rarity: 'HEROIC',
-    file: 'Charms_Eye_of_Rakhul.png',
+    file: 'charms/Charms_Eye_of_Rakhul.png',
     tier: 'SS',
     level: '100',
     stats: [
@@ -672,7 +672,7 @@ export const CHARM_DB = [
     name: 'Chaos Gemstone',
     size: [2, 2],
     rarity: 'HEROIC',
-    file: 'Charms_Chaos_Gemstone.png',
+    file: 'charms/Charms_Chaos_Gemstone.png',
     tier: 'SS',
     level: '100',
     stats: [
@@ -686,7 +686,7 @@ export const CHARM_DB = [
     name: 'Gas Canister',
     size: [1, 2],
     rarity: 'HEROIC',
-    file: 'Charms_Gas_Canister.png',
+    file: 'charms/Charms_Gas_Canister.png',
     tier: 'SS',
     level: '100',
     stats: [
@@ -699,7 +699,7 @@ export const CHARM_DB = [
     name: 'Fulgurite',
     size: [1, 1],
     rarity: 'HEROIC',
-    file: 'Charms_Fulgurite.png',
+    file: 'charms/Charms_Fulgurite.png',
     tier: 'SS',
     level: '100',
     stats: [
@@ -713,7 +713,7 @@ export const CHARM_DB = [
     name: "Lilith's Wrath",
     size: [2, 2],
     rarity: 'UNHOLY',
-    file: 'Charms_Liliths_Wrath.png',
+    file: 'charms/Charms_Liliths_Wrath.png',
     tier: 'SS',
     level: '100',
     stats: [
@@ -727,7 +727,7 @@ export const CHARM_DB = [
     name: 'Finger of Despair',
     size: [1, 1],
     rarity: 'UNHOLY',
-    file: 'Charms_Finger_of_Despair.png',
+    file: 'charms/Charms_Finger_of_Despair.png',
     tier: 'SS',
     level: '100',
     stats: [
@@ -745,7 +745,7 @@ export const CHARM_DB = [
     name: "Sobek's Fall",
     size: [3, 1],
     rarity: 'UNHOLY',
-    file: 'Charms_Sobeks_Fall.png',
+    file: 'charms/Charms_Sobeks_Fall.png',
     tier: 'SS',
     level: '100',
     stats: [
@@ -761,7 +761,7 @@ export const CHARM_DB = [
     name: 'Arcane Pumpkin',
     size: [2, 2],
     rarity: 'ANGELIC',
-    file: 'Charms_Arcane_Pumpkin.png',
+    file: 'charms/Charms_Arcane_Pumpkin.png',
     tier: 'SS',
     level: '94',
     stats: [
@@ -776,7 +776,7 @@ export const CHARM_DB = [
     name: 'Fire Melon',
     size: [2, 2],
     rarity: 'ANGELIC',
-    file: 'Charms_Fire_Melon.png',
+    file: 'charms/Charms_Fire_Melon.png',
     tier: 'SS',
     level: '94',
     stats: [
@@ -791,7 +791,7 @@ export const CHARM_DB = [
     name: 'Earth Melon',
     size: [2, 2],
     rarity: 'ANGELIC',
-    file: 'Charms_Earth_Melon.png',
+    file: 'charms/Charms_Earth_Melon.png',
     tier: 'SS',
     level: '94',
     stats: [
@@ -805,7 +805,7 @@ export const CHARM_DB = [
     name: 'Water Melon',
     size: [2, 2],
     rarity: 'ANGELIC',
-    file: 'Charms_Water_Melon.png',
+    file: 'charms/Charms_Water_Melon.png',
     tier: 'SS',
     level: '94',
     stats: [
@@ -820,7 +820,7 @@ export const CHARM_DB = [
     name: 'Air Melon',
     size: [2, 2],
     rarity: 'ANGELIC',
-    file: 'Charms_Air_Melon.png',
+    file: 'charms/Charms_Air_Melon.png',
     tier: 'SS',
     level: '94',
     stats: [
@@ -835,7 +835,7 @@ export const CHARM_DB = [
     name: 'Rotten Pumpkin',
     size: [2, 2],
     rarity: 'ANGELIC',
-    file: 'Charms_Rotten_Pumpkin.png',
+    file: 'charms/Charms_Rotten_Pumpkin.png',
     tier: 'SS',
     level: '94',
     stats: [
@@ -850,7 +850,7 @@ export const CHARM_DB = [
     name: 'Reverse Card',
     size: [1, 1],
     rarity: 'ANGELIC',
-    file: 'Charms_Reverse_Card.png',
+    file: 'charms/Charms_Reverse_Card.png',
     tier: 'SS',
     level: '100',
     stats: [
@@ -991,7 +991,7 @@ const CharmsPage = () => {
                     </thead>
                     <tbody>
                       {items.map((charm) => {
-                        const img = `/images/charms/${charm.file}`;
+                        const img = `/images/${charm.file}`;
                         const rarityName = rarityLabel(charm.rarity);
                         const rarityHex = rarityColor(charm.rarity);
                         const statsArray = Array.isArray(charm.stats)
@@ -1067,7 +1067,7 @@ const CharmsPage = () => {
                   <>
                     <div className="flex gap-4 mb-4">
                       <img
-                        src={`/images/charms/${selectedCharm.file}`}
+                        src={`/images/${selectedCharm.file}`}
                         alt={selectedCharm.name}
                         className="charms-item-icon"
                         style={{ width: 48, height: 48 }}

@@ -76,7 +76,8 @@ const ClassesView = ({
                 const t = e.currentTarget;
                 if (!t.dataset.fallback) {
                   t.dataset.fallback = '1';
-                  t.src = classImagePath(c.name, 'png');
+                  // Se falhar o webp, tenta png
+                  t.src = classImagePath(c.name, 'legacy');
                 }
               }}
               alt={c.name}

@@ -12,7 +12,9 @@ import MercenariosPage from './MercenariosPage';
 import MineracaoPage from './MineracaoPage';
 import ChavesPage from './ChavesPage';
 import GemasJoiasPage from './GemasJoiasPage';
-import CharmsPage from './CharmsPage';
+import CharmsPage, { CHARM_DB } from './CharmsPage';
+
+import Equipe from './Equipe';
 
 const TWITCH_CONTAINER_ID = 'twitch-embed-spacezone';
 
@@ -252,6 +254,8 @@ const NewDesign = ({ onBack, initialView = 'home' }) => {
   const [nbRelicPickerIndex, setNbRelicPickerIndex] = useState(null);
   const [nbPotions, setNbPotions] = useState([null, null, null, null]);
   const [nbPotionPickerIndex, setNbPotionPickerIndex] = useState(null);
+  const [nbCharms, setNbCharms] = useState([]);
+  const [nbCharmPickerIndex, setNbCharmPickerIndex] = useState(null);
   const [nbMercenary, setNbMercenary] = useState('');
   const [potionOptions, setPotionOptions] = useState([]);
   const [homepageMode, setHomepageMode] = useState('fixed');
@@ -714,10 +718,27 @@ const NewDesign = ({ onBack, initialView = 'home' }) => {
       .toLowerCase()
       .replace(/\s+/g, '');
   const classImagePath = (name, ext = 'webp') => {
-    const base = classSlug(name);
+    // Slug antigo para legacy images (sem underscore)
+    const legacyBase = String(name || '')
+      .normalize('NFD')
+      .replace(/[\u0300-\u036f]/g, '')
+      .toLowerCase()
+      .replace(/\s+/g, '');
+
     const pub = process.env.PUBLIC_URL || '';
     const basePath = pub ? `${pub}/images` : `images`;
-    return `${basePath}/${base}.${ext}`;
+
+    // Retornar a imagem padrão da raiz (public/images/nome.webp)
+    // conforme solicitado pelo usuário
+    if (ext === 'legacy') {
+      return `${basePath}/${legacyBase}.png`;
+    }
+    if (ext === 'legacy_webp') {
+      return `${basePath}/${legacyBase}.webp`;
+    }
+
+    // Default para a imagem da classe na raiz
+    return `${basePath}/${legacyBase}.webp`;
   };
   const slugifyClass = (name) =>
     String(name || '')
@@ -1073,9 +1094,9 @@ const NewDesign = ({ onBack, initialView = 'home' }) => {
         s1: [
           { id: 'vk1', n: 'Seismic Slam', r: 1, c: 1, req: null, hasPlus: true },
           { id: 'vk2', n: 'Brute Force', r: 1, c: 3, req: null, hasPlus: false },
-          { id: 'vk3', n: 'Throw!', r: 2, c: 1, req: 'vk1', hasPlus: true },
+          { id: 'vk3', n: 'Throw', r: 2, c: 1, req: 'vk1', hasPlus: true },
           { id: 'vk4', n: 'Zeal', r: 2, c: 2, req: null, hasPlus: true },
-          { id: 'vk5', n: "Ymir's Champion", r: 3, c: 2, req: 'vk4', hasPlus: true },
+          { id: 'vk5', n: "Ymirs Champion", r: 3, c: 2, req: 'vk4', hasPlus: true },
           { id: 'vk6', n: 'Whirlwind', r: 3, c: 3, req: 'vk2', hasPlus: true },
           { id: 'vk7', n: 'Shockwave', r: 4, c: 1, req: 'vk3', hasPlus: true },
           { id: 'vk8', n: 'Berserk', r: 4, c: 2, req: 'vk5', hasPlus: true },
@@ -1088,7 +1109,7 @@ const NewDesign = ({ onBack, initialView = 'home' }) => {
           { id: 'vk13', n: 'Devastating Charge', r: 2, c: 3, req: 'vk11', hasPlus: false },
           { id: 'vk14', n: 'Norse Resistance', r: 3, c: 1, req: 'vk12', hasPlus: false },
           { id: 'vk15', n: 'Defensive Shout', r: 3, c: 2, req: null, hasPlus: false },
-          { id: 'vk16', n: "Odin's Fury", r: 4, c: 2, req: 'vk15', hasPlus: true },
+          { id: 'vk16', n: "Odins Fury", r: 4, c: 2, req: 'vk15', hasPlus: true },
           { id: 'vk17', n: 'Battle Agility', r: 4, c: 3, req: 'vk13', hasPlus: false },
           { id: 'vk18', n: 'Combat Orders', r: 5, c: 2, req: 'vk16', hasPlus: false }
         ]
@@ -1098,25 +1119,25 @@ const NewDesign = ({ onBack, initialView = 'home' }) => {
         t2: 'Burning Soul',
         s1: [
           { id: 'py1', n: 'Fireball', r: 1, c: 1, req: null, hasPlus: true },
-          { id: 'py2', n: 'Phoenix Spirits', r: 1, c: 3, req: null, hasPlus: true },
+          { id: 'py2', n: 'Phoenix Flight', r: 1, c: 3, req: null, hasPlus: true },
           { id: 'py3', n: 'Fire Nova', r: 2, c: 1, req: 'py1', hasPlus: true },
-          { id: 'py4', n: 'Burning Ground', r: 2, c: 2, req: null, hasPlus: false },
-          { id: 'py5', n: 'Magma Orb', r: 3, c: 2, req: 'py4', hasPlus: true },
-          { id: 'py6', n: 'Blazing Path', r: 3, c: 3, req: 'py2', hasPlus: true },
-          { id: 'py7', n: 'Fire Hydra', r: 4, c: 1, req: 'py3', hasPlus: true },
+          { id: 'py4', n: 'Scorching Aura', r: 2, c: 2, req: null, hasPlus: false },
+          { id: 'py5', n: 'Volcano', r: 3, c: 2, req: 'py4', hasPlus: true },
+          { id: 'py6', n: 'Blazing Trail', r: 3, c: 3, req: 'py2', hasPlus: true },
+          { id: 'py7', n: 'Hydra', r: 4, c: 1, req: 'py3', hasPlus: true },
           { id: 'py8', n: 'Comet', r: 4, c: 2, req: 'py5', hasPlus: true },
-          { id: 'py9', n: 'Meteor Shower', r: 5, c: 3, req: 'py6', hasPlus: false }
+          { id: 'py9', n: 'Meteor', r: 5, c: 3, req: 'py6', hasPlus: false }
         ],
         s2: [
-          { id: 'py10', n: 'Inferno', r: 1, c: 2, req: null, hasPlus: true },
-          { id: 'py11', n: 'Caldarium', r: 1, c: 3, req: null, hasPlus: false },
+          { id: 'py10', n: 'Inferno Slash', r: 1, c: 2, req: null, hasPlus: true },
+          { id: 'py11', n: 'Ignite', r: 1, c: 3, req: null, hasPlus: false },
           { id: 'py12', n: 'Fire Shield', r: 2, c: 1, req: null, hasPlus: false },
           { id: 'py13', n: 'Armageddon', r: 3, c: 2, req: 'py12', hasPlus: true },
-          { id: 'py14', n: 'Flame Master', r: 4, c: 1, req: null, hasPlus: false },
-          { id: 'py15', n: 'Splitter', r: 4, c: 3, req: 'py11', hasPlus: true },
-          { id: 'py16', n: 'Fires of Hell', r: 5, c: 1, req: 'py14', hasPlus: false },
-          { id: 'py17', n: 'Meltdown', r: 5, c: 2, req: null, hasPlus: false },
-          { id: 'py18', n: 'Apocalypse', r: 5, c: 3, req: 'py13', hasPlus: true }
+          { id: 'py14', n: 'Fire Enchant', r: 4, c: 1, req: null, hasPlus: false },
+          { id: 'py15', n: 'Searing Chains', r: 4, c: 3, req: 'py11', hasPlus: true },
+          { id: 'py16', n: 'Fiery Presence', r: 5, c: 1, req: 'py14', hasPlus: false },
+          { id: 'py17', n: 'Breath of Fire', r: 5, c: 2, req: null, hasPlus: false },
+          { id: 'py18', n: 'Avatar of Fire', r: 5, c: 3, req: 'py13', hasPlus: true }
         ]
       },
       marksman: {
@@ -1126,75 +1147,75 @@ const NewDesign = ({ onBack, initialView = 'home' }) => {
           { id: 'mk1', n: 'Arrow Rain', r: 1, c: 1, req: null, hasPlus: true },
           { id: 'mk2', n: 'Agility', r: 1, c: 3, req: null, hasPlus: false },
           { id: 'mk3', n: 'Multishot', r: 2, c: 1, req: 'mk1', hasPlus: true },
-          { id: 'mk4', n: 'Homing Rocket', r: 2, c: 2, req: null, hasPlus: true },
-          { id: 'mk5', n: 'Explosive Shot', r: 3, c: 2, req: 'mk4', hasPlus: true },
-          { id: 'mk6', n: 'Critical Shot', r: 3, c: 3, req: 'mk2', hasPlus: false },
-          { id: 'mk7', n: 'Turret', r: 4, c: 1, req: 'mk3', hasPlus: true },
-          { id: 'mk8', n: 'Guided Arrow', r: 4, c: 2, req: 'mk5', hasPlus: true },
-          { id: 'mk9', n: 'Master Marksman', r: 5, c: 3, req: 'mk6', hasPlus: false }
+          { id: 'mk4', n: 'Homing Missile', r: 2, c: 2, req: null, hasPlus: true },
+          { id: 'mk5', n: 'Volatile Shot', r: 3, c: 2, req: 'mk4', hasPlus: true },
+          { id: 'mk6', n: 'Critical Accuracy', r: 3, c: 3, req: 'mk2', hasPlus: false },
+          { id: 'mk7', n: 'Arrow Turret', r: 4, c: 1, req: 'mk3', hasPlus: true },
+          { id: 'mk8', n: 'Trickshot', r: 4, c: 2, req: 'mk5', hasPlus: true },
+          { id: 'mk9', n: 'Master Mechanic', r: 5, c: 3, req: 'mk6', hasPlus: false }
         ],
         s2: [
-          { id: 'mk10', n: 'Weapon Mastery', r: 1, c: 2, req: null, hasPlus: false },
-          { id: 'mk11', n: 'Barrage', r: 1, c: 3, req: null, hasPlus: true },
-          { id: 'mk12', n: 'Sniper', r: 2, c: 1, req: null, hasPlus: false },
-          { id: 'mk13', n: 'Explosives Master', r: 2, c: 3, req: 'mk11', hasPlus: false },
-          { id: 'mk14', n: 'Windwalker', r: 3, c: 1, req: 'mk12', hasPlus: false },
-          { id: 'mk15', n: 'Frost Shot', r: 3, c: 2, req: null, hasPlus: true },
-          { id: 'mk16', n: 'Ice Arrow', r: 4, c: 2, req: 'mk15', hasPlus: true },
-          { id: 'mk17', n: 'Power Shot', r: 4, c: 3, req: 'mk13', hasPlus: false },
-          { id: 'mk18', n: 'Executioner', r: 5, c: 2, req: 'mk16', hasPlus: false }
+          { id: 'mk10', n: 'Turret Mastery', r: 1, c: 2, req: null, hasPlus: false },
+          { id: 'mk11', n: 'Arrow Rampage', r: 1, c: 3, req: null, hasPlus: true },
+          { id: 'mk12', n: 'Gunner Drone', r: 2, c: 1, req: null, hasPlus: false },
+          { id: 'mk13', n: 'Frag Grenade', r: 2, c: 3, req: 'mk11', hasPlus: false },
+          { id: 'mk14', n: 'Vault', r: 3, c: 1, req: 'mk12', hasPlus: false },
+          { id: 'mk15', n: 'Rocket Turret', r: 3, c: 2, req: null, hasPlus: true },
+          { id: 'mk16', n: 'Landmine', r: 4, c: 2, req: 'mk15', hasPlus: true },
+          { id: 'mk17', n: 'Cannon Turret', r: 4, c: 3, req: 'mk13', hasPlus: false },
+          { id: 'mk18', n: 'Beacon', r: 5, c: 2, req: 'mk16', hasPlus: false }
         ]
       },
       pirate: {
         t1: 'Shipmaster',
         t2: 'Cannoneer',
         s1: [
-          { id: 'pi1', n: 'Anchor Smash', r: 1, c: 1, req: null, hasPlus: true },
-          { id: 'pi2', n: 'Plunder', r: 1, c: 3, req: null, hasPlus: false },
+          { id: 'pi1', n: 'Anchor Swing', r: 1, c: 1, req: null, hasPlus: true },
+          { id: 'pi2', n: 'Land Ahoy', r: 1, c: 3, req: null, hasPlus: false },
           { id: 'pi3', n: 'Parrot', r: 2, c: 1, req: 'pi1', hasPlus: true },
-          { id: 'pi4', n: 'Drunken Sailor', r: 2, c: 2, req: null, hasPlus: true },
-          { id: 'pi5', n: 'Rum Flask', r: 3, c: 2, req: 'pi4', hasPlus: true },
-          { id: 'pi6', n: 'Cutlass Master', r: 3, c: 3, req: 'pi2', hasPlus: false },
-          { id: 'pi7', n: 'Grappling Hook', r: 4, c: 1, req: 'pi3', hasPlus: true },
-          { id: 'pi8', n: 'Blackbeard', r: 4, c: 2, req: 'pi5', hasPlus: true },
-          { id: 'pi9', n: 'Treasure Hunt', r: 5, c: 3, req: 'pi6', hasPlus: false }
+          { id: 'pi4', n: 'Set Sail', r: 2, c: 2, req: null, hasPlus: true },
+          { id: 'pi5', n: 'Powder Trail', r: 3, c: 2, req: 'pi4', hasPlus: true },
+          { id: 'pi6', n: 'Kneecap', r: 3, c: 3, req: 'pi2', hasPlus: false },
+          { id: 'pi7', n: 'Torrent', r: 4, c: 1, req: 'pi3', hasPlus: true },
+          { id: 'pi8', n: 'Grenade Jump', r: 4, c: 2, req: 'pi5', hasPlus: true },
+          { id: 'pi9', n: 'Treasure Hunter', r: 5, c: 3, req: 'pi6', hasPlus: false }
         ],
         s2: [
           { id: 'pi10', n: 'Cannonball', r: 1, c: 2, req: null, hasPlus: true },
-          { id: 'pi11', n: 'Bombardment', r: 1, c: 3, req: null, hasPlus: true },
-          { id: 'pi12', n: 'Naval Strike', r: 2, c: 1, req: null, hasPlus: false },
-          { id: 'pi13', n: 'Gunpowder', r: 2, c: 3, req: 'pi11', hasPlus: false },
-          { id: 'pi14', n: 'Heavy Metal', r: 3, c: 1, req: 'pi12', hasPlus: false },
-          { id: 'pi15', n: 'Kraken', r: 3, c: 2, req: null, hasPlus: true },
-          { id: 'pi16', n: 'Maelstrom', r: 4, c: 2, req: 'pi15', hasPlus: true },
+          { id: 'pi11', n: 'Bomb Barrage', r: 1, c: 3, req: null, hasPlus: true },
+          { id: 'pi12', n: 'Freezing Chain Shot', r: 2, c: 1, req: null, hasPlus: false },
+          { id: 'pi13', n: 'Explosive Bullets', r: 2, c: 3, req: 'pi11', hasPlus: false },
+          { id: 'pi14', n: 'Frozen Lead', r: 3, c: 1, req: 'pi12', hasPlus: false },
+          { id: 'pi15', n: 'Remiges', r: 3, c: 2, req: null, hasPlus: true },
+          { id: 'pi16', n: 'Buckshot', r: 4, c: 2, req: 'pi15', hasPlus: true },
           { id: 'pi17', n: 'Rapid Fire', r: 4, c: 3, req: 'pi13', hasPlus: false },
-          { id: 'pi18', n: 'Ghost Ship', r: 5, c: 2, req: 'pi16', hasPlus: false }
+          { id: 'pi18', n: 'Explosive Barrel', r: 5, c: 2, req: 'pi16', hasPlus: false }
         ]
       },
       nomad: {
         t1: 'Sand Walker',
         t2: 'Desert Blade',
         s1: [
-          { id: 'no1', n: 'Sandstorm', r: 1, c: 1, req: null, hasPlus: true },
-          { id: 'no2', n: 'Mirage', r: 1, c: 3, req: null, hasPlus: false },
-          { id: 'no3', n: 'Sun Ray', r: 2, c: 1, req: 'no1', hasPlus: true },
-          { id: 'no4', n: 'Desert Wind', r: 2, c: 2, req: null, hasPlus: true },
-          { id: 'no5', n: 'Sand Blast', r: 3, c: 2, req: 'no4', hasPlus: true },
-          { id: 'no6', n: 'Scimitar Master', r: 3, c: 3, req: 'no2', hasPlus: false },
-          { id: 'no7', n: 'Tornado', r: 4, c: 1, req: 'no3', hasPlus: true },
-          { id: 'no8', n: 'Sun Strike', r: 4, c: 2, req: 'no5', hasPlus: true },
-          { id: 'no9', n: 'Sand Guardian', r: 5, c: 3, req: 'no6', hasPlus: false }
+          { id: 'no1', n: 'Sand Vortex', r: 1, c: 1, req: null, hasPlus: true },
+          { id: 'no2', n: 'Sand Gush', r: 1, c: 3, req: null, hasPlus: false },
+          { id: 'no3', n: 'Healing Sunrays', r: 2, c: 1, req: 'no1', hasPlus: true },
+          { id: 'no4', n: 'Mystic Sand', r: 2, c: 2, req: null, hasPlus: true },
+          { id: 'no5', n: 'Sand Carver', r: 3, c: 2, req: 'no4', hasPlus: true },
+          { id: 'no6', n: 'Chainslice', r: 3, c: 3, req: 'no2', hasPlus: false },
+          { id: 'no7', n: 'Dissipating Tornado', r: 4, c: 1, req: 'no3', hasPlus: true },
+          { id: 'no8', n: 'Blade Strike', r: 4, c: 2, req: 'no5', hasPlus: true },
+          { id: 'no9', n: 'Sand Entombment', r: 5, c: 3, req: 'no6', hasPlus: false }
         ],
         s2: [
           { id: 'no10', n: 'Eye of Ra', r: 1, c: 2, req: null, hasPlus: true },
-          { id: 'no11', n: 'Vanish', r: 1, c: 3, req: null, hasPlus: true },
-          { id: 'no12', n: 'Golden Armor', r: 2, c: 1, req: null, hasPlus: false },
-          { id: 'no13', n: 'Shadow Step', r: 2, c: 3, req: 'no11', hasPlus: false },
-          { id: 'no14', n: 'Heatwave', r: 3, c: 1, req: 'no12', hasPlus: false },
-          { id: 'no15', n: 'Falconer', r: 3, c: 2, req: null, hasPlus: true },
-          { id: 'no16', n: 'Golden Eagle', r: 4, c: 2, req: 'no15', hasPlus: true },
-          { id: 'no17', n: 'Desert Agility', r: 4, c: 3, req: 'no13', hasPlus: false },
-          { id: 'no18', n: "Pharaoh's Curse", r: 5, c: 2, req: 'no16', hasPlus: false }
+          { id: 'no11', n: 'Cloud of Sand', r: 1, c: 3, req: null, hasPlus: true },
+          { id: 'no12', n: 'Oasis Aura', r: 2, c: 1, req: null, hasPlus: false },
+          { id: 'no13', n: 'Phantom Blade', r: 2, c: 3, req: 'no11', hasPlus: false },
+          { id: 'no14', n: 'Rupture', r: 3, c: 1, req: 'no12', hasPlus: false },
+          { id: 'no15', n: 'Flying Scimitar', r: 3, c: 2, req: null, hasPlus: true },
+          { id: 'no16', n: 'Scimitar Charge', r: 4, c: 2, req: 'no15', hasPlus: true },
+          { id: 'no17', n: 'Sand Tremors', r: 4, c: 3, req: 'no13', hasPlus: false },
+          { id: 'no18', n: 'Hemorrhage', r: 5, c: 2, req: 'no16', hasPlus: false }
         ]
       },
       redneck: {
@@ -1202,25 +1223,25 @@ const NewDesign = ({ onBack, initialView = 'home' }) => {
         t2: 'Moonshiner',
         s1: [
           { id: 'rn1', n: 'Chainsaw Slash', r: 1, c: 1, req: null, hasPlus: true },
-          { id: 'rn2', n: 'Sturdy', r: 1, c: 3, req: null, hasPlus: false },
+          { id: 'rn2', n: 'Durable Wear', r: 1, c: 3, req: null, hasPlus: false },
           { id: 'rn3', n: 'Oil Spill', r: 2, c: 1, req: 'rn1', hasPlus: true },
-          { id: 'rn4', n: 'Beer Jug', r: 2, c: 2, req: null, hasPlus: true },
-          { id: 'rn5', n: 'Moonshine Blast', r: 3, c: 2, req: 'rn4', hasPlus: true },
-          { id: 'rn6', n: 'Axeman', r: 3, c: 3, req: 'rn2', hasPlus: false },
-          { id: 'rn7', n: 'Fire in the Hole', r: 4, c: 1, req: 'rn3', hasPlus: true },
+          { id: 'rn4', n: 'Moonshine Molotov', r: 2, c: 2, req: null, hasPlus: true },
+          { id: 'rn5', n: 'Moonshine Madness', r: 3, c: 2, req: 'rn4', hasPlus: true },
+          { id: 'rn6', n: 'Chainsaw Mastery', r: 3, c: 3, req: 'rn2', hasPlus: false },
+          { id: 'rn7', n: 'Pipe Bombs', r: 4, c: 1, req: 'rn3', hasPlus: true },
           { id: 'rn8', n: 'Hillbilly Rage', r: 4, c: 2, req: 'rn5', hasPlus: true },
-          { id: 'rn9', n: 'Truck Driver', r: 5, c: 3, req: 'rn6', hasPlus: false }
+          { id: 'rn9', n: 'Pickup Raid', r: 5, c: 3, req: 'rn6', hasPlus: false }
         ],
         s2: [
-          { id: 'rn10', n: 'Tire Toss', r: 1, c: 2, req: null, hasPlus: true },
-          { id: 'rn11', n: 'Shotgun', r: 1, c: 3, req: null, hasPlus: true },
-          { id: 'rn12', n: 'Redneck Resilience', r: 2, c: 1, req: null, hasPlus: false },
-          { id: 'rn13', n: 'Buckshot', r: 2, c: 3, req: 'rn11', hasPlus: false },
-          { id: 'rn14', n: 'Moonlight', r: 3, c: 1, req: 'rn12', hasPlus: false },
-          { id: 'rn15', n: 'Bear Trap', r: 3, c: 2, req: null, hasPlus: true },
-          { id: 'rn16', n: 'Steel Trap', r: 4, c: 2, req: 'rn15', hasPlus: true },
-          { id: 'rn17', n: 'Quick Loader', r: 4, c: 3, req: 'rn13', hasPlus: false },
-          { id: 'rn18', n: "Grandfather's Jug", r: 5, c: 2, req: 'rn16', hasPlus: false }
+          { id: 'rn10', n: 'Tire Fire', r: 1, c: 2, req: null, hasPlus: true },
+          { id: 'rn11', n: 'Rogue Chainsaw', r: 1, c: 3, req: null, hasPlus: true },
+          { id: 'rn12', n: 'Experienced Logger', r: 2, c: 1, req: null, hasPlus: false },
+          { id: 'rn13', n: 'Combustible Oil', r: 2, c: 3, req: 'rn11', hasPlus: false },
+          { id: 'rn14', n: 'Spontaneous Combustion', r: 3, c: 1, req: 'rn12', hasPlus: false },
+          { id: 'rn15', n: 'Loggers Endurance', r: 3, c: 2, req: null, hasPlus: true },
+          { id: 'rn16', n: 'Tree Trunk Triumph', r: 4, c: 2, req: 'rn15', hasPlus: true },
+          { id: 'rn17', n: 'Revved Up', r: 4, c: 3, req: 'rn13', hasPlus: false },
+          { id: 'rn18', n: 'Chainsaw Massacre', r: 5, c: 2, req: 'rn16', hasPlus: false }
         ]
       },
       necromancer: {
@@ -1228,51 +1249,51 @@ const NewDesign = ({ onBack, initialView = 'home' }) => {
         t2: 'Lich',
         s1: [
           { id: 'ne1', n: 'Raise Skeleton', r: 1, c: 1, req: null, hasPlus: true },
-          { id: 'ne2', n: 'Soul Feast', r: 1, c: 3, req: null, hasPlus: false },
-          { id: 'ne3', n: 'Skeleton Mage', r: 2, c: 1, req: 'ne1', hasPlus: true },
-          { id: 'ne4', n: 'Blood Burst', r: 2, c: 2, req: null, hasPlus: true },
+          { id: 'ne2', n: 'Life Tap', r: 1, c: 3, req: null, hasPlus: false },
+          { id: 'ne3', n: 'Raise Skeleton Mage', r: 2, c: 1, req: 'ne1', hasPlus: true },
+          { id: 'ne4', n: 'Poison Breath', r: 2, c: 2, req: null, hasPlus: true },
           { id: 'ne5', n: 'Corpse Explosion', r: 3, c: 2, req: 'ne4', hasPlus: true },
-          { id: 'ne6', n: 'Command Undead', r: 3, c: 3, req: 'ne2', hasPlus: false },
-          { id: 'ne7', n: 'Raise Golem', r: 4, c: 1, req: 'ne3', hasPlus: true },
-          { id: 'ne8', n: 'Desecration', r: 4, c: 2, req: 'ne5', hasPlus: true },
-          { id: 'ne9', n: 'Army of Dead', r: 5, c: 3, req: 'ne6', hasPlus: false }
+          { id: 'ne6', n: 'Summon Mastery', r: 3, c: 3, req: 'ne2', hasPlus: false },
+          { id: 'ne7', n: 'Meat Shield', r: 4, c: 1, req: 'ne3', hasPlus: true },
+          { id: 'ne8', n: 'Cursed Ground', r: 4, c: 2, req: 'ne5', hasPlus: true },
+          { id: 'ne9', n: 'Summon Damned Legion', r: 5, c: 3, req: 'ne6', hasPlus: false }
         ],
         s2: [
           { id: 'ne10', n: 'Poison Nova', r: 1, c: 2, req: null, hasPlus: true },
           { id: 'ne11', n: 'Bone Spear', r: 1, c: 3, req: null, hasPlus: true },
-          { id: 'ne12', n: 'Grim Reaper', r: 2, c: 1, req: null, hasPlus: false },
-          { id: 'ne13', n: 'Bone Armor', r: 2, c: 3, req: 'ne11', hasPlus: false },
-          { id: 'ne14', n: "Death's Reach", r: 3, c: 1, req: 'ne12', hasPlus: false },
-          { id: 'ne15', n: 'Curse of Weakness', r: 3, c: 2, req: null, hasPlus: true },
-          { id: 'ne16', n: 'Life Tap', r: 4, c: 2, req: 'ne15', hasPlus: true },
-          { id: 'ne17', n: 'Soul Sacrifise', r: 4, c: 3, req: 'ne13', hasPlus: false },
-          { id: 'ne18', n: 'Lich Form', r: 5, c: 2, req: 'ne16', hasPlus: false }
+          { id: 'ne12', n: 'Summon Frenzy', r: 2, c: 1, req: null, hasPlus: false },
+          { id: 'ne13', n: 'Summon Resistances', r: 2, c: 3, req: 'ne11', hasPlus: false },
+          { id: 'ne14', n: 'Amplify Damage', r: 3, c: 1, req: 'ne12', hasPlus: false },
+          { id: 'ne15', n: 'Summon Vengeful Spirit', r: 3, c: 2, req: null, hasPlus: true },
+          { id: 'ne16', n: 'Meat Bomb', r: 4, c: 2, req: 'ne15', hasPlus: true },
+          { id: 'ne17', n: 'Bone Spirit', r: 4, c: 3, req: 'ne13', hasPlus: false },
+          { id: 'ne18', n: 'Bone Shred', r: 5, c: 2, req: 'ne16', hasPlus: false }
         ]
       },
       samurai: {
         t1: 'Bushido',
         t2: 'Ronin',
         s1: [
-          { id: 'sa1', n: 'Bushido Blade', r: 1, c: 1, req: null, hasPlus: true },
+          { id: 'sa1', n: 'Quickslash', r: 1, c: 1, req: null, hasPlus: true },
           { id: 'sa2', n: 'Evasion', r: 1, c: 3, req: null, hasPlus: false },
-          { id: 'sa3', n: 'Shuriken Toss', r: 2, c: 1, req: 'sa1', hasPlus: true },
-          { id: 'sa4', n: "Warrior's Spirit", r: 2, c: 2, req: null, hasPlus: true },
-          { id: 'sa5', n: 'Focus', r: 3, c: 2, req: 'sa4', hasPlus: true },
-          { id: 'sa6', n: 'Kendo Master', r: 3, c: 3, req: 'sa2', hasPlus: false },
-          { id: 'sa7', n: 'Katana Slice', r: 4, c: 1, req: 'sa3', hasPlus: true },
-          { id: 'sa8', n: 'Ancestral Spirits', r: 4, c: 2, req: 'sa5', hasPlus: true },
-          { id: 'sa9', n: 'Last Stand', r: 5, c: 3, req: 'sa6', hasPlus: false }
+          { id: 'sa3', n: 'Shuriken Throw', r: 2, c: 1, req: 'sa1', hasPlus: true },
+          { id: 'sa4', n: 'Warriors Spirit', r: 2, c: 2, req: null, hasPlus: true },
+          { id: 'sa5', n: 'Battle Glance', r: 3, c: 2, req: 'sa4', hasPlus: true },
+          { id: 'sa6', n: 'Bushido', r: 3, c: 3, req: 'sa2', hasPlus: false },
+          { id: 'sa7', n: 'Empires Slash', r: 4, c: 1, req: 'sa3', hasPlus: true },
+          { id: 'sa8', n: 'Live by the Sword', r: 4, c: 2, req: 'sa5', hasPlus: true },
+          { id: 'sa9', n: 'For Honor', r: 5, c: 3, req: 'sa6', hasPlus: false }
         ],
         s2: [
-          { id: 'sa10', n: 'Way of the Sword', r: 1, c: 2, req: null, hasPlus: true },
-          { id: 'sa11', n: 'Dash', r: 1, c: 3, req: null, hasPlus: true },
-          { id: 'sa12', n: 'Shadow Strike', r: 2, c: 1, req: null, hasPlus: false },
-          { id: 'sa13', n: 'Quick Draw', r: 2, c: 3, req: 'sa11', hasPlus: false },
-          { id: 'sa14', n: 'Honor', r: 3, c: 1, req: 'sa12', hasPlus: false },
-          { id: 'sa15', n: 'Dragon Spirit', r: 3, c: 2, req: null, hasPlus: true },
+          { id: 'sa10', n: 'Way of the Warrior', r: 1, c: 2, req: null, hasPlus: true },
+          { id: 'sa11', n: 'Shadow Step', r: 1, c: 3, req: null, hasPlus: true },
+          { id: 'sa12', n: 'Blade Barrier', r: 2, c: 1, req: null, hasPlus: false },
+          { id: 'sa13', n: 'Fan of Knives', r: 2, c: 3, req: 'sa11', hasPlus: false },
+          { id: 'sa14', n: 'Burst of Speed', r: 3, c: 1, req: 'sa12', hasPlus: false },
+          { id: 'sa15', n: 'Exploding Bolas', r: 3, c: 2, req: null, hasPlus: true },
           { id: 'sa16', n: 'Omnislash', r: 4, c: 2, req: 'sa15', hasPlus: true },
-          { id: 'sa17', n: 'Wind Blade', r: 4, c: 3, req: 'sa13', hasPlus: false },
-          { id: 'sa18', n: "Emperor's Will", r: 5, c: 2, req: 'sa16', hasPlus: false }
+          { id: 'sa17', n: 'Explosive Kunai', r: 4, c: 3, req: 'sa13', hasPlus: false },
+          { id: 'sa18', n: 'Smoke Bomb', r: 5, c: 2, req: 'sa16', hasPlus: false }
         ]
       },
       paladin: {
@@ -1280,337 +1301,416 @@ const NewDesign = ({ onBack, initialView = 'home' }) => {
         t2: 'Crusader',
         s1: [
           { id: 'pa1', n: 'Holy Hammer', r: 1, c: 1, req: null, hasPlus: true },
-          { id: 'pa2', n: 'Righteousness', r: 1, c: 3, req: null, hasPlus: false },
-          { id: 'pa3', n: 'Lightning Bolt', r: 2, c: 1, req: 'pa1', hasPlus: true },
-          { id: 'pa4', n: 'Holy Shield', r: 2, c: 2, req: null, hasPlus: true },
-          { id: 'pa5', n: 'Divine Light', r: 3, c: 2, req: 'pa4', hasPlus: true },
-          { id: 'pa6', n: 'Aura of Purity', r: 3, c: 3, req: 'pa2', hasPlus: false },
-          { id: 'pa7', n: 'Judgement', r: 4, c: 1, req: 'pa3', hasPlus: true },
-          { id: 'pa8', n: 'Consecration', r: 4, c: 2, req: 'pa5', hasPlus: true },
-          { id: 'pa9', n: "God's Wrath", r: 5, c: 3, req: 'pa6', hasPlus: false }
+          { id: 'pa2', n: 'Holy Aura', r: 1, c: 3, req: null, hasPlus: false },
+          { id: 'pa3', n: 'Holy Bolt', r: 2, c: 1, req: 'pa1', hasPlus: true },
+          { id: 'pa4', n: 'Thunder Shield', r: 2, c: 2, req: null, hasPlus: true },
+          { id: 'pa5', n: 'Divine Wisdom', r: 3, c: 2, req: 'pa4', hasPlus: true },
+          { id: 'pa6', n: 'Fanaticism Aura', r: 3, c: 3, req: 'pa2', hasPlus: false },
+          { id: 'pa7', n: 'Holy Retribution', r: 4, c: 1, req: 'pa3', hasPlus: true },
+          { id: 'pa8', n: 'Holy Nova', r: 4, c: 2, req: 'pa5', hasPlus: true },
+          { id: 'pa9', n: 'Thors Fury', r: 5, c: 3, req: 'pa6', hasPlus: false }
         ],
         s2: [
-          { id: 'pa10', n: 'Charge', r: 1, c: 2, req: null, hasPlus: true },
-          { id: 'pa11', n: 'Smite', r: 1, c: 3, req: null, hasPlus: true },
-          { id: 'pa12', n: 'Devotion', r: 2, c: 1, req: null, hasPlus: false },
-          { id: 'pa13', n: 'Blessed Hammer', r: 2, c: 3, req: 'pa11', hasPlus: false },
+          { id: 'pa10', n: 'Lights Embrace', r: 1, c: 2, req: null, hasPlus: true },
+          { id: 'pa11', n: 'Fist of the Heavens', r: 1, c: 3, req: null, hasPlus: true },
+          { id: 'pa12', n: 'The Venerated One', r: 2, c: 1, req: null, hasPlus: false },
+          { id: 'pa13', n: 'Divine Storm', r: 2, c: 3, req: 'pa11', hasPlus: false },
           { id: 'pa14', n: 'Vengeance', r: 3, c: 1, req: 'pa12', hasPlus: false },
-          { id: 'pa15', n: 'Holy Nova', r: 3, c: 2, req: null, hasPlus: true },
-          { id: 'pa16', n: 'Hand of God', r: 4, c: 2, req: 'pa15', hasPlus: true },
-          { id: 'pa17', n: 'Zealot', r: 4, c: 3, req: 'pa13', hasPlus: false },
-          { id: 'pa18', n: 'Heavenly Strength', r: 5, c: 2, req: 'pa16', hasPlus: false }
+          { id: 'pa15', n: 'Holy Shock Aura', r: 3, c: 2, req: null, hasPlus: true },
+          { id: 'pa16', n: 'Eye of the Storm', r: 4, c: 2, req: 'pa15', hasPlus: true },
+          { id: 'pa17', n: 'Ball Lightning', r: 4, c: 3, req: 'pa13', hasPlus: false },
+          { id: 'pa18', n: 'Lightning Fury', r: 5, c: 2, req: 'pa16', hasPlus: false }
         ]
       },
       amazon: {
         t1: 'Spear Maiden',
         t2: 'Huntress',
         s1: [
-          { id: 'am1', n: 'Javelin Toss', r: 1, c: 1, req: null, hasPlus: true },
-          { id: 'am2', n: 'Evasive', r: 1, c: 3, req: null, hasPlus: false },
-          { id: 'am3', n: 'Thunder Spear', r: 2, c: 1, req: 'am1', hasPlus: true },
-          { id: 'am4', n: 'Battle Cry', r: 2, c: 2, req: null, hasPlus: true },
-          { id: 'am5', n: 'Grace', r: 3, c: 2, req: 'am4', hasPlus: true },
-          { id: 'am6', n: 'Spear Master', r: 3, c: 3, req: 'am2', hasPlus: false },
-          { id: 'am7', n: 'Lightning Strike', r: 4, c: 1, req: 'am3', hasPlus: true },
-          { id: 'am8', n: 'Enrage', r: 4, c: 2, req: 'am5', hasPlus: true },
-          { id: 'am9', n: 'Valkyrie', r: 5, c: 3, req: 'am6', hasPlus: false }
+          { id: 'am1', n: 'Spearnage', r: 1, c: 1, req: null, hasPlus: true },
+          { id: 'am2', n: 'Leaping Ambush', r: 1, c: 3, req: null, hasPlus: false },
+          { id: 'am3', n: 'Thunder Fury', r: 2, c: 1, req: 'am1', hasPlus: true },
+          { id: 'am4', n: 'Thrill of the Hunt', r: 2, c: 2, req: null, hasPlus: true },
+          { id: 'am5', n: 'Astropes Gift', r: 3, c: 2, req: 'am4', hasPlus: true },
+          { id: 'am6', n: 'Master Poisoner', r: 3, c: 3, req: 'am2', hasPlus: false },
+          { id: 'am7', n: 'Thunder Goddesses Chosen', r: 4, c: 1, req: 'am3', hasPlus: true },
+          { id: 'am8', n: 'Astropes Battle Maiden', r: 4, c: 2, req: 'am5', hasPlus: true },
+          { id: 'am9', n: 'Death from Above', r: 5, c: 3, req: 'am6', hasPlus: false }
         ],
         s2: [
-          { id: 'am10', n: 'Multi Javelin', r: 1, c: 2, req: null, hasPlus: true },
-          { id: 'am11', n: 'Dash Strike', r: 1, c: 3, req: null, hasPlus: true },
-          { id: 'am12', n: 'Natural Resistance', r: 2, c: 1, req: null, hasPlus: false },
-          { id: 'am13', n: 'Power Throw', r: 2, c: 3, req: 'am11', hasPlus: false },
-          { id: 'am14', n: 'Amazonian Will', r: 3, c: 1, req: 'am12', hasPlus: false },
-          { id: 'am15', n: 'Poison Spear', r: 3, c: 2, req: null, hasPlus: true },
-          { id: 'am16', n: 'Toxic Cloud', r: 4, c: 2, req: 'am15', hasPlus: true },
-          { id: 'am17', n: 'Critical Pierce', r: 4, c: 3, req: 'am13', hasPlus: false },
-          { id: 'am18', n: 'Queen of Jungle', r: 5, c: 2, req: 'am16', hasPlus: false }
+          { id: 'am10', n: 'Noxious Strike', r: 1, c: 2, req: null, hasPlus: true },
+          { id: 'am11', n: 'Storm Dash', r: 1, c: 3, req: null, hasPlus: true },
+          { id: 'am12', n: 'Jungle Camouflage', r: 2, c: 1, req: null, hasPlus: false },
+          { id: 'am13', n: 'Caustic Spearhead', r: 2, c: 3, req: 'am11', hasPlus: false },
+          { id: 'am14', n: 'Chooser of the Slain', r: 3, c: 1, req: 'am12', hasPlus: false },
+          { id: 'am15', n: 'Toxic Remains', r: 3, c: 2, req: null, hasPlus: true },
+          { id: 'am16', n: 'Envenom', r: 4, c: 2, req: 'am15', hasPlus: true },
+          { id: 'am17', n: 'Feint', r: 4, c: 3, req: 'am13', hasPlus: false },
+          { id: 'am18', n: 'Rebound', r: 5, c: 2, req: 'am16', hasPlus: false }
         ]
       },
       demon_slayer: {
         t1: 'Executioner',
         t2: 'Inquisitor',
         s1: [
-          { id: 'ds1', n: 'Bullet Rain', r: 1, c: 1, req: null, hasPlus: true },
-          { id: 'ds2', n: 'Agility', r: 1, c: 3, req: null, hasPlus: false },
-          { id: 'ds3', n: 'Silver Shot', r: 2, c: 1, req: 'ds1', hasPlus: true },
-          { id: 'ds4', n: 'Reload', r: 2, c: 2, req: null, hasPlus: true },
-          { id: 'ds5', n: 'Holy Water', r: 3, c: 2, req: 'ds4', hasPlus: true },
-          { id: 'ds6', n: 'Gun Master', r: 3, c: 3, req: 'ds2', hasPlus: false },
-          { id: 'ds7', n: 'Crossbow Trap', r: 4, c: 1, req: 'ds3', hasPlus: true },
-          { id: 'ds8', n: 'Exorcism', r: 4, c: 2, req: 'ds5', hasPlus: true },
-          { id: 'ds9', n: "Slayer's Focus", r: 5, c: 3, req: 'ds6', hasPlus: false }
+          { id: 'ds1', n: 'Bullet Hell', r: 1, c: 1, req: null, hasPlus: true },
+          { id: 'ds2', n: 'Concentration Aura', r: 1, c: 3, req: null, hasPlus: false },
+          { id: 'ds3', n: 'Possessed Bullet', r: 2, c: 1, req: 'ds1', hasPlus: true },
+          { id: 'ds4', n: 'Trigger Finger', r: 2, c: 2, req: null, hasPlus: true },
+          { id: 'ds5', n: 'Demons Presence', r: 3, c: 2, req: 'ds4', hasPlus: true },
+          { id: 'ds6', n: 'Sword Handler', r: 3, c: 3, req: 'ds2', hasPlus: false },
+          { id: 'ds7', n: 'Shredder Trap', r: 4, c: 1, req: 'ds3', hasPlus: true },
+          { id: 'ds8', n: 'Soul Leech', r: 4, c: 2, req: 'ds5', hasPlus: true },
+          { id: 'ds9', n: 'Absolute Mayhem', r: 5, c: 3, req: 'ds6', hasPlus: false }
         ],
         s2: [
-          { id: 'ds10', n: 'Double Tap', r: 1, c: 2, req: null, hasPlus: true },
-          { id: 'ds11', n: 'Dash', r: 1, c: 3, req: null, hasPlus: true },
-          { id: 'ds12', n: 'Shadow Armor', r: 2, c: 1, req: null, hasPlus: false },
-          { id: 'ds13', n: 'Headshot', r: 2, c: 3, req: 'ds11', hasPlus: false },
-          { id: 'ds14', n: "Hunter's Mark", r: 3, c: 1, req: 'ds12', hasPlus: false },
-          { id: 'ds15', n: 'Holy Grenade', r: 3, c: 2, req: null, hasPlus: true },
-          { id: 'ds16', n: 'Purification', r: 4, c: 2, req: 'ds15', hasPlus: true },
-          { id: 'ds17', n: 'Execution', r: 4, c: 3, req: 'ds13', hasPlus: false },
-          { id: 'ds18', n: 'Vengeance', r: 5, c: 2, req: 'ds16', hasPlus: false }
+          { id: 'ds10', n: 'Fast Slices', r: 1, c: 2, req: null, hasPlus: true },
+          { id: 'ds11', n: 'Slice of Shadows', r: 1, c: 3, req: null, hasPlus: true },
+          { id: 'ds12', n: 'Demons Shield', r: 2, c: 1, req: null, hasPlus: false },
+          { id: 'ds13', n: 'Execute', r: 2, c: 3, req: 'ds11', hasPlus: false },
+          { id: 'ds14', n: 'Eagle Eye', r: 3, c: 1, req: 'ds12', hasPlus: false },
+          { id: 'ds15', n: 'Shadow Anomalies', r: 3, c: 2, req: null, hasPlus: true },
+          { id: 'ds16', n: 'Demons Calling', r: 4, c: 2, req: 'ds15', hasPlus: true },
+          { id: 'ds17', n: 'Heart Attack', r: 4, c: 3, req: 'ds13', hasPlus: false },
+          { id: 'ds18', n: 'Demon Form', r: 5, c: 2, req: 'ds16', hasPlus: false }
         ]
       },
       demonspawn: {
-        t1: 'Hellfire',
-        t2: 'Demonic',
+        t1: 'Blood',
+        t2: 'Bone',
         s1: [
-          { id: 'dp1', n: 'Blood Bolt', r: 1, c: 1, req: null, hasPlus: true },
-          { id: 'dp2', n: 'Toughness', r: 1, c: 3, req: null, hasPlus: false },
-          { id: 'dp3', n: 'Flame Breath', r: 2, c: 1, req: 'dp1', hasPlus: true },
-          { id: 'dp4', n: 'Demon Skin', r: 2, c: 2, req: null, hasPlus: true },
-          { id: 'dp5', n: 'Spike Shield', r: 3, c: 2, req: 'dp4', hasPlus: true },
-          { id: 'dp6', n: 'Chaos Master', r: 3, c: 3, req: 'dp2', hasPlus: false },
-          { id: 'dp7', n: 'Fire Nova', r: 4, c: 1, req: 'dp3', hasPlus: true },
-          { id: 'dp8', n: 'Infernal Soul', r: 4, c: 2, req: 'dp5', hasPlus: true },
-          { id: 'dp9', n: "Hell's Gate", r: 5, c: 3, req: 'dp6', hasPlus: false }
+          { id: 'dp1', n: 'Blood Bolts', r: 1, c: 1, req: null, hasPlus: true },
+          { id: 'dp2', n: 'Gut Spread', r: 1, c: 3, req: null, hasPlus: false },
+          { id: 'dp3', n: 'Blood Surge', r: 2, c: 1, req: 'dp1', hasPlus: true },
+          { id: 'dp4', n: 'Blood Tendrils', r: 2, c: 2, req: null, hasPlus: true },
+          { id: 'dp5', n: 'Impale', r: 3, c: 2, req: 'dp4', hasPlus: true },
+          { id: 'dp6', n: 'Spinal Tap', r: 3, c: 3, req: 'dp2', hasPlus: false },
+          { id: 'dp7', n: 'Blood Demons', r: 4, c: 1, req: 'dp3', hasPlus: true },
+          { id: 'dp8', n: 'Cartilage Build Up', r: 4, c: 2, req: 'dp5', hasPlus: true },
+          { id: 'dp9', n: "Single Out", r: 5, c: 3, req: 'dp6', hasPlus: false }
         ],
         s2: [
-          { id: 'dp10', n: 'Blood Surge', r: 1, c: 2, req: null, hasPlus: true },
-          { id: 'dp11', n: 'Shadow Step', r: 1, c: 3, req: null, hasPlus: true },
-          { id: 'dp12', n: 'Demonic Might', r: 2, c: 1, req: null, hasPlus: false },
-          { id: 'dp13', n: 'Drain Life', r: 2, c: 3, req: 'dp11', hasPlus: false },
-          { id: 'dp14', n: 'Corruption', r: 3, c: 1, req: 'dp12', hasPlus: false },
-          { id: 'dp15', n: 'Bone Spikes', r: 3, c: 2, req: null, hasPlus: true },
-          { id: 'dp16', n: 'Soul Eater', r: 4, c: 2, req: 'dp15', hasPlus: true },
-          { id: 'dp17', n: 'Darkness', r: 4, c: 3, req: 'dp13', hasPlus: false },
-          { id: 'dp18', n: 'Avatar of Chaos', r: 5, c: 2, req: 'dp16', hasPlus: false }
+          { id: 'dp10', n: 'Bone Fragments', r: 1, c: 2, req: null, hasPlus: true },
+          { id: 'dp11', n: 'Bone Barrage', r: 1, c: 3, req: null, hasPlus: true },
+          { id: 'dp12', n: 'Mana Devour', r: 2, c: 1, req: null, hasPlus: false },
+          { id: 'dp13', n: 'Mana Shield', r: 2, c: 3, req: 'dp11', hasPlus: false },
+          { id: 'dp14', n: 'Manapool Aura', r: 3, c: 1, req: 'dp12', hasPlus: false },
+          { id: 'dp15', n: 'Bone Storm', r: 3, c: 2, req: null, hasPlus: true },
+          { id: 'dp16', n: 'Ominous Aura', r: 4, c: 2, req: 'dp15', hasPlus: true },
+          { id: 'dp17', n: 'Demonic Presence', r: 4, c: 3, req: 'dp13', hasPlus: false },
+          { id: 'dp18', n: 'Ossification', r: 5, c: 2, req: 'dp16', hasPlus: false }
         ]
       },
       shaman: {
-        t1: 'Elemental',
-        t2: 'Totemic',
+        t1: 'Elements',
+        t2: 'Totems',
         s1: [
           { id: 'sh1', n: 'Fire Totem', r: 1, c: 1, req: null, hasPlus: true },
-          { id: 'sh2', n: 'Ancestral Guidance', r: 1, c: 3, req: null, hasPlus: false },
-          { id: 'sh3', n: 'Earth Bind', r: 2, c: 1, req: 'sh1', hasPlus: true },
-          { id: 'sh4', n: 'Storm Spirit', r: 2, c: 2, req: null, hasPlus: true },
-          { id: 'sh5', n: 'Lightning Shield', r: 3, c: 2, req: 'sh4', hasPlus: true },
-          { id: 'sh6', n: "Nature's Ally", r: 3, c: 3, req: 'sh2', hasPlus: false },
-          { id: 'sh7', n: 'Chain Lightning', r: 4, c: 1, req: 'sh3', hasPlus: true },
-          { id: 'sh8', n: 'Volcano', r: 4, c: 2, req: 'sh5', hasPlus: true },
-          { id: 'sh9', n: 'Elemental Overload', r: 5, c: 3, req: 'sh6', hasPlus: false }
+          { id: 'sh2', n: 'Storm Totem', r: 1, c: 3, req: null, hasPlus: false },
+          { id: 'sh3', n: 'Earth Totem', r: 2, c: 1, req: 'sh1', hasPlus: true },
+          { id: 'sh4', n: 'Chaos Totem', r: 2, c: 2, req: null, hasPlus: true },
+          { id: 'sh5', n: 'Tectonic Boulder', r: 3, c: 2, req: 'sh4', hasPlus: true },
+          { id: 'sh6', n: 'Spiritual Guide', r: 3, c: 3, req: 'sh2', hasPlus: false },
+          { id: 'sh7', n: 'Meteor Storm', r: 4, c: 1, req: 'sh3', hasPlus: true },
+          { id: 'sh8', n: 'Twisters', r: 4, c: 2, req: 'sh5', hasPlus: true },
+          { id: 'sh9', n: 'Tornado', r: 5, c: 3, req: 'sh6', hasPlus: false }
         ],
         s2: [
-          { id: 'sh10', n: 'Wolf Spirit', r: 1, c: 2, req: null, hasPlus: true },
-          { id: 'sh11', n: 'Healing Rain', r: 1, c: 3, req: null, hasPlus: true },
-          { id: 'sh12', n: 'Static Field', r: 2, c: 1, req: null, hasPlus: false },
-          { id: 'sh13', n: 'Bloodlust', r: 2, c: 3, req: 'sh11', hasPlus: false },
-          { id: 'sh14', n: 'Earthquake', r: 3, c: 1, req: 'sh12', hasPlus: false },
-          { id: 'sh15', n: 'Windfury', r: 3, c: 2, req: null, hasPlus: true },
-          { id: 'sh16', n: 'Storm Totem', r: 4, c: 2, req: 'sh15', hasPlus: true },
-          { id: 'sh17', n: 'Thunderstrike', r: 4, c: 3, req: 'sh13', hasPlus: false },
-          { id: 'sh18', n: 'Spirit Walk', r: 5, c: 2, req: 'sh16', hasPlus: false }
+          { id: 'sh10', n: 'Spirit Wolves', r: 1, c: 2, req: null, hasPlus: true },
+          { id: 'sh11', n: 'Earth Bind', r: 1, c: 3, req: null, hasPlus: true },
+          { id: 'sh12', n: 'Scent of the Wolf', r: 2, c: 1, req: null, hasPlus: false },
+          { id: 'sh13', n: 'Astral Intellect', r: 2, c: 3, req: 'sh11', hasPlus: false },
+          { id: 'sh14', n: 'Earths Grace', r: 3, c: 1, req: 'sh12', hasPlus: false },
+          { id: 'sh15', n: 'Fractal Mind', r: 3, c: 2, req: null, hasPlus: true },
+          { id: 'sh16', n: 'Natures Prophet', r: 4, c: 2, req: 'sh15', hasPlus: true },
+          { id: 'sh17', n: 'Rock Fragments', r: 4, c: 3, req: 'sh13', hasPlus: false },
+          { id: 'sh18', n: 'Fissures', r: 5, c: 2, req: 'sh16', hasPlus: false }
         ]
       },
       white_mage: {
-        t1: 'Holy Beam',
-        t2: 'Benediction',
+        t1: 'Holy',
+        t2: 'Dark',
         s1: [
-          { id: 'wm1', n: 'Holy Bolt', r: 1, c: 1, req: null, hasPlus: true },
-          { id: 'wm2', n: 'Mana Flow', r: 1, c: 3, req: null, hasPlus: false },
-          { id: 'wm3', n: 'Divine Armor', r: 2, c: 1, req: 'wm1', hasPlus: true },
-          { id: 'wm4', n: 'Inner Fire', r: 2, c: 2, req: null, hasPlus: true },
-          { id: 'wm5', n: 'Holy Fire', r: 3, c: 2, req: 'wm4', hasPlus: true },
-          { id: 'wm6', n: 'Light Master', r: 3, c: 3, req: 'wm2', hasPlus: false },
-          { id: 'wm7', n: 'Heavenly Beam', r: 4, c: 1, req: 'wm3', hasPlus: true },
-          { id: 'wm8', n: 'Purify', r: 4, c: 2, req: 'wm5', hasPlus: true },
-          { id: 'wm9', n: 'Angel Form', r: 5, c: 3, req: 'wm6', hasPlus: false }
+          { id: 'wm1', n: 'Flash Heal', r: 1, c: 1, req: null, hasPlus: true },
+          { id: 'wm2', n: 'Mana Orb', r: 1, c: 3, req: null, hasPlus: false },
+          { id: 'wm3', n: 'Holy Shield', r: 2, c: 1, req: 'wm1', hasPlus: true },
+          { id: 'wm4', n: 'Divine Healing', r: 2, c: 2, req: null, hasPlus: true },
+          { id: 'wm5', n: 'Burst of Light', r: 3, c: 2, req: 'wm4', hasPlus: true },
+          { id: 'wm6', n: 'Heavenly Fire', r: 3, c: 3, req: 'wm2', hasPlus: false },
+          { id: 'wm7', n: 'Healing Zone', r: 4, c: 1, req: 'wm3', hasPlus: true },
+          { id: 'wm8', n: 'Chain of Holy Lightning', r: 4, c: 2, req: 'wm5', hasPlus: true },
+          { id: 'wm9', n: 'Benediction', r: 5, c: 3, req: 'wm6', hasPlus: false }
         ],
         s2: [
-          { id: 'wm10', n: 'Heal', r: 1, c: 2, req: null, hasPlus: true },
-          { id: 'wm11', n: 'Sanctuary', r: 1, c: 3, req: null, hasPlus: true },
-          { id: 'wm12', n: 'Resurrection', r: 2, c: 1, req: null, hasPlus: false },
-          { id: 'wm13', n: 'Benediction', r: 2, c: 3, req: 'wm11', hasPlus: false },
-          { id: 'wm14', n: 'Divine Aura', r: 3, c: 1, req: 'wm12', hasPlus: false },
-          { id: 'wm15', n: 'Holy Nova', r: 3, c: 2, req: null, hasPlus: true },
-          { id: 'wm16', n: "God's Grace", r: 4, c: 2, req: 'wm15', hasPlus: true },
-          { id: 'wm17', n: 'Faith', r: 4, c: 3, req: 'wm13', hasPlus: false },
-          { id: 'wm18', n: 'Archangel', r: 5, c: 2, req: 'wm16', hasPlus: false }
+          { id: 'wm10', n: 'Shadow Bolt', r: 1, c: 2, req: null, hasPlus: true },
+          { id: 'wm11', n: 'Restless Spirits', r: 1, c: 3, req: null, hasPlus: true },
+          { id: 'wm12', n: 'Dark Oath', r: 2, c: 1, req: null, hasPlus: false },
+          { id: 'wm13', n: 'Soul Spurn', r: 2, c: 3, req: 'wm11', hasPlus: false },
+          { id: 'wm14', n: 'Malediction', r: 3, c: 1, req: 'wm12', hasPlus: false },
+          { id: 'wm15', n: 'Satans Mark', r: 3, c: 2, req: null, hasPlus: true },
+          { id: 'wm16', n: 'Digest Souls', r: 4, c: 2, req: 'wm15', hasPlus: true },
+          { id: 'wm17', n: 'Black Mass', r: 4, c: 3, req: 'wm13', hasPlus: false },
+          { id: 'wm18', n: 'Martyr', r: 5, c: 2, req: 'wm16', hasPlus: false }
         ]
       },
       marauder: {
-        t1: 'Bombardier',
-        t2: 'Wrecker',
+        t1: 'Wrecker',
+        t2: 'Trapper',
         s1: [
-          { id: 'ma1', n: 'Unstable Bomb', r: 1, c: 1, req: null, hasPlus: true },
-          { id: 'ma2', n: 'Armor Piercing', r: 1, c: 3, req: null, hasPlus: false },
-          { id: 'ma3', n: 'Shrapnel', r: 2, c: 1, req: 'ma1', hasPlus: true },
-          { id: 'ma4', n: 'Heavy Weights', r: 2, c: 2, req: null, hasPlus: true },
-          { id: 'ma5', n: 'Concussion', r: 3, c: 2, req: 'ma4', hasPlus: true },
-          { id: 'ma6', n: 'Madness', r: 3, c: 3, req: 'ma2', hasPlus: false },
-          { id: 'ma7', n: 'Grenade Toss', r: 4, c: 1, req: 'ma3', hasPlus: true },
-          { id: 'ma8', n: 'Cluster Bomb', r: 4, c: 2, req: 'ma5', hasPlus: true },
-          { id: 'ma9', n: 'Big Bertha', r: 5, c: 3, req: 'ma6', hasPlus: false }
+          { id: 'ma1', n: 'Wrecking Ball', r: 1, c: 1, req: null, hasPlus: true },
+          { id: 'ma2', n: 'Heavy Ball', r: 1, c: 3, req: null, hasPlus: false },
+          { id: 'ma3', n: 'Unstable Bomb', r: 2, c: 1, req: 'ma1', hasPlus: true },
+          { id: 'ma4', n: 'The Big Bo-Om', r: 2, c: 2, req: null, hasPlus: true },
+          { id: 'ma5', n: 'Bouncing Grenade', r: 3, c: 2, req: 'ma4', hasPlus: true },
+          { id: 'ma6', n: 'Bombardment', r: 3, c: 3, req: 'ma2', hasPlus: false },
+          { id: 'ma7', n: 'Madness Control', r: 4, c: 1, req: 'ma3', hasPlus: true },
+          { id: 'ma8', n: 'Force Overwhelming', r: 4, c: 2, req: 'ma5', hasPlus: true },
+          { id: 'ma9', n: 'Annihilation', r: 5, c: 3, req: 'ma6', hasPlus: false }
         ],
         s2: [
-          { id: 'ma10', n: 'Chain Hook', r: 1, c: 2, req: null, hasPlus: true },
-          { id: 'ma11', n: 'Iron Ball', r: 1, c: 3, req: null, hasPlus: true },
-          { id: 'ma12', n: 'Steel Skin', r: 2, c: 1, req: null, hasPlus: false },
-          { id: 'ma13', n: 'Wrecking Ball', r: 2, c: 3, req: 'ma11', hasPlus: false },
-          { id: 'ma14', n: 'Spiked Armor', r: 3, c: 1, req: 'ma12', hasPlus: false },
-          { id: 'ma15', n: 'Battle Cry', r: 3, c: 2, req: null, hasPlus: true },
-          { id: 'ma16', n: 'Juggernaut', r: 4, c: 2, req: 'ma15', hasPlus: true },
-          { id: 'ma17', n: 'Rage', r: 4, c: 3, req: 'ma13', hasPlus: false },
-          { id: 'ma18', n: 'Dreadnought', r: 5, c: 2, req: 'ma16', hasPlus: false }
+          { id: 'ma10', n: 'Chain Trap', r: 1, c: 2, req: null, hasPlus: true },
+          { id: 'ma11', n: 'Serrated Chains', r: 1, c: 3, req: null, hasPlus: true },
+          { id: 'ma12', n: 'Titanium Chains', r: 2, c: 1, req: null, hasPlus: false },
+          { id: 'ma13', n: 'Crazy Grapple', r: 2, c: 3, req: 'ma11', hasPlus: false },
+          { id: 'ma14', n: 'Retiarius Net', r: 3, c: 1, req: 'ma12', hasPlus: false },
+          { id: 'ma15', n: 'Master Trap Maker', r: 3, c: 2, req: null, hasPlus: true },
+          { id: 'ma16', n: 'Rend Flesh', r: 4, c: 2, req: 'ma15', hasPlus: true },
+          { id: 'ma17', n: 'Resilient Gladiator', r: 4, c: 3, req: 'ma13', hasPlus: false },
+          { id: 'ma18', n: 'Flail Mastery', r: 5, c: 2, req: 'ma16', hasPlus: false }
         ]
       },
       plague_doctor: {
-        t1: 'Infection',
-        t2: 'Medicine',
+        t1: 'Plague',
+        t2: 'Doctor',
         s1: [
-          { id: 'pd1', n: 'Plague Rat', r: 1, c: 1, req: null, hasPlus: true },
-          { id: 'pd2', n: 'Contagion', r: 1, c: 3, req: null, hasPlus: false },
-          { id: 'pd3', n: 'Toxic Cloud', r: 2, c: 1, req: 'pd1', hasPlus: true },
-          { id: 'pd4', n: 'Acid Blast', r: 2, c: 2, req: null, hasPlus: true },
-          { id: 'pd5', n: 'Biohazard', r: 3, c: 2, req: 'pd4', hasPlus: true },
-          { id: 'pd6', n: 'Virulence', r: 3, c: 3, req: 'pd2', hasPlus: false },
-          { id: 'pd7', n: 'Corrosive Slop', r: 4, c: 1, req: 'pd3', hasPlus: true },
-          { id: 'pd8', n: 'Epidemic', r: 4, c: 2, req: 'pd5', hasPlus: true },
-          { id: 'pd9', n: 'Plague Lord', r: 5, c: 3, req: 'pd6', hasPlus: false }
+          { id: 'pd1', n: 'Plague of Rats', r: 1, c: 1, req: null, hasPlus: true },
+          { id: 'pd2', n: 'Randy the Rancid Rat', r: 1, c: 3, req: null, hasPlus: false },
+          { id: 'pd3', n: 'Exploding Mice', r: 2, c: 1, req: 'pd1', hasPlus: true },
+          { id: 'pd4', n: 'Miasma', r: 2, c: 2, req: null, hasPlus: true },
+          { id: 'pd5', n: 'Toxic Flask', r: 3, c: 2, req: 'pd4', hasPlus: true },
+          { id: 'pd6', n: 'Plague Master', r: 3, c: 3, req: 'pd2', hasPlus: false },
+          { id: 'pd7', n: 'Crematus', r: 4, c: 1, req: 'pd3', hasPlus: true },
+          { id: 'pd8', n: 'Crow Masks Presence', r: 4, c: 2, req: 'pd5', hasPlus: true },
+          { id: 'pd9', n: 'Oops', r: 5, c: 3, req: 'pd6', hasPlus: false }
         ],
         s2: [
-          { id: 'pd10', n: 'Healing Vial', r: 1, c: 2, req: null, hasPlus: true },
-          { id: 'pd11', n: 'Antidote', r: 1, c: 3, req: null, hasPlus: true },
-          { id: 'pd12', n: 'Sterilize', r: 2, c: 1, req: null, hasPlus: false },
-          { id: 'pd13', n: 'Tincture', r: 2, c: 3, req: 'pd11', hasPlus: false },
-          { id: 'pd14', n: 'Medical Kit', r: 3, c: 1, req: 'pd12', hasPlus: false },
-          { id: 'pd15', n: 'Field Practice', r: 3, c: 2, req: null, hasPlus: true },
-          { id: 'pd16', n: 'Panacea', r: 4, c: 2, req: 'pd15', hasPlus: true },
-          { id: 'pd17', n: 'Preservation', r: 4, c: 3, req: 'pd13', hasPlus: false },
-          { id: 'pd18', n: 'Life Support', r: 5, c: 2, req: 'pd16', hasPlus: false }
+          { id: 'pd10', n: 'Booster Shot', r: 1, c: 2, req: null, hasPlus: true },
+          { id: 'pd11', n: 'Jar of Leeches', r: 1, c: 3, req: null, hasPlus: true },
+          { id: 'pd12', n: 'Blood Sustenance', r: 2, c: 1, req: null, hasPlus: false },
+          { id: 'pd13', n: 'Surgical Blood Letting', r: 2, c: 3, req: 'pd11', hasPlus: false },
+          { id: 'pd14', n: 'Chant of Weakness', r: 3, c: 1, req: 'pd12', hasPlus: false },
+          { id: 'pd15', n: 'Lifeblood Aura', r: 3, c: 2, req: null, hasPlus: true },
+          { id: 'pd16', n: 'Malpractice', r: 4, c: 2, req: 'pd15', hasPlus: true },
+          { id: 'pd17', n: 'Defunct Surgeon', r: 4, c: 3, req: 'pd13', hasPlus: false },
+          { id: 'pd18', n: 'Devout Doctor', r: 5, c: 2, req: 'pd16', hasPlus: false }
         ]
       },
       illusionist: {
         t1: 'Phantasm',
         t2: 'Mirror',
         s1: [
-          { id: 'il1', n: 'Clone Strike', r: 1, c: 1, req: null, hasPlus: true },
-          { id: 'il2', n: 'Mind Trick', r: 1, c: 3, req: null, hasPlus: false },
-          { id: 'il3', n: 'Spectral Blade', r: 2, c: 1, req: 'il1', hasPlus: true },
-          { id: 'il4', n: 'Confusion', r: 2, c: 2, req: null, hasPlus: true },
-          { id: 'il5', n: 'Hallucination', r: 3, c: 2, req: 'il4', hasPlus: true },
-          { id: 'il6', n: 'Illusion Mastery', r: 3, c: 3, req: 'il2', hasPlus: false },
-          { id: 'il7', n: 'Phantasmagoria', r: 4, c: 1, req: 'il3', hasPlus: true },
-          { id: 'il8', n: 'Terror', r: 4, c: 2, req: 'il5', hasPlus: true },
-          { id: 'il9', n: 'Mirror Realm', r: 5, c: 3, req: 'il6', hasPlus: false }
+          { id: 'il1', n: 'Sands of Time', r: 1, c: 1, req: null, hasPlus: true },
+          { id: 'il2', n: 'Sand Guardians', r: 1, c: 3, req: null, hasPlus: false },
+          { id: 'il3', n: 'Link of Sand', r: 2, c: 1, req: 'il1', hasPlus: true },
+          { id: 'il4', n: 'Piercing Sand', r: 2, c: 2, req: null, hasPlus: true },
+          { id: 'il5', n: 'Dissipation', r: 3, c: 2, req: 'il4', hasPlus: true },
+          { id: 'il6', n: 'Expansive Mind', r: 3, c: 3, req: 'il2', hasPlus: false },
+          { id: 'il7', n: 'Gravitation Slam', r: 4, c: 1, req: 'il3', hasPlus: true },
+          { id: 'il8', n: 'Circle of Guardians', r: 4, c: 2, req: 'il5', hasPlus: true },
+          { id: 'il9', n: 'Split Reality', r: 5, c: 3, req: 'il6', hasPlus: false }
         ],
         s2: [
-          { id: 'il10', n: 'Mirror Image', r: 1, c: 2, req: null, hasPlus: true },
-          { id: 'il11', n: 'Teleport', r: 1, c: 3, req: null, hasPlus: true },
-          { id: 'il12', n: 'Prismatic Spray', r: 2, c: 1, req: null, hasPlus: false },
-          { id: 'il13', n: 'Arcane Shift', r: 2, c: 3, req: 'il11', hasPlus: false },
-          { id: 'il14', n: 'Vortex', r: 3, c: 1, req: 'il12', hasPlus: false },
-          { id: 'il15', n: 'Light Show', r: 3, c: 2, req: null, hasPlus: true },
-          { id: 'il16', n: 'Dazzle', r: 4, c: 2, req: 'il15', hasPlus: true },
-          { id: 'il17', n: 'Refraction', r: 4, c: 3, req: 'il13', hasPlus: false },
-          { id: 'il18', n: 'Grand Finale', r: 5, c: 2, req: 'il16', hasPlus: false }
+          { id: 'il10', n: 'Time Deceleration', r: 1, c: 2, req: null, hasPlus: true },
+          { id: 'il11', n: 'Temporal Heroes', r: 1, c: 3, req: null, hasPlus: true },
+          { id: 'il12', n: 'Age Proliferation', r: 2, c: 1, req: null, hasPlus: false },
+          { id: 'il13', n: 'Call For War', r: 2, c: 3, req: 'il11', hasPlus: false },
+          { id: 'il14', n: 'Combat Order', r: 3, c: 1, req: 'il12', hasPlus: false },
+          { id: 'il15', n: 'Precognition', r: 3, c: 2, req: null, hasPlus: true },
+          { id: 'il16', n: 'Dimensional Displacement', r: 4, c: 2, req: 'il15', hasPlus: true },
+          { id: 'il17', n: 'Spirit Link', r: 4, c: 3, req: 'il13', hasPlus: false },
+          { id: 'il18', n: 'Cheapshot', r: 5, c: 2, req: 'il16', hasPlus: false }
         ]
       },
       exo: {
-        t1: 'Gravity',
-        t2: 'Force',
+        t1: 'Solar',
+        t2: 'Lunar',
         s1: [
-          { id: 'ex1', n: 'Force Field', r: 1, c: 1, req: null, hasPlus: true },
-          { id: 'ex2', n: 'Kinetic Energy', r: 1, c: 3, req: null, hasPlus: false },
-          { id: 'ex3', n: 'Gravity Well', r: 2, c: 1, req: 'ex1', hasPlus: true },
-          { id: 'ex4', n: 'Push', r: 2, c: 2, req: null, hasPlus: true },
-          { id: 'ex5', n: 'Repel', r: 3, c: 2, req: 'ex4', hasPlus: true },
-          { id: 'ex6', n: 'Momentum', r: 3, c: 3, req: 'ex2', hasPlus: false },
-          { id: 'ex7', n: 'Singularity', r: 4, c: 1, req: 'ex3', hasPlus: true },
-          { id: 'ex8', n: 'Collapse', r: 4, c: 2, req: 'ex5', hasPlus: true },
-          { id: 'ex9', n: 'Event Horizon', r: 5, c: 3, req: 'ex6', hasPlus: false }
+          { id: 'ex1', n: 'Solar Form', r: 1, c: 1, req: null, hasPlus: true },
+          { id: 'ex2', n: 'Solar Flare', r: 1, c: 3, req: null, hasPlus: false },
+          { id: 'ex3', n: 'Solar Burst', r: 2, c: 1, req: 'ex1', hasPlus: true },
+          { id: 'ex4', n: 'Solar Dash', r: 2, c: 2, req: null, hasPlus: true },
+          { id: 'ex5', n: 'Scorching Whip', r: 3, c: 2, req: 'ex4', hasPlus: true },
+          { id: 'ex6', n: 'Shine Bright', r: 3, c: 3, req: 'ex2', hasPlus: false },
+          { id: 'ex7', n: 'Whiplash', r: 4, c: 1, req: 'ex3', hasPlus: true },
+          { id: 'ex8', n: 'Supernova', r: 4, c: 2, req: 'ex5', hasPlus: true },
+          { id: 'ex9', n: 'Collision', r: 5, c: 3, req: 'ex6', hasPlus: false }
         ],
         s2: [
-          { id: 'ex10', n: 'Exo Strike', r: 1, c: 2, req: null, hasPlus: true },
-          { id: 'ex11', n: 'Jetpack', r: 1, c: 3, req: null, hasPlus: true },
-          { id: 'ex12', n: 'Laser Beam', r: 2, c: 1, req: null, hasPlus: false },
-          { id: 'ex13', n: 'Charge Shot', r: 2, c: 3, req: 'ex11', hasPlus: false },
-          { id: 'ex14', n: 'Plasma Shield', r: 3, c: 1, req: 'ex12', hasPlus: false },
-          { id: 'ex15', n: 'Overload', r: 3, c: 2, req: null, hasPlus: true },
-          { id: 'ex16', n: 'Battery Drain', r: 4, c: 2, req: 'ex15', hasPlus: true },
-          { id: 'ex17', n: 'Photon Blast', r: 4, c: 3, req: 'ex13', hasPlus: false },
-          { id: 'ex18', n: 'Supernova', r: 5, c: 2, req: 'ex16', hasPlus: false }
+          { id: 'ex10', n: 'Lunar Form', r: 1, c: 2, req: null, hasPlus: true },
+          { id: 'ex11', n: 'Lunar Orbit', r: 1, c: 3, req: null, hasPlus: true },
+          { id: 'ex12', n: 'Moonlight', r: 2, c: 1, req: null, hasPlus: false },
+          { id: 'ex13', n: 'Dark Side of the Moon', r: 2, c: 3, req: 'ex11', hasPlus: false },
+          { id: 'ex14', n: 'Blood Moon', r: 3, c: 1, req: 'ex12', hasPlus: false },
+          { id: 'ex15', n: 'Black Hole', r: 3, c: 2, req: null, hasPlus: true },
+          { id: 'ex16', n: 'Asteroid', r: 4, c: 2, req: 'ex15', hasPlus: true },
+          { id: 'ex17', n: 'Tsunami', r: 4, c: 3, req: 'ex13', hasPlus: false },
+          { id: 'ex18', n: 'Blinding Light', r: 5, c: 2, req: 'ex16', hasPlus: false }
         ]
       },
       butcher: {
         t1: 'Meat',
         t2: 'Blood',
         s1: [
-          { id: 'bu1', n: 'Meat Hook', r: 1, c: 1, req: null, hasPlus: true },
-          { id: 'bu2', n: 'Fresh Meat', r: 1, c: 3, req: null, hasPlus: false },
-          { id: 'bu3', n: 'Cleave', r: 2, c: 1, req: 'bu1', hasPlus: true },
-          { id: 'bu4', n: 'Rot', r: 2, c: 2, req: null, hasPlus: true },
-          { id: 'bu5', n: 'Infection', r: 3, c: 2, req: 'bu4', hasPlus: true },
-          { id: 'bu6', n: "Butcher's Grip", r: 3, c: 3, req: 'bu2', hasPlus: false },
-          { id: 'bu7', n: 'Carve', r: 4, c: 1, req: 'bu3', hasPlus: true },
-          { id: 'bu8', n: 'Mutilate', r: 4, c: 2, req: 'bu5', hasPlus: true },
-          { id: 'bu9', n: 'The Slaughter', r: 5, c: 3, req: 'bu6', hasPlus: false }
+          { id: 'bu1', n: "Butchers Hook", r: 1, c: 1, req: null, hasPlus: true },
+          { id: 'bu2', n: 'Chain Swing', r: 1, c: 3, req: null, hasPlus: false },
+          { id: 'bu3', n: 'Slicing Throw', r: 2, c: 1, req: 'bu1', hasPlus: true },
+          { id: 'bu4', n: 'Brutalizing Slash', r: 2, c: 2, req: null, hasPlus: true },
+          { id: 'bu5', n: 'Chain Rip', r: 3, c: 2, req: 'bu4', hasPlus: true },
+          { id: 'bu6', n: 'Hunger For Blood', r: 3, c: 3, req: 'bu2', hasPlus: false },
+          { id: 'bu7', n: 'Insatiable Hunger', r: 4, c: 1, req: 'bu3', hasPlus: true },
+          { id: 'bu8', n: 'Furious Strike', r: 4, c: 2, req: 'bu5', hasPlus: true },
+          { id: 'bu9', n: 'Ending Fate', r: 5, c: 3, req: 'bu6', hasPlus: false }
         ],
         s2: [
-          { id: 'bu10', n: 'Chop', r: 1, c: 2, req: null, hasPlus: true },
-          { id: 'bu11', n: 'Charge', r: 1, c: 3, req: null, hasPlus: true },
-          { id: 'bu12', n: 'Bloodbath', r: 2, c: 1, req: null, hasPlus: false },
-          { id: 'bu13', n: 'Heavy Blade', r: 2, c: 3, req: 'bu11', hasPlus: false },
-          { id: 'bu14', n: 'Savage', r: 3, c: 1, req: 'bu12', hasPlus: false },
-          { id: 'bu15', n: 'Frenzy', r: 3, c: 2, req: null, hasPlus: true },
-          { id: 'bu16', n: 'Rage', r: 4, c: 2, req: 'bu15', hasPlus: true },
-          { id: 'bu17', n: 'Executioner', r: 4, c: 3, req: 'bu13', hasPlus: false },
-          { id: 'bu18', n: 'Butcher Shop', r: 5, c: 2, req: 'bu16', hasPlus: false }
+          { id: 'bu10', n: 'Awakening Fury', r: 1, c: 2, req: null, hasPlus: true },
+          { id: 'bu11', n: 'Blender', r: 1, c: 3, req: null, hasPlus: true },
+          { id: 'bu12', n: 'Enraged Mania', r: 2, c: 1, req: null, hasPlus: false },
+          { id: 'bu13', n: 'Fuel To Fire', r: 2, c: 3, req: 'bu11', hasPlus: false },
+          { id: 'bu14', n: 'Holy Form', r: 3, c: 1, req: 'bu12', hasPlus: false },
+          { id: 'bu15', n: 'Sacrilegious Scorn', r: 3, c: 2, req: null, hasPlus: true },
+          { id: 'bu16', n: 'Spiritual Duality', r: 4, c: 2, req: 'bu15', hasPlus: true },
+          { id: 'bu17', n: 'Submerged Knives', r: 4, c: 3, req: 'bu13', hasPlus: false },
+          { id: 'bu18', n: 'Unholy Form', r: 5, c: 2, req: 'bu16', hasPlus: false }
         ]
       },
       stormweaver: {
         t1: 'Thunder',
         t2: 'Storm',
         s1: [
-          { id: 'st1', n: 'Lightning Bolt', r: 1, c: 1, req: null, hasPlus: true },
-          { id: 'st2', n: 'Conductivity', r: 1, c: 3, req: null, hasPlus: false },
+          { id: 'st1', n: 'Storm Bolt', r: 1, c: 1, req: null, hasPlus: true },
+          { id: 'st2', n: 'Charged Bolts', r: 1, c: 3, req: null, hasPlus: false },
           { id: 'st3', n: 'Static Shock', r: 2, c: 1, req: 'st1', hasPlus: true },
-          { id: 'st4', n: 'Thunderclap', r: 2, c: 2, req: null, hasPlus: true },
-          { id: 'st5', n: 'Electric Field', r: 3, c: 2, req: 'st4', hasPlus: true },
-          { id: 'st6', n: 'Volt Mastery', r: 3, c: 3, req: 'st2', hasPlus: false },
+          { id: 'st4', n: 'Lightning Surge', r: 2, c: 2, req: null, hasPlus: true },
+          { id: 'st5', n: 'High Voltage Aura', r: 3, c: 2, req: 'st4', hasPlus: true },
+          { id: 'st6', n: 'Electric Cells', r: 3, c: 3, req: 'st2', hasPlus: false },
           { id: 'st7', n: 'Chain Lightning', r: 4, c: 1, req: 'st3', hasPlus: true },
-          { id: 'st8', n: 'Ion Storm', r: 4, c: 2, req: 'st5', hasPlus: true },
-          { id: 'st9', n: 'God of Thunder', r: 5, c: 3, req: 'st6', hasPlus: false }
+          { id: 'st8', n: 'Apocalyptic Thunder', r: 4, c: 2, req: 'st5', hasPlus: true },
+          { id: 'st9', n: 'Symphony of Thunder', r: 5, c: 3, req: 'st6', hasPlus: false }
         ],
         s2: [
           { id: 'st10', n: 'Storm Cloud', r: 1, c: 2, req: null, hasPlus: true },
-          { id: 'st11', n: 'Flash Dash', r: 1, c: 3, req: null, hasPlus: true },
-          { id: 'st12', n: 'Rain of Sparks', r: 2, c: 1, req: null, hasPlus: false },
-          { id: 'st13', n: 'Thunderstrike', r: 2, c: 3, req: 'st11', hasPlus: false },
-          { id: 'st14', n: 'Windfury', r: 3, c: 1, req: 'st12', hasPlus: false },
-          { id: 'st15', n: 'Hurricane', r: 3, c: 2, req: null, hasPlus: true },
-          { id: 'st16', n: 'Tornado', r: 4, c: 2, req: 'st15', hasPlus: true },
-          { id: 'st17', n: 'Cyclone', r: 4, c: 3, req: 'st13', hasPlus: false },
-          { id: 'st18', n: 'Maelstrom', r: 5, c: 2, req: 'st16', hasPlus: false }
+          { id: 'st11', n: 'Pulsing Charge', r: 1, c: 3, req: null, hasPlus: true },
+          { id: 'st12', n: 'Loaded Pulse', r: 2, c: 1, req: null, hasPlus: false },
+          { id: 'st13', n: 'Wave Length', r: 2, c: 3, req: 'st11', hasPlus: false },
+          { id: 'st14', n: 'Manafiend', r: 3, c: 1, req: 'st12', hasPlus: false },
+          { id: 'st15', n: 'Gateway', r: 3, c: 2, req: null, hasPlus: true },
+          { id: 'st16', n: 'The Battery Within', r: 4, c: 2, req: 'st15', hasPlus: true },
+          { id: 'st17', n: 'Hyper Charged', r: 4, c: 3, req: 'st13', hasPlus: false },
+          { id: 'st18', n: 'Aftershock', r: 5, c: 2, req: 'st16', hasPlus: false }
         ]
       },
       bard: {
-        t1: 'Minstrel',
-        t2: 'Troubadour',
+        t1: 'Music',
+        t2: 'Metal',
         s1: [
-          { id: 'ba1', n: 'Melodic Chord', r: 1, c: 1, req: null, hasPlus: true },
-          { id: 'ba2', n: 'Harmony', r: 1, c: 3, req: null, hasPlus: false },
-          { id: 'ba3', n: 'Sound Wave', r: 2, c: 1, req: 'ba1', hasPlus: true },
-          { id: 'ba4', n: 'Discord', r: 2, c: 2, req: null, hasPlus: true },
-          { id: 'ba5', n: 'Vibrant Echo', r: 3, c: 2, req: 'ba4', hasPlus: true },
-          { id: 'ba6', n: 'Rhythm', r: 3, c: 3, req: 'ba2', hasPlus: false },
-          { id: 'ba7', n: 'Symphony', r: 4, c: 1, req: 'ba3', hasPlus: true },
-          { id: 'ba8', n: 'Resonance', r: 4, c: 2, req: 'ba5', hasPlus: true },
-          { id: 'ba9', n: 'Masterpiece', r: 5, c: 3, req: 'ba6', hasPlus: false }
+          { id: 'bd1', n: 'Sounds of Silence', r: 1, c: 1, req: null, hasPlus: true },
+          { id: 'bd2', n: 'High Db', r: 1, c: 3, req: null, hasPlus: false },
+          { id: 'bd3', n: 'Insane Riff', r: 2, c: 1, req: 'bd1', hasPlus: true },
+          { id: 'bd4', n: "Satan's Melody", r: 2, c: 2, req: null, hasPlus: true },
+          { id: 'bd5', n: 'Craving for Attention', r: 3, c: 2, req: 'bd4', hasPlus: true },
+          { id: 'bd6', n: 'Craving for Another Killing', r: 3, c: 3, req: 'bd2', hasPlus: false },
+          { id: 'bd7', n: 'Crowd Pummeler', r: 4, c: 1, req: 'bd3', hasPlus: true },
+          { id: 'bd8', n: 'Headbanger', r: 4, c: 2, req: 'bd5', hasPlus: true },
+          { id: 'bd9', n: 'Moshpit Massacre', r: 5, c: 3, req: 'bd6', hasPlus: false }
         ],
         s2: [
-          { id: 'ba10', n: 'Inspiring Tune', r: 1, c: 2, req: null, hasPlus: true },
-          { id: 'ba11', n: 'Dancing Step', r: 1, c: 3, req: null, hasPlus: true },
-          { id: 'ba12', n: 'Lullaby', r: 2, c: 1, req: null, hasPlus: false },
-          { id: 'ba13', n: 'Power Ballad', r: 2, c: 3, req: 'ba11', hasPlus: false },
-          { id: 'ba14', n: 'Chorus', r: 3, c: 1, req: 'ba12', hasPlus: false },
-          { id: 'ba15', n: 'Battle Song', r: 3, c: 2, req: null, hasPlus: true },
-          { id: 'ba16', n: 'Heroic Anthem', r: 4, c: 2, req: 'ba15', hasPlus: true },
-          { id: 'ba17', n: 'Crescendo', r: 4, c: 3, req: 'ba13', hasPlus: false },
-          { id: 'ba18', n: 'Final Encore', r: 5, c: 2, req: 'ba16', hasPlus: false }
+          { id: 'bd10', n: 'Slaying Riffs', r: 1, c: 2, req: null, hasPlus: true },
+          { id: 'bd11', n: 'Sacrilegious Symphony', r: 1, c: 3, req: null, hasPlus: true },
+          { id: 'bd12', n: 'Pyro Technician', r: 2, c: 1, req: null, hasPlus: false },
+          { id: 'bd13', n: 'Progenies of the Great Cataclysm', r: 2, c: 3, req: 'bd11', hasPlus: false },
+          { id: 'bd14', n: 'Crowd Dive', r: 3, c: 1, req: 'bd12', hasPlus: false },
+          { id: 'bd15', n: 'Bard Skill 15', r: 3, c: 2, req: null, hasPlus: true },
+          { id: 'bd16', n: 'Bard Skill 16', r: 4, c: 2, req: 'bd15', hasPlus: true },
+          { id: 'bd17', n: 'Bard Skill 17', r: 4, c: 3, req: 'bd13', hasPlus: false },
+          { id: 'bd18', n: 'Bard Skill 18', r: 5, c: 2, req: 'bd16', hasPlus: false }
+        ]
+      },
+
+      shield_lancer: {
+        t1: 'Lancer',
+        t2: 'Shield',
+        s1: [
+          { id: 'sl1', n: 'Lance Thrust', r: 1, c: 1, req: null, hasPlus: true },
+          { id: 'sl2', n: 'Crushing Lance', r: 1, c: 3, req: null, hasPlus: false },
+          { id: 'sl3', n: 'Lance Throw', r: 2, c: 1, req: 'sl1', hasPlus: true },
+          { id: 'sl4', n: 'Glorious Strike', r: 2, c: 2, req: null, hasPlus: true },
+          { id: 'sl5', n: 'Battle Charge', r: 3, c: 2, req: 'sl4', hasPlus: true },
+          { id: 'sl6', n: 'Armor Crush', r: 3, c: 3, req: 'sl2', hasPlus: false },
+          { id: 'sl7', n: 'Counter', r: 4, c: 1, req: 'sl3', hasPlus: true },
+          { id: 'sl8', n: 'Glory', r: 4, c: 2, req: 'sl5', hasPlus: true },
+          { id: 'sl9', n: 'Commending Banner', r: 5, c: 3, req: 'sl6', hasPlus: false }
+        ],
+        s2: [
+          { id: 'sl10', n: 'Shield Slam', r: 1, c: 2, req: null, hasPlus: true },
+          { id: 'sl11', n: 'Shield Wall', r: 1, c: 3, req: null, hasPlus: true },
+          { id: 'sl12', n: 'Spiked Shields', r: 2, c: 1, req: null, hasPlus: false },
+          { id: 'sl13', n: 'Parry', r: 2, c: 3, req: 'sl11', hasPlus: false },
+          { id: 'sl14', n: 'Taunt', r: 3, c: 1, req: 'sl12', hasPlus: false },
+          { id: 'sl15', n: 'Last Stand', r: 3, c: 2, req: null, hasPlus: true },
+          { id: 'sl16', n: 'Honed Defenses', r: 4, c: 2, req: 'sl15', hasPlus: true },
+          { id: 'sl17', n: 'Knights Resilience', r: 4, c: 3, req: 'sl13', hasPlus: false },
+          { id: 'sl18', n: 'Damage Reflect', r: 5, c: 2, req: 'sl16', hasPlus: false }
+        ]
+      },
+      jotunn: {
+        t1: 'Frost',
+        t2: 'Glacial',
+        s1: [
+          { id: 'jo1', n: 'Icicles', r: 1, c: 1, req: null, hasPlus: true },
+          { id: 'jo2', n: 'Frozen Boulder', r: 1, c: 3, req: null, hasPlus: false },
+          { id: 'jo3', n: 'Flash Freeze', r: 2, c: 1, req: 'jo1', hasPlus: true },
+          { id: 'jo4', n: 'Freezing Leap', r: 2, c: 2, req: null, hasPlus: true },
+          { id: 'jo5', n: 'Breath of Ice', r: 3, c: 2, req: 'jo4', hasPlus: true },
+          { id: 'jo6', n: 'Permafrost', r: 3, c: 3, req: 'jo2', hasPlus: false },
+          { id: 'jo7', n: 'Orb of Frost', r: 4, c: 1, req: 'jo3', hasPlus: true },
+          { id: 'jo8', n: 'Absolute Zero', r: 4, c: 2, req: 'jo5', hasPlus: true },
+          { id: 'jo9', n: 'The Embodiment of Aurgelmir', r: 5, c: 3, req: 'jo6', hasPlus: false }
+        ],
+        s2: [
+          { id: 'jo10', n: 'Glacial Armor', r: 1, c: 2, req: null, hasPlus: true },
+          { id: 'jo11', n: 'Frozen Hide', r: 1, c: 3, req: null, hasPlus: true },
+          { id: 'jo12', n: 'Glacial Tremors', r: 2, c: 1, req: null, hasPlus: false },
+          { id: 'jo13', n: 'Avalanche', r: 2, c: 3, req: 'jo11', hasPlus: false },
+          { id: 'jo14', n: 'Sweep Freeze', r: 3, c: 1, req: 'jo12', hasPlus: false },
+          { id: 'jo15', n: 'Blizzard', r: 3, c: 2, req: null, hasPlus: true },
+          { id: 'jo16', n: 'Portal of Ice', r: 4, c: 2, req: 'jo15', hasPlus: true },
+          { id: 'jo17', n: 'Avatar of Frost', r: 4, c: 3, req: 'jo13', hasPlus: false },
+          { id: 'jo18', n: 'Power of the Ancients', r: 5, c: 2, req: 'jo16', hasPlus: false }
+        ]
+      },
+      prophet: {
+        t1: 'Prophecy',
+        t2: 'Fate',
+        s1: [
+          { id: 'pr1', n: 'Prophet Skill 1', r: 1, c: 1, req: null, hasPlus: true },
+          { id: 'pr2', n: 'Prophet Skill 2', r: 1, c: 3, req: null, hasPlus: false },
+          { id: 'pr3', n: 'Prophet Skill 3', r: 2, c: 1, req: 'pr1', hasPlus: true },
+          { id: 'pr4', n: 'Prophet Skill 4', r: 2, c: 2, req: null, hasPlus: true },
+          { id: 'pr5', n: 'Prophet Skill 5', r: 3, c: 2, req: 'pr4', hasPlus: true },
+          { id: 'pr6', n: 'Prophet Skill 6', r: 3, c: 3, req: 'pr2', hasPlus: false },
+          { id: 'pr7', n: 'Prophet Skill 7', r: 4, c: 1, req: 'pr3', hasPlus: true },
+          { id: 'pr8', n: 'Prophet Skill 8', r: 4, c: 2, req: 'pr5', hasPlus: true },
+          { id: 'pr9', n: 'Prophet Skill 9', r: 5, c: 3, req: 'pr6', hasPlus: false }
+        ],
+        s2: [
+          { id: 'pr10', n: 'Prophet Skill 10', r: 1, c: 2, req: null, hasPlus: true },
+          { id: 'pr11', n: 'Prophet Skill 11', r: 1, c: 3, req: null, hasPlus: true },
+          { id: 'pr12', n: 'Prophet Skill 12', r: 2, c: 1, req: null, hasPlus: false },
+          { id: 'pr13', n: 'Prophet Skill 13', r: 2, c: 3, req: 'pr11', hasPlus: false },
+          { id: 'pr14', n: 'Prophet Skill 14', r: 3, c: 1, req: 'pr12', hasPlus: false },
+          { id: 'pr15', n: 'Prophet Skill 15', r: 3, c: 2, req: null, hasPlus: true },
+          { id: 'pr16', n: 'Prophet Skill 16', r: 4, c: 2, req: 'pr15', hasPlus: true },
+          { id: 'pr17', n: 'Prophet Skill 17', r: 4, c: 3, req: 'pr13', hasPlus: false },
+          { id: 'pr18', n: 'Prophet Skill 18', r: 5, c: 2, req: 'pr16', hasPlus: false }
         ]
       }
     };
@@ -1692,6 +1792,19 @@ const NewDesign = ({ onBack, initialView = 'home' }) => {
       skills.forEach(sk => {
         const iconCandidates = [];
         const raw = (sk.n || '').trim();
+
+        // Tentar carregar ícone local primeiro
+        // Ex: public/images/amazon/Amazon_Javelin_Toss.png
+        // clsKey já é 'amazon', 'demon_slayer', etc.
+        let filePrefix = clsKey
+          .split('_')
+          .map(p => p.charAt(0).toUpperCase() + p.slice(1))
+          .join('_');
+        if (clsKey === 'jotunn') filePrefix = 'Jötunn';
+        
+        const baseForLocal = raw.replace(/['’!]/g, '').replace(/\s+/g, '_');
+        iconCandidates.push(`/images/${clsKey}/${filePrefix}_${baseForLocal}.png`);
+
         const base = raw.replace(/\s+/g, '_').replace(/'/g, '%27');
         const nameKey = raw
           .toLowerCase()
@@ -2395,6 +2508,12 @@ const NewDesign = ({ onBack, initialView = 'home' }) => {
                 Builder
               </button>
               <button
+                onClick={() => navigateToView('equipe')}
+                className={`transition-colors ${currentView === 'equipe' ? 'text-orange-500' : 'hover:text-white'}`}
+              >
+                Equipe
+              </button>
+              <button
                 onClick={() => navigateToView('contact')}
                 className={`transition-colors ${currentView === 'contact' ? 'text-orange-500' : 'hover:text-white'}`}
               >
@@ -2540,6 +2659,15 @@ const NewDesign = ({ onBack, initialView = 'home' }) => {
                 Builder
               </button>
               <button
+                className={`block w-full text-left py-1 ${currentView === 'equipe' ? 'text-orange-500' : ''}`}
+                onClick={() => {
+                  navigateToView('equipe');
+                  setMobileMenuOpen(false);
+                }}
+              >
+                Equipe
+              </button>
+              <button
                 className={`block w-full text-left py-1 ${currentView === 'contact' ? 'text-orange-500' : ''}`}
                 onClick={() => {
                   navigateToView('contact');
@@ -2650,7 +2778,7 @@ const NewDesign = ({ onBack, initialView = 'home' }) => {
                             <div className="bg-[#151923] border border-white/5 p-8 flex flex-col">
                                 <div className="flex items-center justify-between mb-6">
                                     <h3 className="text-xl font-black text-white uppercase italic tracking-tighter">
-                                        Season 9 <span className="text-orange-500">Tier List</span>
+                                        Season 8 <span className="text-orange-500">Tier List</span>
                                     </h3>
                                     <span className="text-[10px] text-gray-500 font-bold uppercase tracking-widest">Updated: Today</span>
                                 </div>
@@ -2850,6 +2978,9 @@ const NewDesign = ({ onBack, initialView = 'home' }) => {
                               armor: 0,
                               vitality: 0,
                             });
+                            setNbRelics([null, null, null, null, null]);
+                            setNbPotions([null, null, null, null]);
+                            setNbCharms([]);
                             setNewBuildOpen(true);
                           }}
                         >
@@ -2887,7 +3018,7 @@ const NewDesign = ({ onBack, initialView = 'home' }) => {
                                       const t = e.currentTarget;
                                       if (!t.dataset.fallback) {
                                         t.dataset.fallback = '1';
-                                        t.src = classImagePath(c.name, 'png');
+                                        t.src = classImagePath(c.name, 'legacy');
                                       }
                                     }}
                                     alt={c.name}
@@ -3125,7 +3256,7 @@ const NewDesign = ({ onBack, initialView = 'home' }) => {
                               >
                                 <img
                                   src={src}
-                                  onError={(e) => { const t = e.currentTarget; if (!t.dataset.fallback) { t.dataset.fallback = '1'; t.src = classImagePath(c.name, 'png'); } }}
+                                  onError={(e) => { const t = e.currentTarget; if (!t.dataset.fallback) { t.dataset.fallback = '1'; t.src = classImagePath(c.name, 'legacy'); } }}
                                   alt={c.name}
                                 />
                               </button>
@@ -3698,9 +3829,8 @@ const NewDesign = ({ onBack, initialView = 'home' }) => {
                                     Poções
                                   </div>
                                   <div className="flex flex-wrap gap-2">
-                                    {nbPotions.map((name, idx) => {
-                                      const pot = name ? potionOptions.find((p) => p.name === name) : null;
-                                      const img = pot ? pot.image || pot.img : null;
+                                    {nbPotions.map((p, idx) => {
+                                      const img = p ? p.image : null;
                                       return (
                                         <button
                                           key={idx}
@@ -3710,15 +3840,13 @@ const NewDesign = ({ onBack, initialView = 'home' }) => {
                                         >
                                           {img ? (
                                             <>
-                                              <img src={img} alt={name} className="w-8 h-8 object-contain mb-1" />
+                                              <img src={img} alt={p.name} className="w-8 h-8 object-contain mb-1" />
                                               <span className="px-1 text-[9px] leading-tight text-center line-clamp-2">
-                                                {name}
+                                                {p.name}
                                               </span>
                                             </>
                                           ) : (
-                                            <span className="text-xs text-gray-500">
-                                              Selecionar
-                                            </span>
+                                            <span className="text-xs text-gray-500">Selecionar</span>
                                           )}
                                         </button>
                                       );
@@ -3753,33 +3881,159 @@ const NewDesign = ({ onBack, initialView = 'home' }) => {
                                         </div>
                                         <span>Nenhuma poção</span>
                                       </button>
-                                      {potionOptions.map((pot) => (
+                                      {potionOptions.map((opt) => (
                                         <button
-                                          key={pot.id}
+                                          key={opt.id}
                                           type="button"
                                           className="w-full flex items-center gap-3 px-3 py-2 text-xs text-gray-200 hover:bg-white/10 border-b border-white/5"
                                           onClick={() => {
                                             setNbPotions((prev) => {
                                               const next = prev.slice();
-                                              next[nbPotionPickerIndex] = pot.name;
+                                              next[nbPotionPickerIndex] = opt;
                                               return next;
                                             });
                                             setNbPotionPickerIndex(null);
                                           }}
                                         >
-                                          {pot.image || pot.img ? (
-                                            <img src={pot.image || pot.img} alt={pot.name} className="w-7 h-7 object-contain" />
-                                          ) : (
-                                            <div className="w-7 h-7 flex items-center justify-center border border-white/20 text-[11px]">
-                                              ?
-                                            </div>
-                                          )}
-                                          <span>{pot.name}</span>
+                                          <img src={opt.image} alt={opt.name} className="w-7 h-7 object-contain" />
+                                          <span>{opt.name}</span>
                                         </button>
                                       ))}
                                     </div>
                                   )}
                                 </div>
+
+                                <div className="mt-4">
+                                  <div className="text-[11px] font-bold uppercase tracking-widest text-yellow-400 mb-2">
+                                    Charms
+                                  </div>
+                                  <div className="flex flex-wrap gap-2">
+                                    {nbCharms.map((charm, idx) => {
+                                      const isSet = charm.rarity && (charm.rarity.includes('SET') || charm.rarity.includes('Set'));
+                                      const isSatanic = charm.rarity && (charm.rarity === 'SATANIC' || charm.rarity === 'Satanic');
+                                      const isHeroic = charm.rarity && (charm.rarity === 'HEROIC' || charm.rarity === 'Heroic');
+                                      
+                                      let borderColor = 'border-white/20';
+                                      if (isSet) borderColor = 'border-green-600';
+                                      else if (isSatanic) borderColor = 'border-red-600';
+                                      else if (isHeroic) borderColor = 'border-purple-500';
+
+                                      const pub = process.env.PUBLIC_URL || '';
+                                      const basePath = pub ? `${pub}/images` : `images`;
+                                      const img = charm.file ? `${basePath}/${charm.file}` : null;
+
+                                      return (
+                                        <button
+                                          key={idx}
+                                          type="button"
+                                          className={`w-20 h-20 flex flex-col items-center justify-center border ${borderColor} bg-black/30 text-[10px] text-gray-300 hover:border-amber-400 hover:bg-black/60 relative`}
+                                          onClick={() => setNbCharmPickerIndex(idx)}
+                                        >
+                                          {img ? (
+                                            <>
+                                              <img src={img} alt={charm.name} className="w-8 h-8 object-contain mb-1" />
+                                              <span className="px-1 text-[9px] leading-tight text-center line-clamp-2">
+                                                {charm.name}
+                                              </span>
+                                            </>
+                                          ) : (
+                                            <span className="text-xs text-gray-500">
+                                              {charm.name}
+                                            </span>
+                                          )}
+                                        </button>
+                                      );
+                                    })}
+                                    <button
+                                      type="button"
+                                      className="w-20 h-20 flex flex-col items-center justify-center border border-dashed border-white/20 bg-white/5 text-gray-400 hover:bg-white/10 hover:border-white/40 hover:text-white transition-colors"
+                                      onClick={() => setNbCharmPickerIndex(nbCharms.length)}
+                                    >
+                                      <span className="text-2xl mb-1">+</span>
+                                      <span className="text-[10px] uppercase tracking-widest">Adicionar</span>
+                                    </button>
+                                  </div>
+
+                                  {nbCharmPickerIndex !== null && (
+                                    <div className="mt-2 border border-white/10 bg-[#0b0d16] max-h-64 overflow-y-auto custom-scrollbar">
+                                      <div className="flex items-center justify-between px-3 py-2 border-b border-white/10 text-[11px] text-gray-400">
+                                        <span>
+                                          {nbCharmPickerIndex < nbCharms.length 
+                                            ? 'Gerenciar Charm' 
+                                            : 'Selecionar Charm'}
+                                        </span>
+                                        <button
+                                          type="button"
+                                          className="text-[10px] px-2 py-0.5 border border-white/20 rounded hover:bg-white hover:text-black"
+                                          onClick={() => setNbCharmPickerIndex(null)}
+                                        >
+                                          Fechar
+                                        </button>
+                                      </div>
+                                      
+                                      {nbCharmPickerIndex < nbCharms.length && (
+                                        <button
+                                          type="button"
+                                          className="w-full flex items-center gap-3 px-3 py-2 text-xs text-red-400 hover:bg-red-900/20 border-b border-white/5"
+                                          onClick={() => {
+                                            setNbCharms(prev => prev.filter((_, i) => i !== nbCharmPickerIndex));
+                                            setNbCharmPickerIndex(null);
+                                          }}
+                                        >
+                                          <div className="w-7 h-7 flex items-center justify-center border border-red-500/20 text-[13px]">
+                                            ×
+                                          </div>
+                                          <span>Remover este charm</span>
+                                        </button>
+                                      )}
+
+                                      {CHARM_DB.map((charm, cIdx) => {
+                                        const pub = process.env.PUBLIC_URL || '';
+                                        const basePath = pub ? `${pub}/images` : `images`;
+                                        const img = charm.file ? `${basePath}/${charm.file}` : null;
+                                        
+                                        return (
+                                          <button
+                                            key={cIdx}
+                                            type="button"
+                                            className="w-full flex items-center gap-3 px-3 py-2 text-xs text-gray-200 hover:bg-white/10 border-b border-white/5"
+                                            onClick={() => {
+                                              if (nbCharmPickerIndex < nbCharms.length) {
+                                                setNbCharms(prev => {
+                                                  const next = [...prev];
+                                                  next[nbCharmPickerIndex] = charm;
+                                                  return next;
+                                                });
+                                              } else {
+                                                setNbCharms(prev => [...prev, charm]);
+                                              }
+                                              setNbCharmPickerIndex(null);
+                                            }}
+                                          >
+                                            {img ? (
+                                              <img src={img} alt={charm.name} className="w-7 h-7 object-contain" />
+                                            ) : (
+                                              <div className="w-7 h-7 flex items-center justify-center border border-white/20 text-[11px]">
+                                                ?
+                                              </div>
+                                            )}
+                                            <div className="flex flex-col items-start">
+                                                <span>{charm.name}</span>
+                                                <span className={`text-[9px] ${
+                                                    charm.rarity === 'SATANIC' ? 'text-red-500' :
+                                                    charm.rarity === 'SET' ? 'text-green-500' :
+                                                    charm.rarity === 'HEROIC' ? 'text-purple-400' : 'text-gray-400'
+                                                }`}>
+                                                    {charm.rarity}
+                                                </span>
+                                            </div>
+                                          </button>
+                                        );
+                                      })}
+                                    </div>
+                                  )}
+                                </div>
+
                                 <div className="mt-4">
                                   <div className="text-[11px] font-bold uppercase tracking-widest text-yellow-400 mb-2">
                                     Mercenário
@@ -4383,6 +4637,10 @@ const NewDesign = ({ onBack, initialView = 'home' }) => {
                     )}
                   </div>
                 )}
+
+                {currentView === 'equipe' && (
+                  <Equipe />
+                )}
             </div>
 
             {/* Right Column: News/Sidebar */}
@@ -4578,9 +4836,9 @@ const NewDesign = ({ onBack, initialView = 'home' }) => {
                     <div className="absolute inset-0 bg-[url('https://herosiege.wiki.gg/images/c/c5/Viking_SkinID_1.png')] bg-cover opacity-5"></div>
                     
                     <div className="w-full h-full overflow-y-auto custom-scrollbar p-8 flex flex-col items-center text-center relative z-10">
-                        <img 
+                            <img 
                             src={classImagePath(selectedClass)} 
-                            onError={(e) => { const t = e.currentTarget; if (!t.dataset.fallback) { t.dataset.fallback = '1'; t.src = classImagePath(selectedClass, 'png'); } }}
+                            onError={(e) => { const t = e.currentTarget; if (!t.dataset.fallback) { t.dataset.fallback = '1'; t.src = classImagePath(selectedClass, 'legacy'); } }}
                             alt={selectedClass} 
                             className="w-48 h-48 object-contain drop-shadow-[0_10px_20px_rgba(0,0,0,0.5)] mb-6"
                         />

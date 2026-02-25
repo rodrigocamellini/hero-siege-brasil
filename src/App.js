@@ -1,6 +1,7 @@
 import React from 'react';
 import { Routes, Route, Navigate } from 'react-router-dom';
 import PainelApp from './PainelApp';
+import Equipe from './Equipe';
 import NewDesign from './NewDesign';
 
 function App() {
@@ -21,6 +22,7 @@ function App() {
       <Route path="/gems" element={<NewDesign initialView="gems" />} />
       <Route path="/charms" element={<NewDesign initialView="charms" />} />
       <Route path="/builder" element={<NewDesign initialView="builder" />} />
+      <Route path="/equipe" element={<NewDesign initialView="equipe" />} />
       <Route path="/contato" element={<NewDesign initialView="contact" />} />
       <Route path="/blog" element={<NewDesign initialView="blog" />} />
       <Route path="/blog/:postId" element={<NewDesign initialView="blog" />} />
