@@ -19,6 +19,7 @@ function App() {
       <Route path="/mercenarios" element={<NewDesign initialView="mercenaries" />} />
       <Route path="/mineracao" element={<NewDesign initialView="mining" />} />
       <Route path="/chaves" element={<NewDesign initialView="keys" />} />
+      <Route path="/augments" element={<NewDesign initialView="augments" />} />
       <Route path="/gems" element={<NewDesign initialView="gems" />} />
       <Route path="/charms" element={<NewDesign initialView="charms" />} />
       <Route path="/builder" element={<NewDesign initialView="builder" />} />

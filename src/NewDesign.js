@@ -11,6 +11,7 @@ import ChaosTowerPage from './ChaosTowerPage';
 import MercenariosPage from './MercenariosPage';
 import MineracaoPage from './MineracaoPage';
 import ChavesPage from './ChavesPage';
+import AugmentsPage from './AugmentsPage';
 import GemasJoiasPage from './GemasJoiasPage';
 import CharmsPage, { CHARM_DB } from './CharmsPage';
 
@@ -2698,16 +2699,16 @@ const NewDesign = ({ onBack, initialView = 'home' }) => {
                 onMouseLeave={() => setIsDbOpen(false)}
               >
                 <button
-                  type="button"
-                  onClick={() => setIsDbOpen((v) => !v)}
-                  className={`transition-colors ${
-                    ['classes', 'items', 'relics', 'quests'].includes(currentView) || isDbOpen
-                      ? 'text-orange-500'
-                      : 'hover:text-white'
-                  }`}
-                >
-                  DataBase
-                </button>
+                    type="button"
+                    onClick={() => setIsDbOpen((v) => !v)}
+                    className={`transition-colors ${
+                      ['classes', 'items', 'relics', 'quests', 'augments'].includes(currentView) || isDbOpen
+                        ? 'text-orange-500'
+                        : 'hover:text-white'
+                    }`}
+                  >
+                    DataBase
+                  </button>
                 <div
                   className={`absolute left-0 top-full w-44 bg-[#0b0d14] border border-white/10 rounded shadow-xl py-2 ${
                     isDbOpen ? 'opacity-100 pointer-events-auto' : 'opacity-0 pointer-events-none'
@@ -2789,6 +2790,17 @@ const NewDesign = ({ onBack, initialView = 'home' }) => {
                     }`}
                   >
                     Chaves
+                  </button>
+                  <button
+                    onClick={() => {
+                      navigateToView('augments');
+                      setIsDbOpen(false);
+                    }}
+                    className={`block w-full text-left px-4 py-2 text-xs font-bold uppercase tracking-widest hover:bg-white/5 ${
+                      currentView === 'augments' ? 'text-orange-500' : 'text-gray-400 hover:text-white'
+                    }`}
+                  >
+                    Augments
                   </button>
                   <button
                     onClick={() => {
@@ -2880,7 +2892,7 @@ const NewDesign = ({ onBack, initialView = 'home' }) => {
               </button>
               <button
                 className={`block w-full text-left py-1 ${
-                  ['classes', 'items', 'runes', 'relics', 'chaosTower', 'mercenaries', 'keys', 'mining', 'gems', 'charms', 'quests'].includes(
+                  ['classes', 'items', 'runes', 'relics', 'chaosTower', 'mercenaries', 'keys', 'augments', 'mining', 'gems', 'charms', 'quests'].includes(
                     currentView
                   )
                     ? 'text-orange-500'
@@ -2946,6 +2958,15 @@ const NewDesign = ({ onBack, initialView = 'home' }) => {
                 }}
               >
                 Chaves
+              </button>
+              <button
+                className="block w-full text-left py-1"
+                onClick={() => {
+                  navigateToView('augments');
+                  setMobileMenuOpen(false);
+                }}
+              >
+                Augments
               </button>
               <button
                 className="block w-full text-left py-1"
@@ -6044,6 +6065,12 @@ const NewDesign = ({ onBack, initialView = 'home' }) => {
 
                 {(currentView === 'keys') && (
                   <ChavesPage />
+                )}
+
+                {(currentView === 'augments') && (
+                  <div className="animate-fade-in">
+                    <AugmentsPage />
+                  </div>
                 )}
 
                 {(currentView === 'gems') && (

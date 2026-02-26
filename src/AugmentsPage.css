@@ -1,0 +1,173 @@
+
+/* Box Principal */
+.info-box-angelic {
+    max-width: 1000px;
+    margin: 0 auto 40px auto;
+    background: #111;
+    border: 2px solid #f97316;
+    border-radius: 12px;
+    padding: 30px;
+    box-shadow: 0 0 20px rgba(249, 115, 22, 0.1);
+    position: relative;
+    overflow: hidden;
+}
+
+/* Imagem do Anjo no Fundo */
+.angel-bg {
+    position: absolute;
+    right: -50px;
+    top: -50px;
+    width: 350px;
+    opacity: 0.12;
+    pointer-events: none;
+    transform: rotate(-10deg);
+}
+
+.info-box-angelic h2 {
+    color: #f97316;
+    text-align: center;
+    text-transform: uppercase;
+    margin-top: 0;
+    font-size: 2rem;
+}
+
+.highlight-key {
+    color: #00ffff;
+    font-weight: bold;
+}
+
+.text-detail {
+    margin-bottom: 15px;
+    font-size: 0.95rem;
+    max-width: 85%;
+    position: relative;
+    z-index: 2;
+}
+
+/* Container da Tabela para Scroll Mobile */
+.table-container {
+    width: 100%;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    margin: 20px 0;
+    position: relative;
+    z-index: 2;
+}
+
+/* Tabela */
+.table-upgrade {
+    width: 100%;
+    min-width: 600px; /* Garante que a tabela não quebre em telas muito pequenas */
+    border-collapse: collapse;
+    background: #000;
+}
+
+.table-upgrade th {
+    background: #f97316;
+    color: #000;
+    padding: 12px;
+    font-size: 0.85rem;
+    text-transform: uppercase;
+}
+
+.table-upgrade td {
+    border: 1px solid #222;
+    padding: 12px;
+    text-align: center;
+    font-weight: bold;
+}
+
+.cost-summary {
+    background: rgba(0, 255, 255, 0.05);
+    border-left: 4px solid #00ffff;
+    padding: 15px;
+    margin-top: 20px;
+    border-radius: 4px;
+    position: relative;
+    z-index: 2;
+}
+
+/* Grid de Augments */
+.augments-grid {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 20px;
+    max-width: 1200px;
+    margin: 0 auto;
+}
+
+@media (min-width: 640px) {
+    .augments-grid {
+        grid-template-columns: repeat(2, 1fr);
+    }
+}
+
+@media (min-width: 1024px) {
+    .augments-grid {
+        grid-template-columns: repeat(3, 1fr);
+    }
+}
+
+.aug-card {
+    background: #111;
+    border: 1px solid #333;
+    border-radius: 10px;
+    padding: 18px;
+    transition: 0.3s;
+    height: 135px;
+    display: flex;
+    flex-direction: column;
+}
+
+.aug-card:hover {
+    border-color: #f97316;
+    background: #161616;
+    transform: translateY(-3px);
+}
+
+.aug-header {
+    display: flex;
+    align-items: center;
+    margin-bottom: 12px;
+}
+
+/* Ícones FontAwesome */
+.aug-icon {
+    width: 45px;
+    height: 45px;
+    background: #1a1a1a;
+    border: 2px solid #f97316;
+    border-radius: 6px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-right: 15px;
+    color: #f97316;
+    font-size: 1.4rem;
+    flex-shrink: 0;
+}
+
+.name-wrapper {
+    display: flex;
+    flex-direction: column;
+}
+
+.name-en {
+    color: #777;
+    font-size: 0.85rem;
+    font-style: italic;
+}
+
+.name-pt {
+    color: #fff;
+    font-weight: bold;
+    font-size: 1.1rem;
+}
+
+.aug-desc {
+    font-size: 0.85rem;
+    color: #aaa;
+    border-top: 1px solid #222;
+    padding-top: 10px;
+    flex-grow: 1;
+}
