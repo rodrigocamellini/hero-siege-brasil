@@ -26,6 +26,7 @@ function App() {
       <Route path="/contato" element={<NewDesign initialView="contact" />} />
       <Route path="/blog" element={<NewDesign initialView="blog" />} />
       <Route path="/blog/:postId" element={<NewDesign initialView="blog" />} />
+      <Route path="/build/:buildId" element={<NewDesign initialView="build" />} />
 
       <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>

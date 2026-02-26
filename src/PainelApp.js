@@ -1,4 +1,5 @@
 import React, { useEffect, useMemo, useState } from 'react';
+import { Link } from 'react-router-dom';
 import app, { db } from './firebase';
 import { PASSIVE_RELICS, EXTRA_RELICS, normalizeRelicImageUrl } from './RelicsView';
 import { CHARM_DB } from './CharmsPage';
@@ -98,6 +99,12 @@ function PainelStyles() {
     .painel-stat-detail { margin-top:6px; font-size:12px; color:#6b7280; }
     .painel-metrics { display:grid; grid-template-columns: repeat(4, minmax(0,1fr)); gap:12px; }
     .painel-metric-card { display:flex; align-items:center; gap:10px; padding:12px 14px; border-radius:18px; border:1px solid rgba(15,23,42,.08); box-shadow:0 14px 30px rgba(15,23,42,.06); }
+    @keyframes pulse-alert {
+      0% { box-shadow: 0 0 0 0 rgba(220, 38, 38, 0.7); transform: scale(1); }
+      70% { box-shadow: 0 0 0 10px rgba(220, 38, 38, 0); transform: scale(1.02); }
+      100% { box-shadow: 0 0 0 0 rgba(220, 38, 38, 0); transform: scale(1); }
+    }
+    .painel-pulse-alert { animation: pulse-alert 2s infinite; border-color: #ef4444 !important; }
     .painel-metric-icon { font-size:28px; line-height:1; }
     .painel-metric-data .value { font-size:22px; font-weight:900; line-height:1; }
     .painel-metric-data .label { margin-top:4px; font-size:11px; letter-spacing:.12em; text-transform:uppercase; opacity:.9; }
@@ -148,6 +155,8 @@ function PainelStyles() {
     .painel-action-btn { width:28px; height:28px; border-radius:999px; display:grid; place-items:center; padding:0; font-size:15px; border:none; cursor:pointer; }
     .painel-action-edit { background:#eef2ff; color:#4338ca; }
     .painel-action-edit:hover { background:#e0e7ff; }
+    .painel-action-view { background:#e0f2fe; color:#0369a1; }
+    .painel-action-view:hover { background:#bae6fd; }
     .painel-action-toggle-published { background:#dcfce7; color:#15803d; }
     .painel-action-toggle-published:hover { background:#bbf7d0; }
     .painel-action-toggle-draft { background:#fee2e2; color:#b91c1c; }
@@ -561,28 +570,28 @@ function PainelDashboard() {
         </div>
       </div>
       <div className="painel-metrics" style={{ marginTop: 12 }}>
-        <div className="painel-metric-card metric-posts-light">
+        <div className={`painel-metric-card metric-posts-light ${(parseInt(draftCount) || 0) > 0 ? 'painel-pulse-alert' : ''}`}>
           <div className="painel-metric-icon">📝</div>
           <div className="painel-metric-data">
             <div className="value">{draftCount}</div>
             <div className="label">Posts em rascunho</div>
           </div>
         </div>
-        <div className="painel-metric-card metric-comments-light">
+        <div className={`painel-metric-card metric-comments-light ${(parseInt(pendingComments) || 0) > 0 ? 'painel-pulse-alert' : ''}`}>
           <div className="painel-metric-icon">⏳</div>
           <div className="painel-metric-data">
             <div className="value">{pendingComments}</div>
             <div className="label">Comentários pendentes</div>
           </div>
         </div>
-        <div className="painel-metric-card metric-messages-light">
+        <div className={`painel-metric-card metric-messages-light ${(parseInt(unreadMessages) || 0) > 0 ? 'painel-pulse-alert' : ''}`}>
           <div className="painel-metric-icon">⏳</div>
           <div className="painel-metric-data">
             <div className="value">{unreadMessages}</div>
             <div className="label">Mensagens não lidas</div>
           </div>
         </div>
-        <div className="painel-metric-card metric-builds-light">
+        <div className={`painel-metric-card metric-builds-light ${(parseInt(buildsPendingCount) || 0) > 0 ? 'painel-pulse-alert' : ''}`}>
           <div className="painel-metric-icon">⏳</div>
           <div className="painel-metric-data">
             <div className="value">{buildsPendingCount}</div>
@@ -914,12 +923,25 @@ function PainelForum() {
                         const rowForum = b.forum || b.classSlug || (rowClassName ? slugifyClass(rowClassName) : '');
                         return (
                           <tr key={b.id}>
-                            <td><strong>{b.title || '(sem título)'}</strong></td>
+                            <td>
+                              <Link to={`/build/${b.id}`} target="_blank" style={{ color: 'inherit', textDecoration: 'none' }}>
+                                <strong>{b.title || '(sem título)'}</strong>
+                              </Link>
+                            </td>
                             <td>{rowClassName}</td>
                             <td>{b.author || ''}</td>
                             <td>{rowForum}</td>
                             <td><span className="painel-tag">{statusLabel(b.status)}</span></td>
                             <td className="painel-actions-cell">
+                              <Link
+                                to={`/build/${b.id}`}
+                                target="_blank"
+                                className="painel-action-btn painel-action-view"
+                                title="Visualizar build"
+                                style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center', textDecoration: 'none' }}
+                              >
+                                👁️
+                              </Link>
                               <button type="button" className="painel-action-btn painel-action-edit" title="Editar build" onClick={() => openEdit(b)}>✏️</button>
                               <button
                                 type="button"
