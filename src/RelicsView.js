@@ -121,6 +121,24 @@ const passiveRelics = PASSIVE_RELICS.slice().sort((a, b) =>
   a.name.localeCompare(b.name)
 );
 
+const handleRelicError = (e, name) => {
+  const target = e.target;
+  const originalName = String(name || '');
+  const safeName = originalName.replace(/ /g, '_').replace(/'/g, '%27');
+  const noApostrophe = originalName.replace(/'/g, '').replace(/ /g, '_');
+  const src = target.src;
+  
+  if (src.includes('Relics_') && !src.includes(noApostrophe)) {
+     target.src = `https://herosiege.wiki.gg/images/Relic_${safeName}.png`;
+  } else if (src.includes('Relic_') && !src.includes(noApostrophe)) {
+     target.src = `https://herosiege.wiki.gg/images/${safeName}.png`;
+  } else if (!src.includes(noApostrophe) && originalName.includes("'")) {
+     target.src = `https://herosiege.wiki.gg/images/Relics_${noApostrophe}.png`;
+  } else {
+     target.style.display = 'none';
+  }
+};
+
 const RelicsView = () => {
   const [search, setSearch] = useState('');
 
@@ -211,9 +229,7 @@ const RelicsView = () => {
                       src={imgFor(r)}
                       alt={r.name}
                       className="w-8 h-8 object-contain"
-                      onError={(e) => {
-                        e.currentTarget.src = 'https://via.placeholder.com/32?text=?';
-                      }}
+                      onError={(e) => handleRelicError(e, r.name)}
                     />
                     <span className="text-sm font-bold text-white">{r.name}</span>
                   </div>

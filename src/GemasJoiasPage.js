@@ -1,5 +1,17 @@
 import React from 'react';
 
+const handleGemError = (e) => {
+  const t = e.target;
+  if (t.src.includes('wikia.nocookie.net')) {
+    const filename = t.src.split('/').pop();
+    if (filename) {
+      t.src = `https://herosiege.wiki.gg/images/${filename}`;
+      return;
+    }
+  }
+  t.style.display = 'none';
+};
+
 const GemasJoiasPage = () => {
   return (
     <div className="animate-fade-in">
@@ -83,7 +95,7 @@ const GemasJoiasPage = () => {
                       <div className="item-wrapper">
                         <img
                           src="https://static.wikia.nocookie.net/herosiege/images/3/3f/Pristine_ruby.png"
-                          className="item-icon"
+                          onError={handleGemError} className="item-icon"
                           alt="Pristine Ruby"
                         />
                         <span className="item-name">Pristine Ruby</span>
@@ -99,7 +111,7 @@ const GemasJoiasPage = () => {
                       <div className="item-wrapper">
                         <img
                           src="https://static.wikia.nocookie.net/herosiege/images/a/a2/Pristine_sapphire.png"
-                          className="item-icon"
+                          onError={handleGemError} className="item-icon"
                           alt="Pristine Sapphire"
                         />
                         <span className="item-name">Pristine Sapphire</span>
@@ -115,7 +127,7 @@ const GemasJoiasPage = () => {
                       <div className="item-wrapper">
                         <img
                           src="https://static.wikia.nocookie.net/herosiege/images/0/0a/Pristine_topaz.png"
-                          className="item-icon"
+                          onError={handleGemError} className="item-icon"
                           alt="Pristine Topaz"
                         />
                         <span className="item-name">Pristine Topaz</span>
@@ -131,7 +143,7 @@ const GemasJoiasPage = () => {
                       <div className="item-wrapper">
                         <img
                           src="https://static.wikia.nocookie.net/herosiege/images/f/f0/Pristine_emerald.png"
-                          className="item-icon"
+                          onError={handleGemError} className="item-icon"
                           alt="Pristine Emerald"
                         />
                         <span className="item-name">Pristine Emerald</span>
@@ -147,7 +159,7 @@ const GemasJoiasPage = () => {
                       <div className="item-wrapper">
                         <img
                           src="https://static.wikia.nocookie.net/herosiege/images/0/08/Pristine_amethyst.png"
-                          className="item-icon"
+                          onError={handleGemError} className="item-icon"
                           alt="Pristine Amethyst"
                         />
                         <span className="item-name">Pristine Amethyst</span>
@@ -163,7 +175,7 @@ const GemasJoiasPage = () => {
                       <div className="item-wrapper">
                         <img
                           src="https://static.wikia.nocookie.net/herosiege/images/4/4b/Pristine_citrine.png"
-                          className="item-icon"
+                          onError={handleGemError} className="item-icon"
                           alt="Pristine Citrine"
                         />
                         <span className="item-name">Pristine Diamond</span>
@@ -178,7 +190,7 @@ const GemasJoiasPage = () => {
                       <div className="item-wrapper">
                         <img
                           src="https://static.wikia.nocookie.net/herosiege/images/6/64/Pristine_skull.png"
-                          className="item-icon"
+                          onError={handleGemError} className="item-icon"
                           alt="Pristine Skull"
                         />
                         <span className="item-name">Pristine Skull</span>
@@ -202,7 +214,7 @@ const GemasJoiasPage = () => {
                       <div className="item-wrapper">
                         <img
                           src="https://static.wikia.nocookie.net/herosiege/images/5/50/Elemental_Gem.gif"
-                          className="item-icon"
+                          onError={handleGemError} className="item-icon"
                           alt="Elemental Gem"
                         />
                         <div>
@@ -218,7 +230,7 @@ const GemasJoiasPage = () => {
                       <div className="item-wrapper">
                         <img
                           src="https://static.wikia.nocookie.net/herosiege/images/1/12/Chaos_Gem.gif"
-                          className="item-icon"
+                          onError={handleGemError} className="item-icon"
                           alt="Chaos Gem"
                         />
                         <div>
@@ -237,7 +249,7 @@ const GemasJoiasPage = () => {
                       <div className="item-wrapper">
                         <img
                           src="https://static.wikia.nocookie.net/herosiege/images/f/f7/Angelic_gem.gif"
-                          className="item-icon"
+                          onError={handleGemError} className="item-icon"
                           alt="Angelic Gem"
                         />
                         <span className="item-name">Angelic Gem</span>
@@ -250,7 +262,7 @@ const GemasJoiasPage = () => {
                       <div className="item-wrapper">
                         <img
                           src="https://static.wikia.nocookie.net/herosiege/images/2/2a/Moonstone.gif"
-                          className="item-icon"
+                          onError={handleGemError} className="item-icon"
                           alt="Moonstone Gem"
                         />
                         <div>
@@ -283,7 +295,7 @@ const GemasJoiasPage = () => {
               <h3 style={{ color: '#cd7f32' }}>
                 <img
                   src="https://static.wikia.nocookie.net/herosiege/images/5/52/Jewel_Socket_Low_spr.png"
-                  className="socket-icon"
+                  onError={handleGemError} className="socket-icon"
                   alt="Bronze socket"
                 />
                 Bronze Flaming
@@ -295,7 +307,7 @@ const GemasJoiasPage = () => {
                       <div className="item-wrapper">
                         <img
                           src="https://static.wikia.nocookie.net/herosiege/images/c/c0/Jewel_Exan_spr.png"
-                          className="item-icon"
+                          onError={handleGemError} className="item-icon"
                           alt="Exan Jewel"
                         />
                         <span className="item-name">Exan Jewel</span>
@@ -308,7 +320,7 @@ const GemasJoiasPage = () => {
                       <div className="item-wrapper">
                         <img
                           src="https://static.wikia.nocookie.net/herosiege/images/b/bf/Jewel_Wilrden_spr.png"
-                          className="item-icon"
+                          onError={handleGemError} className="item-icon"
                           alt="Wildren Jewel"
                         />
                         <span className="item-name">Wildren Jewel</span>
@@ -321,7 +333,7 @@ const GemasJoiasPage = () => {
                       <div className="item-wrapper">
                         <img
                           src="https://static.wikia.nocookie.net/herosiege/images/7/7b/Jewel_Volcon_spr.png"
-                          className="item-icon"
+                          onError={handleGemError} className="item-icon"
                           alt="Volcon Jewel"
                         />
                         <span className="item-name">Volcon Jewel</span>
@@ -334,7 +346,7 @@ const GemasJoiasPage = () => {
                       <div className="item-wrapper">
                         <img
                           src="https://static.wikia.nocookie.net/herosiege/images/d/dd/Jewel_Aether_spr.png"
-                          className="item-icon"
+                          onError={handleGemError} className="item-icon"
                           alt="Aether Jewel"
                         />
                         <span className="item-name">Aether Jewel</span>
@@ -347,7 +359,7 @@ const GemasJoiasPage = () => {
                       <div className="item-wrapper">
                         <img
                           src="https://static.wikia.nocookie.net/herosiege/images/3/3a/Jewel_Helmon_spr.png"
-                          className="item-icon"
+                          onError={handleGemError} className="item-icon"
                           alt="Helmon Jewel"
                         />
                         <span className="item-name">Helmon Jewel</span>
@@ -360,7 +372,7 @@ const GemasJoiasPage = () => {
                       <div className="item-wrapper">
                         <img
                           src="https://static.wikia.nocookie.net/herosiege/images/7/7c/Jewel_Mariane_spr.png"
-                          className="item-icon"
+                          onError={handleGemError} className="item-icon"
                           alt="Mariane Jewel"
                         />
                         <span className="item-name">Mariane Jewel</span>
@@ -373,7 +385,7 @@ const GemasJoiasPage = () => {
                       <div className="item-wrapper">
                         <img
                           src="https://static.wikia.nocookie.net/herosiege/images/d/dd/Jewel_Lyrcon_spr.png"
-                          className="item-icon"
+                          onError={handleGemError} className="item-icon"
                           alt="Lyrcon Jewel"
                         />
                         <span className="item-name">Lyrcon Jewel</span>
@@ -386,7 +398,7 @@ const GemasJoiasPage = () => {
                       <div className="item-wrapper">
                         <img
                           src="https://static.wikia.nocookie.net/herosiege/images/0/05/Jewel_Fieryzen_spr.png"
-                          className="item-icon"
+                          onError={handleGemError} className="item-icon"
                           alt="Fieryzen Jewel"
                         />
                         <span className="item-name">Fieryzen Jewel</span>
@@ -402,7 +414,7 @@ const GemasJoiasPage = () => {
               <h3 style={{ color: '#c0c0c0' }}>
                 <img
                   src="https://static.wikia.nocookie.net/herosiege/images/3/31/Jewel_Socket_Mid_spr.png"
-                  className="socket-icon"
+                  onError={handleGemError} className="socket-icon"
                   alt="Silver socket"
                 />
                 Silver Flaming
@@ -414,7 +426,7 @@ const GemasJoiasPage = () => {
                       <div className="item-wrapper">
                         <img
                           src="https://static.wikia.nocookie.net/herosiege/images/1/14/Lapis.gif"
-                          className="item-icon"
+                          onError={handleGemError} className="item-icon"
                           alt="Lapis-Lazuli Jewel"
                         />
                         <span className="item-name">Lapis-Lazuli Jewel</span>
@@ -427,7 +439,7 @@ const GemasJoiasPage = () => {
                       <div className="item-wrapper">
                         <img
                           src="https://static.wikia.nocookie.net/herosiege/images/b/b0/Omnipearl.gif"
-                          className="item-icon"
+                          onError={handleGemError} className="item-icon"
                           alt="Omnipearl Jewel"
                         />
                         <span className="item-name">Omnipearl Jewel</span>
@@ -440,7 +452,7 @@ const GemasJoiasPage = () => {
                       <div className="item-wrapper">
                         <img
                           src="https://static.wikia.nocookie.net/herosiege/images/f/f7/Agathetheum.gif"
-                          className="item-icon"
+                          onError={handleGemError} className="item-icon"
                           alt="Agathetheum Jewel"
                         />
                         <span className="item-name">Agathetheum Jewel</span>
@@ -453,7 +465,7 @@ const GemasJoiasPage = () => {
                       <div className="item-wrapper">
                         <img
                           src="https://static.wikia.nocookie.net/herosiege/images/f/f2/Tramal.gif"
-                          className="item-icon"
+                          onError={handleGemError} className="item-icon"
                           alt="Tramal Jewel"
                         />
                         <span className="item-name">Tramal Jewel</span>
@@ -469,7 +481,7 @@ const GemasJoiasPage = () => {
               <h3 style={{ color: '#ffd700' }}>
                 <img
                   src="https://static.wikia.nocookie.net/herosiege/images/3/3f/Jewel_Socket_High_spr.png"
-                  className="socket-icon"
+                  onError={handleGemError} className="socket-icon"
                   alt="Golden socket"
                 />
                 Golden Flaming
@@ -481,7 +493,7 @@ const GemasJoiasPage = () => {
                       <div className="item-wrapper">
                         <img
                           src="https://static.wikia.nocookie.net/herosiege/images/4/4b/Pearlescento.gif"
-                          className="item-icon"
+                          onError={handleGemError} className="item-icon"
                           alt="Pearlescento Jewel"
                         />
                         <div>
@@ -497,7 +509,7 @@ const GemasJoiasPage = () => {
                       <div className="item-wrapper">
                         <img
                           src="https://static.wikia.nocookie.net/herosiege/images/c/c2/Mythgonlion.gif"
-                          className="item-icon"
+                          onError={handleGemError} className="item-icon"
                           alt="Mythgonlion Jewel"
                         />
                         <div>

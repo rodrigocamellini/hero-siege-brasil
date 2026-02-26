@@ -101,7 +101,7 @@ const ChavesPage = () => {
                 <td>
                   <div className="keys-key-box">
                     <div className="keys-icon-container">
-                      <img src="https://herosiege.wiki.gg/images/Keys_Smelly_Cheese.png" alt="Smelly Cheese" />
+                      <img onError={(e) => e.target.style.display = 'none'} src="https://herosiege.wiki.gg/images/Keys_Smelly_Cheese.png" alt="Smelly Cheese" />
                     </div>
                     Smelly Cheese
                   </div>
@@ -114,7 +114,7 @@ const ChavesPage = () => {
                 <td>
                   <div className="keys-key-box">
                     <div className="keys-icon-container">
-                      <img src="https://herosiege.wiki.gg/images/Keys_Cellar_Key.png" alt="Cellar Key" />
+                      <img onError={(e) => e.target.style.display = 'none'} src="https://herosiege.wiki.gg/images/Keys_Cellar_Key.png" alt="Cellar Key" />
                     </div>
                     Cellar Key
                   </div>
@@ -127,7 +127,7 @@ const ChavesPage = () => {
                 <td>
                   <div className="keys-key-box">
                     <div className="keys-icon-container">
-                      <img src="https://herosiege.wiki.gg/images/Keys_Tower_Key.png" alt="Tower Key" />
+                      <img onError={(e) => e.target.style.display = 'none'} src="https://herosiege.wiki.gg/images/Keys_Tower_Key.png" alt="Tower Key" />
                     </div>
                     Tower Key
                   </div>
@@ -140,7 +140,7 @@ const ChavesPage = () => {
                 <td>
                   <div className="keys-key-box">
                     <div className="keys-icon-container">
-                      <img src="https://herosiege.wiki.gg/images/Keys_Frosted_Key.png" alt="Frosted Key" />
+                      <img onError={(e) => e.target.style.display = 'none'} src="https://herosiege.wiki.gg/images/Keys_Frosted_Key.png" alt="Frosted Key" />
                     </div>
                     Frosted Key
                   </div>
@@ -153,7 +153,7 @@ const ChavesPage = () => {
                 <td>
                   <div className="keys-key-box">
                     <div className="keys-icon-container">
-                      <img src="https://herosiege.wiki.gg/images/Keys_Ancient_Key.png" alt="Ancient Key" />
+                      <img onError={(e) => e.target.style.display = 'none'} src="https://herosiege.wiki.gg/images/Keys_Ancient_Key.png" alt="Ancient Key" />
                     </div>
                     Ancient Key
                   </div>
@@ -166,7 +166,7 @@ const ChavesPage = () => {
                 <td>
                   <div className="keys-key-box">
                     <div className="keys-icon-container">
-                      <img src="https://herosiege.wiki.gg/images/Keys_Shovel_Key.png" alt="Shovel Key" />
+                      <img onError={(e) => e.target.style.display = 'none'} src="https://herosiege.wiki.gg/images/Keys_Shovel_Key.png" alt="Shovel Key" />
                     </div>
                     Shovel Key
                   </div>
@@ -179,7 +179,7 @@ const ChavesPage = () => {
                 <td>
                   <div className="keys-key-box">
                     <div className="keys-icon-container">
-                      <img src="https://herosiege.wiki.gg/images/Keys_Mystic_Key.png" alt="Mystic Key" />
+                      <img onError={(e) => e.target.style.display = 'none'} src="https://herosiege.wiki.gg/images/Keys_Mystic_Key.png" alt="Mystic Key" />
                     </div>
                     Mystic Key
                   </div>
@@ -192,7 +192,7 @@ const ChavesPage = () => {
                 <td>
                   <div className="keys-key-box">
                     <div className="keys-icon-container">
-                      <img src="https://herosiege.wiki.gg/images/Keys_Tomb_Key.png" alt="Tomb Key" />
+                      <img onError={(e) => e.target.style.display = 'none'} src="https://herosiege.wiki.gg/images/Keys_Tomb_Key.png" alt="Tomb Key" />
                     </div>
                     Tomb Key
                   </div>
@@ -205,7 +205,7 @@ const ChavesPage = () => {
                 <td>
                   <div className="keys-key-box">
                     <div className="keys-icon-container">
-                      <img src="https://herosiege.wiki.gg/images/Keys_Copper_Key.png" alt="Copper Key" />
+                      <img onError={(e) => e.target.style.display = 'none'} src="https://herosiege.wiki.gg/images/Keys_Copper_Key.png" alt="Copper Key" />
                     </div>
                     Copper Key
                   </div>
@@ -218,7 +218,7 @@ const ChavesPage = () => {
                 <td>
                   <div className="keys-key-box">
                     <div className="keys-icon-container">
-                      <img src="https://herosiege.wiki.gg/images/Keys_Rusted_Key.png" alt="Rusted Key" />
+                      <img onError={(e) => e.target.style.display = 'none'} src="https://herosiege.wiki.gg/images/Keys_Rusted_Key.png" alt="Rusted Key" />
                     </div>
                     Rusted Key
                   </div>
@@ -231,7 +231,7 @@ const ChavesPage = () => {
                 <td>
                   <div className="keys-key-box">
                     <div className="keys-icon-container">
-                      <img src="https://herosiege.wiki.gg/images/Keys_Devils_Key.png" alt="Devil's Key" />
+                      <img onError={(e) => e.target.style.display = 'none'} src="https://herosiege.wiki.gg/images/Keys_Devils_Key.png" alt="Devil's Key" />
                     </div>
                     Devil's Key
                   </div>
@@ -244,7 +244,7 @@ const ChavesPage = () => {
                 <td>
                   <div className="keys-key-box">
                     <div className="keys-icon-container">
-                      <img src="https://herosiege.wiki.gg/images/Keys_Pickaxe_Key.png" alt="Pickaxe Key" />
+                      <img onError={(e) => e.target.style.display = 'none'} src="https://herosiege.wiki.gg/images/Keys_Pickaxe_Key.png" alt="Pickaxe Key" />
                     </div>
                     Pickaxe Key
                   </div>
@@ -257,7 +257,7 @@ const ChavesPage = () => {
                 <td>
                   <div className="keys-key-box">
                     <div className="keys-icon-container">
-                      <img src="https://herosiege.wiki.gg/images/Keys_Garden_Key.png" alt="Garden Key" />
+                      <img onError={(e) => e.target.style.display = 'none'} src="https://herosiege.wiki.gg/images/Keys_Garden_Key.png" alt="Garden Key" />
                     </div>
                     Garden Key
                   </div>
@@ -270,7 +270,7 @@ const ChavesPage = () => {
                 <td>
                   <div className="keys-key-box">
                     <div className="keys-icon-container">
-                      <img src="https://herosiege.wiki.gg/images/Keys_Battle_Key.png" alt="Battle Key" />
+                      <img onError={(e) => e.target.style.display = 'none'} src="https://herosiege.wiki.gg/images/Keys_Battle_Key.png" alt="Battle Key" />
                     </div>
                     Battle Key
                   </div>
@@ -283,7 +283,7 @@ const ChavesPage = () => {
                 <td>
                   <div className="keys-key-box">
                     <div className="keys-icon-container">
-                      <img src="https://herosiege.wiki.gg/images/Keys_Golden_Key.png" alt="Golden Key" />
+                      <img onError={(e) => e.target.style.display = 'none'} src="https://herosiege.wiki.gg/images/Keys_Golden_Key.png" alt="Golden Key" />
                     </div>
                     Golden Key
                   </div>
@@ -296,7 +296,7 @@ const ChavesPage = () => {
                 <td>
                   <div className="keys-key-box">
                     <div className="keys-icon-container">
-                      <img src="https://herosiege.wiki.gg/images/Keys_Axe_Key.png" alt="Axe Key" />
+                      <img onError={(e) => e.target.style.display = 'none'} src="https://herosiege.wiki.gg/images/Keys_Axe_Key.png" alt="Axe Key" />
                     </div>
                     Axe Key
                   </div>
@@ -309,7 +309,7 @@ const ChavesPage = () => {
                 <td>
                   <div className="keys-key-box">
                     <div className="keys-icon-container">
-                      <img src="https://herosiege.wiki.gg/images/Keys_Storage_Key.png" alt="Storage Key" />
+                      <img onError={(e) => e.target.style.display = 'none'} src="https://herosiege.wiki.gg/images/Keys_Storage_Key.png" alt="Storage Key" />
                     </div>
                     Storage Key
                   </div>
@@ -322,7 +322,7 @@ const ChavesPage = () => {
                 <td>
                   <div className="keys-key-box">
                     <div className="keys-icon-container">
-                      <img src="https://herosiege.wiki.gg/images/Keys_Warp_Key.png" alt="Warp Key" />
+                      <img onError={(e) => e.target.style.display = 'none'} src="https://herosiege.wiki.gg/images/Keys_Warp_Key.png" alt="Warp Key" />
                     </div>
                     Warp Key
                   </div>
@@ -335,7 +335,7 @@ const ChavesPage = () => {
                 <td>
                   <div className="keys-key-box">
                     <div className="keys-icon-container">
-                      <img src="https://herosiege.wiki.gg/images/Keys_Valor_Key.png" alt="Valor Key" />
+                      <img onError={(e) => e.target.style.display = 'none'} src="https://herosiege.wiki.gg/images/Keys_Valor_Key.png" alt="Valor Key" />
                     </div>
                     Valor Key
                   </div>
@@ -348,7 +348,7 @@ const ChavesPage = () => {
                 <td>
                   <div className="keys-key-box">
                     <div className="keys-icon-container">
-                      <img src="https://herosiege.wiki.gg/images/Keys_Naga_Scale_Key.png" alt="Naga Scale Key" />
+                      <img onError={(e) => e.target.style.display = 'none'} src="https://herosiege.wiki.gg/images/Keys_Naga_Scale_Key.png" alt="Naga Scale Key" />
                     </div>
                     Naga Scale Key
                   </div>
@@ -361,7 +361,7 @@ const ChavesPage = () => {
                 <td>
                   <div className="keys-key-box">
                     <div className="keys-icon-container">
-                      <img src="https://herosiege.wiki.gg/images/Keys_Magma_Key.png" alt="Magma Key" />
+                      <img onError={(e) => e.target.style.display = 'none'} src="https://herosiege.wiki.gg/images/Keys_Magma_Key.png" alt="Magma Key" />
                     </div>
                     Magma Key
                   </div>
@@ -374,7 +374,7 @@ const ChavesPage = () => {
                 <td>
                   <div className="keys-key-box">
                     <div className="keys-icon-container">
-                      <img src="https://herosiege.wiki.gg/images/Keys_Helflame_Torch.png" alt="Helflame Torch" />
+                      <img onError={(e) => e.target.style.display = 'none'} src="https://herosiege.wiki.gg/images/Keys_Helflame_Torch.png" alt="Helflame Torch" />
                     </div>
                     Helflame Torch
                   </div>
@@ -403,7 +403,7 @@ const ChavesPage = () => {
                 <td>
                   <div className="keys-key-box keys-unique-key">
                     <div className="keys-icon-container">
-                      <img src="https://herosiege.wiki.gg/images/Keys_Angelic_Key.png" alt="Angelic Key" />
+                      <img onError={(e) => e.target.style.display = 'none'} src="https://herosiege.wiki.gg/images/Keys_Angelic_Key.png" alt="Angelic Key" />
                     </div>
                     Angelic Key
                   </div>
@@ -416,7 +416,7 @@ const ChavesPage = () => {
                 <td>
                   <div className="keys-key-box keys-unique-key">
                     <div className="keys-icon-container">
-                      <img src="https://herosiege.wiki.gg/images/Keys_Ruby_Key.png" alt="Ruby Key" />
+                      <img onError={(e) => e.target.style.display = 'none'} src="https://herosiege.wiki.gg/images/Keys_Ruby_Key.png" alt="Ruby Key" />
                     </div>
                     Ruby Key
                   </div>
@@ -429,7 +429,7 @@ const ChavesPage = () => {
                 <td>
                   <div className="keys-key-box keys-unique-key">
                     <div className="keys-icon-container">
-                      <img src="https://herosiege.wiki.gg/images/Keys_Bifr%C3%B6st_Key.png" alt="Bifröst Key" />
+                      <img onError={(e) => e.target.style.display = 'none'} src="https://herosiege.wiki.gg/images/Keys_Bifr%C3%B6st_Key.png" alt="Bifröst Key" />
                     </div>
                     Bifröst Key
                   </div>
@@ -456,7 +456,7 @@ const ChavesPage = () => {
                 <td>
                   <div className="keys-key-box keys-chest-key">
                     <div className="keys-icon-container">
-                      <img src="https://herosiege.wiki.gg/images/Keys_Key.png" alt="Common Key" />
+                      <img onError={(e) => e.target.style.display = 'none'} src="https://herosiege.wiki.gg/images/Keys_Key.png" alt="Common Key" />
                     </div>
                     Common Key
                   </div>
@@ -467,7 +467,7 @@ const ChavesPage = () => {
                 <td>
                   <div className="keys-key-box keys-chest-key">
                     <div className="keys-icon-container">
-                      <img src="https://herosiege.wiki.gg/images/Keys_Crystal_Key.png" alt="Crystal Key" />
+                      <img onError={(e) => e.target.style.display = 'none'} src="https://herosiege.wiki.gg/images/Keys_Crystal_Key.png" alt="Crystal Key" />
                     </div>
                     Crystal Key
                   </div>

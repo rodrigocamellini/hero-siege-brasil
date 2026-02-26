@@ -612,6 +612,24 @@ function slugifyClass(name) {
     .replace(/(^-|-$)/g, '');
 }
 
+const handleRelicError = (e, name) => {
+  const target = e.target;
+  const originalName = String(name || '');
+  const safeName = originalName.replace(/ /g, '_').replace(/'/g, '%27');
+  const noApostrophe = originalName.replace(/'/g, '').replace(/ /g, '_');
+  const src = target.src;
+  
+  if (src.includes('Relics_') && !src.includes(noApostrophe)) {
+     target.src = `https://herosiege.wiki.gg/images/Relic_${safeName}.png`;
+  } else if (src.includes('Relic_') && !src.includes(noApostrophe)) {
+     target.src = `https://herosiege.wiki.gg/images/${safeName}.png`;
+  } else if (!src.includes(noApostrophe) && originalName.includes("'")) {
+     target.src = `https://herosiege.wiki.gg/images/Relics_${noApostrophe}.png`;
+  } else {
+     target.style.display = 'none';
+  }
+};
+
 function PainelForum() {
   const [items, setItems] = useState([]);
   const [filter, setFilter] = useState('all');
@@ -1023,7 +1041,7 @@ function PainelForum() {
                         >
                           {opt ? (
                             <>
-                              <img src={opt.img} alt={opt.name} style={{ width: 28, height: 28, objectFit: 'contain', marginBottom: 6 }} />
+                              <img src={opt.img} alt={opt.name} style={{ width: 28, height: 28, objectFit: 'contain', marginBottom: 6 }} onError={(e) => handleRelicError(e, opt.name)} />
                               <span style={{ fontSize: 10, textAlign: 'center', color: '#374151' }}>{opt.name}</span>
                             </>
                           ) : (
@@ -1070,7 +1088,7 @@ function PainelForum() {
                             setRelicPickerIndex(null);
                           }}
                         >
-                          <img src={r.img} alt={r.name} style={{ width: 24, height: 24, objectFit: 'contain' }} />
+                          <img src={r.img} alt={r.name} style={{ width: 24, height: 24, objectFit: 'contain' }} onError={(e) => handleRelicError(e, r.name)} />
                           <span>{r.name}</span>
                         </button>
                       ))}
@@ -1097,7 +1115,7 @@ function PainelForum() {
                           >
                             {opt ? (
                               <>
-                                <img src={opt.image || opt.img} alt={opt.name} style={{ width: 28, height: 28, objectFit: 'contain', marginBottom: 6 }} />
+                                <img src={opt.image || opt.img} alt={opt.name} style={{ width: 28, height: 28, objectFit: 'contain', marginBottom: 6 }} onError={(e) => { e.currentTarget.style.display = 'none'; }} />
                                 <span style={{ fontSize: 10, textAlign: 'center', color: '#374151' }}>{opt.name}</span>
                               </>
                             ) : (
@@ -1145,7 +1163,7 @@ function PainelForum() {
                             }}
                           >
                             {(p.image || p.img) && (
-                              <img src={p.image || p.img} alt={p.name} style={{ width: 24, height: 24, objectFit: 'contain' }} />
+                              <img src={p.image || p.img} alt={p.name} style={{ width: 24, height: 24, objectFit: 'contain' }} onError={(e) => { e.currentTarget.style.display = 'none'; }} />
                             )}
                             <span>{p.name}</span>
                           </button>
@@ -1192,6 +1210,7 @@ function PainelForum() {
                                   src={`https://herosiege.wiki.gg/images/${charm.file}`} 
                                   alt={charm.name} 
                                   style={{ width: 28, height: 28, objectFit: 'contain', marginBottom: 6 }} 
+                                  onError={(e) => { e.currentTarget.style.display = 'none'; }}
                                 />
                                 <span style={{ fontSize: 10, textAlign: 'center', color: '#374151', lineHeight: 1.1 }}>{charm.name}</span>
                               </>
@@ -1243,7 +1262,7 @@ function PainelForum() {
                               setCharmPickerIndex(null);
                             }}
                           >
-                            <img src={`https://herosiege.wiki.gg/images/${c.file}`} alt={c.name} style={{ width: 24, height: 24, objectFit: 'contain' }} />
+                            <img src={`https://herosiege.wiki.gg/images/${c.file}`} alt={c.name} style={{ width: 24, height: 24, objectFit: 'contain' }} onError={(e) => { e.currentTarget.style.display = 'none'; }} />
                             <span>{c.name}</span>
                           </button>
                         ))}
@@ -1290,7 +1309,7 @@ function PainelForum() {
                             }}
                             title={m.name}
                           >
-                            <img src={m.image} alt={m.name} style={{ width: 32, height: 32, objectFit: 'contain', marginBottom: 6 }} />
+                            <img src={m.image} alt={m.name} style={{ width: 32, height: 32, objectFit: 'contain', marginBottom: 6 }} onError={(e) => { e.currentTarget.style.display = 'none'; }} />
                             <span style={{ fontSize: 11, textAlign: 'center', color: '#374151' }}>{m.name}</span>
                           </button>
                         );
@@ -1323,7 +1342,7 @@ function PainelForum() {
                         const isQuest = idx === 4;
                         return (
                           <div key={`${name}-${idx}`} style={{ display: 'flex', alignItems: 'center', gap: 6, border: isQuest ? '1px solid rgba(239,68,68,.6)' : '1px solid #e5e7eb', padding: '4px 6px', background: isQuest ? 'rgba(239,68,68,.06)' : '#f9fafb' }}>
-                            <img src={opt?.img} alt={name} style={{ width: 18, height: 18, objectFit: 'contain' }} />
+                            <img src={opt?.img} alt={name} style={{ width: 18, height: 18, objectFit: 'contain' }} onError={(e) => handleRelicError(e, name)} />
                             <span style={{ fontSize: 11 }}>{name}</span>
                           </div>
                         );
@@ -1341,7 +1360,7 @@ function PainelForum() {
                         return (
                           <div key={`${name}-${idx}`} style={{ display: 'flex', alignItems: 'center', gap: 6, border: '1px solid #e5e7eb', padding: '4px 6px', background: '#f9fafb' }}>
                             {(opt?.image || opt?.img) && (
-                              <img src={opt.image || opt.img} alt={name} style={{ width: 18, height: 18, objectFit: 'contain' }} />
+                              <img src={opt.image || opt.img} alt={name} style={{ width: 18, height: 18, objectFit: 'contain' }} onError={(e) => { e.currentTarget.style.display = 'none'; }} />
                             )}
                             <span style={{ fontSize: 11 }}>{name}</span>
                           </div>
@@ -1371,7 +1390,7 @@ function PainelForum() {
 
                         return (
                           <div key={`${name}-${idx}`} style={{ display: 'flex', alignItems: 'center', gap: 6, border: `1px solid ${borderColor}`, padding: '4px 6px', background: bgColor }}>
-                            <img src={`https://herosiege.wiki.gg/images/${charm.file}`} alt={name} style={{ width: 18, height: 18, objectFit: 'contain' }} />
+                            <img src={`https://herosiege.wiki.gg/images/${charm.file}`} alt={name} style={{ width: 18, height: 18, objectFit: 'contain' }} onError={(e) => { e.currentTarget.style.display = 'none'; }} />
                             <span style={{ fontSize: 11 }}>{name}</span>
                           </div>
                         );
@@ -1405,7 +1424,7 @@ function PainelForum() {
                         if (!info) return null;
                         return (
                           <div style={{ display: 'flex', alignItems: 'center', gap: 6, border: '1px solid #e5e7eb', padding: '4px 6px', background: '#f9fafb' }}>
-                            <img src={info.image} alt={info.name} style={{ width: 18, height: 18, objectFit: 'contain' }} />
+                            <img src={info.image} alt={info.name} style={{ width: 18, height: 18, objectFit: 'contain' }} onError={(e) => { e.currentTarget.style.display = 'none'; }} />
                             <span style={{ fontSize: 11 }}>{info.name}</span>
                           </div>
                         );
@@ -1739,7 +1758,7 @@ function PainelHomepage() {
           <h2>Visualização atual</h2>
           <div className="painel-homepage-preview">
             <div className="painel-homepage-preview-img">
-              <img src={previewImage} alt={selected || classes[0]} />
+              <img src={previewImage} alt={selected || classes[0]} onError={(e) => e.currentTarget.style.display = 'none'} />
             </div>
             <div className="painel-homepage-preview-info">
               <div style={{ fontWeight: 700, marginBottom: 6 }}>{activeLabel}</div>
@@ -1811,7 +1830,7 @@ function PainelHomepage() {
                   onClick={() => selectFixed(c)}
                   disabled={saving}
                 >
-                  <img src={img} alt={c} />
+                  <img src={img} alt={c} onError={(e) => e.currentTarget.style.display = 'none'} />
                   <span>{c}</span>
                 </button>
               );
@@ -1891,6 +1910,7 @@ function PainelHomepage() {
                       src={imageFor(cls)}
                       alt={cls}
                       title={cls}
+                      onError={(e) => e.currentTarget.style.display = 'none'}
                       style={{
                         width: 40,
                         height: 40,
@@ -1929,6 +1949,7 @@ function PainelHomepage() {
                   src={imageFor(cls)}
                   alt={cls}
                   title={cls}
+                  onError={(e) => e.currentTarget.style.display = 'none'}
                   style={{
                     width: 40,
                     height: 40,
@@ -1983,6 +2004,7 @@ function PainelHomepage() {
                         src={imageFor(cls)}
                         alt={cls}
                         title={cls}
+                        onError={(e) => e.currentTarget.style.display = 'none'}
                         style={{ width:40, height:40, objectFit:'contain', filter:'drop-shadow(0 2px 4px rgba(0,0,0,.4))', background:'#0b0f19' }}
                       />
                     ))}

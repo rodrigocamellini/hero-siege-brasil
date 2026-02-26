@@ -21,12 +21,45 @@ const TWITCH_CONTAINER_ID = 'twitch-embed-spacezone';
 const ALL_RELICS = [...PASSIVE_RELICS, ...EXTRA_RELICS];
 
 const relicImageFor = (rel) => {
-  if (rel && rel.img) return normalizeRelicImageUrl(rel.img);
-  const safeName = String(rel?.name || '')
-    .replace(/ /g, '_')
-    .replace(/'/g, '%27');
-  return `https://herosiege.wiki.gg/images/Relics_${safeName}.png`;
-};
+    if (rel && rel.img) return normalizeRelicImageUrl(rel.img);
+    const safeName = String(rel?.name || '')
+      .replace(/ /g, '_')
+      .replace(/'/g, '%27');
+    return `https://herosiege.wiki.gg/images/Relics_${safeName}.png`;
+  };
+
+  const handleRelicError = (e, name) => {
+    const target = e.target;
+    // Tenta diferentes variações de nome para encontrar a imagem na wiki
+    const originalName = String(name || '');
+    const safeName = originalName.replace(/ /g, '_').replace(/'/g, '%27');
+    const noApostrophe = originalName.replace(/'/g, '').replace(/ /g, '_');
+    const src = target.src;
+    
+    // Lista de tentativas de URL
+    // 1. Relics_Name.png (Padrão)
+    // 2. Relic_Name.png (Singular)
+    // 3. Name.png (Apenas nome)
+    // 4. Relics_NameNoApostrophe.png (Sem apóstrofo)
+    
+    if (src.includes('Relics_') && !src.includes(noApostrophe)) {
+       // Se falhou o padrão, tenta singular
+       target.src = `https://herosiege.wiki.gg/images/Relic_${safeName}.png`;
+    } else if (src.includes('Relic_') && !src.includes(noApostrophe)) {
+       // Se falhou singular, tenta apenas o nome
+       target.src = `https://herosiege.wiki.gg/images/${safeName}.png`;
+    } else if (!src.includes(noApostrophe) && originalName.includes("'")) {
+       // Se tem apóstrofo e falhou as anteriores, tenta remover o apóstrofo
+       target.src = `https://herosiege.wiki.gg/images/Relics_${noApostrophe}.png`;
+    } else {
+       // Se tudo falhar, esconde a imagem e mostra um placeholder
+       target.style.display = 'none';
+       // Opcional: Poderíamos injetar um elemento de texto ou ícone aqui, 
+       // mas o layout já tem o nome ao lado ou embaixo.
+       // Vamos tentar forçar um ícone genérico se possível, ou deixar invisível.
+       // target.src = 'https://herosiege.wiki.gg/images/3/30/Unknown.png'; // Exemplo genérico
+    }
+  };
 
 const CLASS_DATA = [
   { name: 'Prophet', type: 'MAGIC', destacado: true },
@@ -2163,10 +2196,24 @@ const NewDesign = ({ onBack, initialView = 'home' }) => {
                 console.warn('Failed to load shields from DB, using fallback', err);
               }
 
-              if ((!loadedShields || loadedShields.length === 0) && typeof EXTRA_SHIELDS !== 'undefined' && EXTRA_SHIELDS.length > 0) {
-                 // Map EXTRA_SHIELDS to match the structure if needed, or use as is since they have 'image'
-                 loadedShields = EXTRA_SHIELDS.map(s => ({...s, img: s.image, category: 'Shields'})); 
+              // Se não encontrou nada no banco ou encontrou muito poucos (possível erro de carga), 
+              // mistura com os shields manuais para garantir que apareçam
+              if (!loadedShields || loadedShields.length < 5) {
+                 console.log('Merging EXTRA_SHIELDS fallback due to low/no DB results');
+                 if (typeof EXTRA_SHIELDS !== 'undefined' && EXTRA_SHIELDS.length > 0) {
+                    const extra = EXTRA_SHIELDS.map(s => ({...s, img: s.image, category: 'Shields'}));
+                    
+                    // Se loadedShields é nulo/indefinido, inicializa
+                    const currentList = loadedShields || [];
+                    const existingNames = new Set(currentList.map(s => String(s.name || '').trim().toLowerCase()));
+                    
+                    const toAdd = extra.filter(s => !existingNames.has(String(s.name || '').trim().toLowerCase()));
+                    loadedShields = [...currentList, ...toAdd];
+                 }
               }
+              // Ordenar por nome
+              loadedShields.sort((a, b) => (a.name || '').localeCompare(b.name || ''));
+              
               setShieldOptions(loadedShields);
 
               setAmuletOptions(await loadCategoryItems('amulets'));
@@ -3152,7 +3199,7 @@ const NewDesign = ({ onBack, initialView = 'home' }) => {
                               <div className="bg-[#151923] border border-white/10 rounded-sm shadow-xl max-w-5xl w-[92vw] md:w-[80vw]">
                                 <div className="flex items-center justify-between px-5 py-4 border-b border-white/10">
                                   <div className="flex items-center gap-3">
-                                    <img src="/images/herosiege.png" alt="Hero Siege Brasil" className="h-6 w-auto" />
+                                    <img src="/images/herosiege.png" alt="Hero Siege Brasil" className="h-6 w-auto"  onError={(e) => e.target.style.display = 'none'}/>
                                     <div className="text-lg font-black text-white uppercase italic tracking-widest">Tier List Completa</div>
                                   </div>
                                   <div className="flex gap-2">
@@ -3167,7 +3214,7 @@ const NewDesign = ({ onBack, initialView = 'home' }) => {
                                       <div className="flex-1 flex gap-2 flex-wrap">
                                         {(tiers[k] || []).map((c) => (
                                           <div key={`${k}-${c}`} className="relative group/icon">
-                                            <img src={imageFor(c)} alt={c} className="w-10 h-10 object-contain drop-shadow-md" />
+                                            <img src={imageFor(c)} alt={c} className="w-10 h-10 object-contain drop-shadow-md"  onError={(e) => e.target.style.display = 'none'}/>
                                             <div className="absolute -bottom-6 left-1/2 -translate-x-1/2 bg-black text-white text-[10px] px-2 py-1 opacity-0 group-hover/icon:opacity-100 transition-opacity whitespace-nowrap z-50 border border-white/10 pointer-events-none">
                                               {c}
                                             </div>
@@ -3904,7 +3951,7 @@ const NewDesign = ({ onBack, initialView = 'home' }) => {
                                               }`}
                                             >
                                               {item.img ? (
-                                                <img src={item.img} alt={item.name} className="w-5 h-5 object-contain" />
+                                                <img src={item.img} alt={item.name} className="w-5 h-5 object-contain"  onError={(e) => e.target.style.display = 'none'}/>
                                               ) : (
                                                 <div className="w-5 h-5 flex items-center justify-center border border-white/20 text-[10px] text-gray-400">?</div>
                                               )}
@@ -3933,7 +3980,7 @@ const NewDesign = ({ onBack, initialView = 'home' }) => {
                                               }`}
                                             >
                                               {item.img ? (
-                                                <img src={item.img} alt={item.name} className="w-5 h-5 object-contain" />
+                                                <img src={item.img} alt={item.name} className="w-5 h-5 object-contain"  onError={(e) => e.target.style.display = 'none'}/>
                                               ) : (
                                                 <div className="w-5 h-5 flex items-center justify-center border border-white/20 text-[10px] text-gray-400">?</div>
                                               )}
@@ -3962,7 +4009,7 @@ const NewDesign = ({ onBack, initialView = 'home' }) => {
                                               }`}
                                             >
                                               {item.img ? (
-                                                <img src={item.img} alt={item.name} className="w-5 h-5 object-contain" />
+                                                <img src={item.img} alt={item.name} className="w-5 h-5 object-contain"  onError={(e) => e.target.style.display = 'none'}/>
                                               ) : (
                                                 <div className="w-5 h-5 flex items-center justify-center border border-white/20 text-[10px] text-gray-400">?</div>
                                               )}
@@ -3991,7 +4038,7 @@ const NewDesign = ({ onBack, initialView = 'home' }) => {
                                               }`}
                                             >
                                               {item.img ? (
-                                                <img src={item.img} alt={item.name} className="w-5 h-5 object-contain" />
+                                                <img src={item.img} alt={item.name} className="w-5 h-5 object-contain"  onError={(e) => e.target.style.display = 'none'}/>
                                               ) : (
                                                 <div className="w-5 h-5 flex items-center justify-center border border-white/20 text-[10px] text-gray-400">?</div>
                                               )}
@@ -4020,7 +4067,7 @@ const NewDesign = ({ onBack, initialView = 'home' }) => {
                                               }`}
                                             >
                                               {item.img ? (
-                                                <img src={item.img} alt={item.name} className="w-5 h-5 object-contain" />
+                                                <img src={item.img} alt={item.name} className="w-5 h-5 object-contain"  onError={(e) => e.target.style.display = 'none'}/>
                                               ) : (
                                                 <div className="w-5 h-5 flex items-center justify-center border border-white/20 text-[10px] text-gray-400">?</div>
                                               )}
@@ -4049,7 +4096,7 @@ const NewDesign = ({ onBack, initialView = 'home' }) => {
                                               }`}
                                             >
                                               {item.img ? (
-                                                <img src={item.img} alt={item.name} className="w-5 h-5 object-contain" />
+                                                <img src={item.img} alt={item.name} className="w-5 h-5 object-contain"  onError={(e) => e.target.style.display = 'none'}/>
                                               ) : (
                                                 <div className="w-5 h-5 flex items-center justify-center border border-white/20 text-[10px] text-gray-400">?</div>
                                               )}
@@ -4078,7 +4125,7 @@ const NewDesign = ({ onBack, initialView = 'home' }) => {
                                               }`}
                                             >
                                               {item.img ? (
-                                                <img src={item.img} alt={item.name} className="w-5 h-5 object-contain" />
+                                                <img src={item.img} alt={item.name} className="w-5 h-5 object-contain"  onError={(e) => e.target.style.display = 'none'}/>
                                               ) : (
                                                 <div className="w-5 h-5 flex items-center justify-center border border-white/20 text-[10px] text-gray-400">?</div>
                                               )}
@@ -4107,7 +4154,7 @@ const NewDesign = ({ onBack, initialView = 'home' }) => {
                                               }`}
                                             >
                                               {item.img ? (
-                                                <img src={item.img} alt={item.name} className="w-5 h-5 object-contain" />
+                                                <img src={item.img} alt={item.name} className="w-5 h-5 object-contain"  onError={(e) => e.target.style.display = 'none'}/>
                                               ) : (
                                                 <div className="w-5 h-5 flex items-center justify-center border border-white/20 text-[10px] text-gray-400">?</div>
                                               )}
@@ -4136,7 +4183,7 @@ const NewDesign = ({ onBack, initialView = 'home' }) => {
                                               }`}
                                             >
                                               {item.img ? (
-                                                <img src={item.img} alt={item.name} className="w-5 h-5 object-contain" />
+                                                <img src={item.img} alt={item.name} className="w-5 h-5 object-contain"  onError={(e) => e.target.style.display = 'none'}/>
                                               ) : (
                                                 <div className="w-5 h-5 flex items-center justify-center border border-white/20 text-[10px] text-gray-400">?</div>
                                               )}
@@ -4163,7 +4210,7 @@ const NewDesign = ({ onBack, initialView = 'home' }) => {
                                               className="flex items-center gap-2 border px-2 py-1 border-white/10 bg-black/40"
                                             >
                                               {item.img ? (
-                                                <img src={item.img} alt={item.name} className="w-5 h-5 object-contain" />
+                                                <img src={item.img} alt={item.name} className="w-5 h-5 object-contain"  onError={(e) => e.target.style.display = 'none'}/>
                                               ) : (
                                                 <div className="w-5 h-5 flex items-center justify-center border border-white/20 text-[10px] text-gray-400">?</div>
                                               )}
@@ -4190,6 +4237,7 @@ const NewDesign = ({ onBack, initialView = 'home' }) => {
                                                 src={rel.img}
                                                 alt={rel.name}
                                                 className="w-5 h-5 object-contain"
+                                                onError={(e) => handleRelicError(e, rel.name)}
                                               />
                                               <span className="text-[11px] text-gray-200">
                                                 {rel.name}
@@ -4469,7 +4517,12 @@ const NewDesign = ({ onBack, initialView = 'home' }) => {
                                         >
                                           {img ? (
                                             <>
-                                              <img src={img} alt={name} className="w-8 h-8 object-contain mb-1" />
+                                              <img 
+                                                src={img} 
+                                                alt={name} 
+                                                className="w-8 h-8 object-contain mb-1" 
+                                                onError={(e) => handleRelicError(e, name)}
+                                              />
                                               <span className="px-1 text-[9px] leading-tight text-center line-clamp-2">
                                                 {name}
                                               </span>
@@ -4526,7 +4579,12 @@ const NewDesign = ({ onBack, initialView = 'home' }) => {
                                             setNbRelicPickerIndex(null);
                                           }}
                                         >
-                                          <img src={rel.img} alt={rel.name} className="w-7 h-7 object-contain" />
+                                          <img 
+                                            src={rel.img} 
+                                            alt={rel.name} 
+                                            className="w-7 h-7 object-contain"
+                                            onError={(e) => handleRelicError(e, rel.name)}
+                                          />
                                           <span>{rel.name}</span>
                                         </button>
                                       ))}
@@ -4549,7 +4607,7 @@ const NewDesign = ({ onBack, initialView = 'home' }) => {
                                         >
                                           {img ? (
                                             <>
-                                              <img src={img} alt={p.name} className="w-8 h-8 object-contain mb-1" />
+                                              <img src={img} alt={p.name} className="w-8 h-8 object-contain mb-1"  onError={(e) => e.target.style.display = 'none'}/>
                                               <span className="px-1 text-[9px] leading-tight text-center line-clamp-2">
                                                 {p.name}
                                               </span>
@@ -4604,7 +4662,7 @@ const NewDesign = ({ onBack, initialView = 'home' }) => {
                                             setNbPotionPickerIndex(null);
                                           }}
                                         >
-                                          <img src={opt.image} alt={opt.name} className="w-7 h-7 object-contain" />
+                                          <img src={opt.image} alt={opt.name} className="w-7 h-7 object-contain"  onError={(e) => e.target.style.display = 'none'}/>
                                           <span>{opt.name}</span>
                                         </button>
                                       ))}
@@ -4641,7 +4699,7 @@ const NewDesign = ({ onBack, initialView = 'home' }) => {
                                         >
                                           {img ? (
                                             <>
-                                              <img src={img} alt={charm.name} className="w-8 h-8 object-contain mb-1" />
+                                              <img src={img} alt={charm.name} className="w-8 h-8 object-contain mb-1"  onError={(e) => e.target.style.display = 'none'}/>
                                               <span className="px-1 text-[9px] leading-tight text-center line-clamp-2">
                                                 {charm.name}
                                               </span>
@@ -4721,7 +4779,7 @@ const NewDesign = ({ onBack, initialView = 'home' }) => {
                                             }}
                                           >
                                             {img ? (
-                                              <img src={img} alt={charm.name} className="w-7 h-7 object-contain" />
+                                              <img src={img} alt={charm.name} className="w-7 h-7 object-contain"  onError={(e) => e.target.style.display = 'none'}/>
                                             ) : (
                                               <div className="w-7 h-7 flex items-center justify-center border border-white/20 text-[11px]">
                                                 ?
@@ -4846,7 +4904,7 @@ const NewDesign = ({ onBack, initialView = 'home' }) => {
                                             }}
                                           >
                                             {item.image ? (
-                                              <img src={item.image} alt={item.name} className="w-7 h-7 object-contain" />
+                                              <img src={item.image} alt={item.name} className="w-7 h-7 object-contain"  onError={(e) => e.target.style.display = 'none'}/>
                                             ) : (
                                               <div className="w-7 h-7 flex items-center justify-center border border-white/20 text-[11px]">?</div>
                                             )}
@@ -4963,7 +5021,7 @@ const NewDesign = ({ onBack, initialView = 'home' }) => {
                                             }}
                                           >
                                             {item.image ? (
-                                              <img src={item.image} alt={item.name} className="w-7 h-7 object-contain" />
+                                              <img src={item.image} alt={item.name} className="w-7 h-7 object-contain"  onError={(e) => e.target.style.display = 'none'}/>
                                             ) : (
                                               <div className="w-7 h-7 flex items-center justify-center border border-white/20 text-[11px]">?</div>
                                             )}
@@ -5001,7 +5059,7 @@ const NewDesign = ({ onBack, initialView = 'home' }) => {
                                       <button type="button" className="w-full flex items-center gap-3 px-3 py-2 text-xs text-red-400 hover:bg-red-900/20 border-b border-white/5" onClick={() => { setNbBoots(prev => { const next = [...prev]; next[nbBootPickerIndex] = null; return next; }); setNbBootPickerIndex(null); }}><div className="w-7 h-7 flex items-center justify-center border border-red-500/20 text-[13px]">×</div><span>Remover item</span></button>
                                       {loadingBuildItems ? <div className="p-4 text-center text-xs text-gray-500">Carregando itens...</div> : bootOptions.map((item, idx) => (
                                         <button key={item.id || idx} type="button" className="w-full flex items-center gap-3 px-3 py-2 text-xs text-gray-200 hover:bg-white/10 border-b border-white/5 text-left" onClick={() => { setNbBoots(prev => { const next = [...prev]; next[nbBootPickerIndex] = item; return next; }); setNbBootPickerIndex(null); }}>
-                                          {item.image || item.img ? <img src={item.image || item.img} alt={item.name} className="w-7 h-7 object-contain" /> : <div className="w-7 h-7 flex items-center justify-center border border-white/20 text-[11px]">?</div>}<div className="flex flex-col"><span>{item.name}</span><span className="text-[9px] text-gray-500">{item.category}</span></div>
+                                          {item.image || item.img ? <img src={item.image || item.img} alt={item.name} className="w-7 h-7 object-contain"  onError={(e) => e.target.style.display = 'none'}/> : <div className="w-7 h-7 flex items-center justify-center border border-white/20 text-[11px]">?</div>}<div className="flex flex-col"><span>{item.name}</span><span className="text-[9px] text-gray-500">{item.category}</span></div>
                                         </button>
                                       ))}
                                     </div>
@@ -5031,7 +5089,7 @@ const NewDesign = ({ onBack, initialView = 'home' }) => {
                                       <button type="button" className="w-full flex items-center gap-3 px-3 py-2 text-xs text-red-400 hover:bg-red-900/20 border-b border-white/5" onClick={() => { setNbGloves(prev => { const next = [...prev]; next[nbGlovePickerIndex] = null; return next; }); setNbGlovePickerIndex(null); }}><div className="w-7 h-7 flex items-center justify-center border border-red-500/20 text-[13px]">×</div><span>Remover item</span></button>
                                       {loadingBuildItems ? <div className="p-4 text-center text-xs text-gray-500">Carregando itens...</div> : gloveOptions.map((item, idx) => (
                                         <button key={item.id || idx} type="button" className="w-full flex items-center gap-3 px-3 py-2 text-xs text-gray-200 hover:bg-white/10 border-b border-white/5 text-left" onClick={() => { setNbGloves(prev => { const next = [...prev]; next[nbGlovePickerIndex] = item; return next; }); setNbGlovePickerIndex(null); }}>
-                                          {item.image || item.img ? <img src={item.image || item.img} alt={item.name} className="w-7 h-7 object-contain" /> : <div className="w-7 h-7 flex items-center justify-center border border-white/20 text-[11px]">?</div>}<div className="flex flex-col"><span>{item.name}</span><span className="text-[9px] text-gray-500">{item.category}</span></div>
+                                          {item.image || item.img ? <img src={item.image || item.img} alt={item.name} className="w-7 h-7 object-contain"  onError={(e) => e.target.style.display = 'none'}/> : <div className="w-7 h-7 flex items-center justify-center border border-white/20 text-[11px]">?</div>}<div className="flex flex-col"><span>{item.name}</span><span className="text-[9px] text-gray-500">{item.category}</span></div>
                                         </button>
                                       ))}
                                     </div>
@@ -5061,7 +5119,7 @@ const NewDesign = ({ onBack, initialView = 'home' }) => {
                                       <button type="button" className="w-full flex items-center gap-3 px-3 py-2 text-xs text-red-400 hover:bg-red-900/20 border-b border-white/5" onClick={() => { setNbHelmets(prev => { const next = [...prev]; next[nbHelmetPickerIndex] = null; return next; }); setNbHelmetPickerIndex(null); }}><div className="w-7 h-7 flex items-center justify-center border border-red-500/20 text-[13px]">×</div><span>Remover item</span></button>
                                       {loadingBuildItems ? <div className="p-4 text-center text-xs text-gray-500">Carregando itens...</div> : helmetOptions.map((item, idx) => (
                                         <button key={item.id || idx} type="button" className="w-full flex items-center gap-3 px-3 py-2 text-xs text-gray-200 hover:bg-white/10 border-b border-white/5 text-left" onClick={() => { setNbHelmets(prev => { const next = [...prev]; next[nbHelmetPickerIndex] = item; return next; }); setNbHelmetPickerIndex(null); }}>
-                                          {item.image || item.img ? <img src={item.image || item.img} alt={item.name} className="w-7 h-7 object-contain" /> : <div className="w-7 h-7 flex items-center justify-center border border-white/20 text-[11px]">?</div>}<div className="flex flex-col"><span>{item.name}</span><span className="text-[9px] text-gray-500">{item.category}</span></div>
+                                          {item.image || item.img ? <img src={item.image || item.img} alt={item.name} className="w-7 h-7 object-contain"  onError={(e) => e.target.style.display = 'none'}/> : <div className="w-7 h-7 flex items-center justify-center border border-white/20 text-[11px]">?</div>}<div className="flex flex-col"><span>{item.name}</span><span className="text-[9px] text-gray-500">{item.category}</span></div>
                                         </button>
                                       ))}
                                     </div>
@@ -5091,7 +5149,7 @@ const NewDesign = ({ onBack, initialView = 'home' }) => {
                                       <button type="button" className="w-full flex items-center gap-3 px-3 py-2 text-xs text-red-400 hover:bg-red-900/20 border-b border-white/5" onClick={() => { setNbShields(prev => { const next = [...prev]; next[nbShieldPickerIndex] = null; return next; }); setNbShieldPickerIndex(null); }}><div className="w-7 h-7 flex items-center justify-center border border-red-500/20 text-[13px]">×</div><span>Remover item</span></button>
                                       {loadingBuildItems ? <div className="p-4 text-center text-xs text-gray-500">Carregando itens...</div> : shieldOptions.map((item, idx) => (
                                         <button key={item.id || idx} type="button" className="w-full flex items-center gap-3 px-3 py-2 text-xs text-gray-200 hover:bg-white/10 border-b border-white/5 text-left" onClick={() => { setNbShields(prev => { const next = [...prev]; next[nbShieldPickerIndex] = item; return next; }); setNbShieldPickerIndex(null); }}>
-                                          {item.image || item.img ? <img src={item.image || item.img} alt={item.name} className="w-7 h-7 object-contain" /> : <div className="w-7 h-7 flex items-center justify-center border border-white/20 text-[11px]">?</div>}<div className="flex flex-col"><span>{item.name}</span><span className="text-[9px] text-gray-500">{item.category}</span></div>
+                                          {item.image || item.img ? <img src={item.image || item.img} alt={item.name} className="w-7 h-7 object-contain"  onError={(e) => e.target.style.display = 'none'}/> : <div className="w-7 h-7 flex items-center justify-center border border-white/20 text-[11px]">?</div>}<div className="flex flex-col"><span>{item.name}</span><span className="text-[9px] text-gray-500">{item.category}</span></div>
                                         </button>
                                       ))}
                                     </div>
@@ -5121,7 +5179,7 @@ const NewDesign = ({ onBack, initialView = 'home' }) => {
                                       <button type="button" className="w-full flex items-center gap-3 px-3 py-2 text-xs text-red-400 hover:bg-red-900/20 border-b border-white/5" onClick={() => { setNbAmulets(prev => { const next = [...prev]; next[nbAmuletPickerIndex] = null; return next; }); setNbAmuletPickerIndex(null); }}><div className="w-7 h-7 flex items-center justify-center border border-red-500/20 text-[13px]">×</div><span>Remover item</span></button>
                                       {loadingBuildItems ? <div className="p-4 text-center text-xs text-gray-500">Carregando itens...</div> : amuletOptions.map((item, idx) => (
                                         <button key={item.id || idx} type="button" className="w-full flex items-center gap-3 px-3 py-2 text-xs text-gray-200 hover:bg-white/10 border-b border-white/5 text-left" onClick={() => { setNbAmulets(prev => { const next = [...prev]; next[nbAmuletPickerIndex] = item; return next; }); setNbAmuletPickerIndex(null); }}>
-                                          {item.image || item.img ? <img src={item.image || item.img} alt={item.name} className="w-7 h-7 object-contain" /> : <div className="w-7 h-7 flex items-center justify-center border border-white/20 text-[11px]">?</div>}<div className="flex flex-col"><span>{item.name}</span><span className="text-[9px] text-gray-500">{item.category}</span></div>
+                                          {item.image || item.img ? <img src={item.image || item.img} alt={item.name} className="w-7 h-7 object-contain"  onError={(e) => e.target.style.display = 'none'}/> : <div className="w-7 h-7 flex items-center justify-center border border-white/20 text-[11px]">?</div>}<div className="flex flex-col"><span>{item.name}</span><span className="text-[9px] text-gray-500">{item.category}</span></div>
                                         </button>
                                       ))}
                                     </div>
@@ -5151,7 +5209,7 @@ const NewDesign = ({ onBack, initialView = 'home' }) => {
                                       <button type="button" className="w-full flex items-center gap-3 px-3 py-2 text-xs text-red-400 hover:bg-red-900/20 border-b border-white/5" onClick={() => { setNbBelts(prev => { const next = [...prev]; next[nbBeltPickerIndex] = null; return next; }); setNbBeltPickerIndex(null); }}><div className="w-7 h-7 flex items-center justify-center border border-red-500/20 text-[13px]">×</div><span>Remover item</span></button>
                                       {loadingBuildItems ? <div className="p-4 text-center text-xs text-gray-500">Carregando itens...</div> : beltOptions.map((item, idx) => (
                                         <button key={item.id || idx} type="button" className="w-full flex items-center gap-3 px-3 py-2 text-xs text-gray-200 hover:bg-white/10 border-b border-white/5 text-left" onClick={() => { setNbBelts(prev => { const next = [...prev]; next[nbBeltPickerIndex] = item; return next; }); setNbBeltPickerIndex(null); }}>
-                                          {item.image || item.img ? <img src={item.image || item.img} alt={item.name} className="w-7 h-7 object-contain" /> : <div className="w-7 h-7 flex items-center justify-center border border-white/20 text-[11px]">?</div>}<div className="flex flex-col"><span>{item.name}</span><span className="text-[9px] text-gray-500">{item.category}</span></div>
+                                          {item.image || item.img ? <img src={item.image || item.img} alt={item.name} className="w-7 h-7 object-contain"  onError={(e) => e.target.style.display = 'none'}/> : <div className="w-7 h-7 flex items-center justify-center border border-white/20 text-[11px]">?</div>}<div className="flex flex-col"><span>{item.name}</span><span className="text-[9px] text-gray-500">{item.category}</span></div>
                                         </button>
                                       ))}
                                     </div>
@@ -5183,7 +5241,7 @@ const NewDesign = ({ onBack, initialView = 'home' }) => {
                                       <button type="button" className="w-full flex items-center gap-3 px-3 py-2 text-xs text-red-400 hover:bg-red-900/20 border-b border-white/5" onClick={() => { setNbRings(prev => { const next = [...prev]; next[nbRingPickerIndex] = null; return next; }); setNbRingPickerIndex(null); }}><div className="w-7 h-7 flex items-center justify-center border border-red-500/20 text-[13px]">×</div><span>Remover item</span></button>
                                       {loadingBuildItems ? <div className="p-4 text-center text-xs text-gray-500">Carregando itens...</div> : ringOptions.map((item, idx) => (
                                         <button key={item.id || idx} type="button" className="w-full flex items-center gap-3 px-3 py-2 text-xs text-gray-200 hover:bg-white/10 border-b border-white/5 text-left" onClick={() => { setNbRings(prev => { const next = [...prev]; next[nbRingPickerIndex] = item; return next; }); setNbRingPickerIndex(null); }}>
-                                          {item.image || item.img ? <img src={item.image || item.img} alt={item.name} className="w-7 h-7 object-contain" /> : <div className="w-7 h-7 flex items-center justify-center border border-white/20 text-[11px]">?</div>}<div className="flex flex-col"><span>{item.name}</span><span className="text-[9px] text-gray-500">{item.category}</span></div>
+                                          {item.image || item.img ? <img src={item.image || item.img} alt={item.name} className="w-7 h-7 object-contain"  onError={(e) => e.target.style.display = 'none'}/> : <div className="w-7 h-7 flex items-center justify-center border border-white/20 text-[11px]">?</div>}<div className="flex flex-col"><span>{item.name}</span><span className="text-[9px] text-gray-500">{item.category}</span></div>
                                         </button>
                                       ))}
                                     </div>
@@ -5206,7 +5264,7 @@ const NewDesign = ({ onBack, initialView = 'home' }) => {
                                             className={`w-8 h-8 flex items-center justify-center border ${item ? 'border-amber-500/50 bg-amber-500/10' : 'border-white/20 bg-black/40'} hover:border-amber-400 transition-colors`}
                                             onClick={() => setNbSocketPickerIndex(idx)}
                                           >
-                                            {img ? <img src={img} alt={item.name} className="w-6 h-6 object-contain" /> : <span className="text-white/20 text-xs">+</span>}
+                                            {img ? <img src={img} alt={item.name} className="w-6 h-6 object-contain" onError={(e) => { e.currentTarget.style.display = 'none'; }} /> : <span className="text-white/20 text-xs">+</span>}
                                           </button>
                                         </div>
                                       );
@@ -5223,7 +5281,7 @@ const NewDesign = ({ onBack, initialView = 'home' }) => {
                                       </button>
                                       {SOCKET_ITEMS.map((item, idx) => (
                                         <button key={idx} type="button" className="w-full flex items-center gap-3 px-3 py-2 text-xs text-gray-200 hover:bg-white/10 border-b border-white/5 text-left" onClick={() => { setNbSockets(prev => { const next = [...prev]; next[nbSocketPickerIndex] = item; return next; }); setNbSocketPickerIndex(null); }}>
-                                          {item.img ? <img src={item.img} alt={item.name} className="w-7 h-7 object-contain" /> : <div className="w-7 h-7 flex items-center justify-center border border-white/20 text-[11px]">?</div>}
+                                          {item.img ? <img src={item.img} alt={item.name} className="w-7 h-7 object-contain" onError={(e) => { e.currentTarget.style.display = 'none'; }} /> : <div className="w-7 h-7 flex items-center justify-center border border-white/20 text-[11px]">?</div>}
                                           <div className="flex flex-col"><span>{item.name}</span><span className="text-[9px] text-gray-500">{item.category}</span></div>
                                         </button>
                                       ))}
@@ -5263,7 +5321,7 @@ const NewDesign = ({ onBack, initialView = 'home' }) => {
                                           } hover:border-amber-400`}
                                           onClick={() => setNbMercenary(selected ? '' : m.id)}
                                         >
-                                          <img src={m.image} alt={m.name} className="w-10 h-10 object-contain mb-1" />
+                                          <img src={m.image} alt={m.name} className="w-10 h-10 object-contain mb-1" onError={(e) => { e.currentTarget.style.display = 'none'; }} />
                                           <span className="px-1 text-[10px] leading-tight text-center">
                                             {m.name}
                                           </span>
@@ -5591,7 +5649,7 @@ const NewDesign = ({ onBack, initialView = 'home' }) => {
                                             <div className="grid grid-cols-2 gap-2">
                                               {socketItems.map((item) => (
                                                 <div key={item.key} className="flex items-center gap-2 border px-2 py-1 border-amber-500/30 bg-amber-500/5">
-                                                  {item.img && <img src={item.img} alt={item.name} className="w-6 h-6 object-contain" />}
+                                                  {item.img && <img src={item.img} alt={item.name} className="w-6 h-6 object-contain" onError={(e) => { e.currentTarget.style.display = 'none'; }} />}
                                                   <div className="flex flex-col">
                                                     <span className="text-[10px] text-gray-400">{item.slot}</span>
                                                     <span className="text-xs text-gray-200">{item.name}</span>
@@ -5618,6 +5676,7 @@ const NewDesign = ({ onBack, initialView = 'home' }) => {
                                                     src={rel.img}
                                                     alt={rel.name}
                                                     className="w-5 h-5 object-contain"
+                                                    onError={(e) => handleRelicError(e, rel.name)}
                                                   />
                                                   <span className="text-[11px] text-gray-200">
                                                     {rel.name}
@@ -5643,6 +5702,7 @@ const NewDesign = ({ onBack, initialView = 'home' }) => {
                                                       src={pot.img}
                                                       alt={pot.name}
                                                       className="w-5 h-5 object-contain"
+                                                      onError={(e) => { e.currentTarget.style.display = 'none'; }}
                                                     />
                                                   ) : (
                                                     <div className="w-5 h-5 flex items-center justify-center border border-white/20 text-[10px] text-gray-400">
@@ -6261,7 +6321,7 @@ const NewDesign = ({ onBack, initialView = 'home' }) => {
                   <div className="absolute inset-0 bg-gradient-to-br from-gray-700/10 to-transparent opacity-40 group-hover:opacity-70 transition-opacity"></div>
                   <div className="relative z-10">
                     <div className="flex items-center justify-center gap-2 mb-2">
-                      <img src="https://store.steampowered.com/favicon.ico" alt="Steam" className="w-4 h-4 opacity-80" />
+                      <img src="https://store.steampowered.com/favicon.ico" alt="Steam" className="w-4 h-4 opacity-80"  onError={(e) => e.target.style.display = 'none'}/>
                       <h3 className="text-xs font-bold text-gray-400 uppercase tracking-widest">Jogadores Online</h3>
                       {!!steamPlayers && <span className="w-2 h-2 rounded-full bg-green-500 animate-pulse"></span>}
                     </div>

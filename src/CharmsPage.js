@@ -1008,7 +1008,7 @@ const CharmsPage = () => {
                           >
                             <td>
                               <div className="charms-item-cell">
-                                <img src={img} alt={charm.name} className="charms-item-icon" />
+                                <img src={img} alt={charm.name} onError={(e) => e.target.style.display = 'none'} className="charms-item-icon" />
                                 <div>
                                   <div className="charms-item-name">{charm.name}</div>
                                   {rarityName && (
@@ -1069,7 +1069,7 @@ const CharmsPage = () => {
                       <img
                         src={`/images/${selectedCharm.file}`}
                         alt={selectedCharm.name}
-                        className="charms-item-icon"
+                        onError={(e) => e.target.style.display = 'none'} className="charms-item-icon"
                         style={{ width: 48, height: 48 }}
                       />
                       <div>

@@ -115,7 +115,7 @@ const RunesView = () => {
                       src={normalizeImageUrl(rune.name)}
                       alt={rune.name}
                       onError={(e) => {
-                        e.currentTarget.src = 'https://via.placeholder.com/32?text=R';
+                        e.currentTarget.style.display = 'none';
                       }}
                       className="w-7 h-7 object-contain"
                       style={{ imageRendering: 'pixelated' }}

@@ -56,7 +56,7 @@ const ChaosTowerPage = () => {
               </div>
               <div className="p-2">
                 <div className="relative w-full overflow-hidden rounded">
-                  <img
+                  <img onError={(e) => e.target.style.display = 'none'}
                     src="https://static.wikia.nocookie.net/herosiege/images/2/2c/Ct1.gif"
                     alt="Chaos Tower Gameplay"
                     className="w-full h-auto block"

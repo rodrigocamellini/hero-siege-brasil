@@ -229,7 +229,7 @@ const MineracaoPage = () => {
                 <tr key={node.name}>
                   <td className="border border-[#2a2a2a] px-3 py-2 align-middle">
                     <div className="flex items-center gap-2 font-semibold text-gray-100">
-                      <img
+                      <img onError={(e) => e.target.style.display = 'none'}
                         src={node.nodeImg}
                         alt={node.name}
                         className="w-9 h-9 object-contain"
@@ -245,7 +245,7 @@ const MineracaoPage = () => {
                   </td>
                   <td className="border border-[#2a2a2a] px-3 py-2 align-middle">
                     <div className="flex items-center gap-2 font-semibold text-gray-100">
-                      <img
+                      <img onError={(e) => e.target.style.display = 'none'}
                         src={node.ore.img}
                         alt={node.ore.name}
                         className="w-6 h-6 object-contain"
@@ -261,7 +261,7 @@ const MineracaoPage = () => {
                           className="flex items-center justify-between gap-2 text-[12px] bg-[#222222] px-2 py-1 rounded border border-[#333333]"
                         >
                           <span className="flex items-center gap-2">
-                            <img
+                            <img onError={(e) => e.target.style.display = 'none'}
                               src={p.img}
                               alt={p.name}
                               className="w-5 h-5 object-contain"

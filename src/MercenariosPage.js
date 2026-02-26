@@ -411,7 +411,7 @@ const MercenariosPage = () => {
             <tr key={s.name} className="hover:bg-[#1d1d1d]">
               <td className="border border-[#222] px-3 py-2 align-middle">
                 <div className="flex items-center gap-3">
-                  <img src={s.icon} alt={s.name} className="w-9 h-9 border border-[#444] rounded" />
+                  <img onError={(e) => e.target.style.display = 'none'} src={s.icon} alt={s.name} className="w-9 h-9 border border-[#444] rounded" />
                   <span className="text-white font-semibold text-sm">{s.name}</span>
                 </div>
               </td>
@@ -462,7 +462,7 @@ const MercenariosPage = () => {
           <div className="bg-[#151515] flex-1 min-w-[260px] max-w-xs rounded-lg shadow-xl border-t-4 border-[#c0392b] border-b-2 border-b-[#c0392b]">
             <div className="p-4 flex flex-col items-center">
               <div className="bg-black border border-gray-700 rounded-md p-2 mb-3">
-                <img
+                <img onError={(e) => e.target.style.display = 'none'}
                   src="https://static.wikia.nocookie.net/herosiege/images/f/f0/Melee_Mercenary.gif"
                   alt="Knight Mercenary"
                   className="h-24 w-auto"
@@ -483,7 +483,7 @@ const MercenariosPage = () => {
           <div className="bg-[#151515] flex-1 min-w-[260px] max-w-xs rounded-lg shadow-xl border-t-4 border-[#27ae60] border-b-2 border-b-[#27ae60]">
             <div className="p-4 flex flex-col items-center">
               <div className="bg-black border border-gray-700 rounded-md p-2 mb-3">
-                <img
+                <img onError={(e) => e.target.style.display = 'none'}
                   src="https://static.wikia.nocookie.net/herosiege/images/d/d9/Ranged_Mercenary.gif"
                   alt="Archer Mercenary"
                   className="h-24 w-auto"
@@ -504,7 +504,7 @@ const MercenariosPage = () => {
           <div className="bg-[#151515] flex-1 min-w-[260px] max-w-xs rounded-lg shadow-xl border-t-4 border-[#8e44ad] border-b-2 border-b-[#8e44ad]">
             <div className="p-4 flex flex-col items-center">
               <div className="bg-black border border-gray-700 rounded-md p-2 mb-3">
-                <img
+                <img onError={(e) => e.target.style.display = 'none'}
                   src="https://static.wikia.nocookie.net/herosiege/images/b/be/Spell_Mercenary.gif"
                   alt="Magister Mercenary"
                   className="h-24 w-auto"
@@ -537,7 +537,7 @@ const MercenariosPage = () => {
                   : 'bg-[#060606] text-gray-400 border-transparent hover:text-white'
               }`}
             >
-              <img
+              <img onError={(e) => e.target.style.display = 'none'}
                 src="https://static.wikia.nocookie.net/herosiege/images/2/26/Warriors_might.png"
                 alt="Knight"
                 className="w-6 h-6"
@@ -553,7 +553,7 @@ const MercenariosPage = () => {
                   : 'bg-[#060606] text-gray-400 border-transparent hover:text-white'
               }`}
             >
-              <img
+              <img onError={(e) => e.target.style.display = 'none'}
                 src="https://static.wikia.nocookie.net/herosiege/images/4/48/Trigger_power.png"
                 alt="Archer"
                 className="w-6 h-6"
@@ -569,7 +569,7 @@ const MercenariosPage = () => {
                   : 'bg-[#060606] text-gray-400 border-transparent hover:text-white'
               }`}
             >
-              <img
+              <img onError={(e) => e.target.style.display = 'none'}
                 src="https://static.wikia.nocookie.net/herosiege/images/4/45/Elemental_intellect.png"
                 alt="Magister"
                 className="w-6 h-6"

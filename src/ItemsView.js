@@ -79,6 +79,10 @@ const rarityStyle = (r) => {
   };
 };
 
+const handleWikiImageError = (e) => {
+  e.target.style.display = 'none';
+};
+
 const ItemsView = ({
   itemCategories,
   selectedItemCategory,
@@ -143,6 +147,7 @@ const ItemsView = ({
                             src={cat.image || 'https://herosiege.wiki.gg/images/Item_Chest.png'}
                             alt={cat.title || cat.id}
                             className="max-h-full max-w-full object-contain"
+                            onError={handleWikiImageError}
                           />
                         </div>
                         <div className="absolute bottom-0 left-0 w-full p-3 z-20 bg-black/40 backdrop-blur-sm">
@@ -243,6 +248,7 @@ const ItemsView = ({
                               src={item.image}
                               alt={item.name}
                               className="max-h-full max-w-full object-contain"
+                              onError={handleWikiImageError}
                             />
                           ) : (
                             <span className="text-gray-600 text-3xl">🎒</span>
@@ -292,6 +298,7 @@ const ItemsView = ({
                     src={selectedItem.image}
                     alt={selectedItem.name}
                     className="max-h-40 object-contain"
+                    onError={handleWikiImageError}
                   />
                 ) : (
                   <span className="text-5xl">🎒</span>

@@ -78,6 +78,8 @@ const ClassesView = ({
                   t.dataset.fallback = '1';
                   // Se falhar o webp, tenta png
                   t.src = classImagePath(c.name, 'legacy');
+                } else {
+                  t.style.display = 'none';
                 }
               }}
               alt={c.name}
