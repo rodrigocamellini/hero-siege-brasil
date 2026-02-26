@@ -256,6 +256,16 @@ const NewDesign = ({ onBack, initialView = 'home' }) => {
   const [nbPotionPickerIndex, setNbPotionPickerIndex] = useState(null);
   const [nbCharms, setNbCharms] = useState([]);
   const [nbCharmPickerIndex, setNbCharmPickerIndex] = useState(null);
+  
+  // Weapons & Body Armors
+  const [nbWeapons, setNbWeapons] = useState([null, null, null, null]);
+  const [nbWeaponPickerIndex, setNbWeaponPickerIndex] = useState(null);
+  const [weaponOptions, setWeaponOptions] = useState([]);
+  const [nbBodyArmors, setNbBodyArmors] = useState([null, null, null, null]);
+  const [nbBodyArmorPickerIndex, setNbBodyArmorPickerIndex] = useState(null);
+  const [bodyArmorOptions, setBodyArmorOptions] = useState([]);
+  const [loadingBuildItems, setLoadingBuildItems] = useState(false);
+
   const [nbMercenary, setNbMercenary] = useState('');
   const [potionOptions, setPotionOptions] = useState([]);
   const [homepageMode, setHomepageMode] = useState('fixed');
@@ -1946,6 +1956,71 @@ const NewDesign = ({ onBack, initialView = 'home' }) => {
     };
   }, [currentView, builderReady, builderClass]);
 
+  useEffect(() => {
+    if (!newBuildOpen) return;
+    if (weaponOptions.length > 0 && bodyArmorOptions.length > 0) return;
+    
+    const loadBuildItems = async () => {
+      setLoadingBuildItems(true);
+      try {
+        // Carregar Weapons
+        const weaponCategories = [
+          'swords', 'daggers', 'maces', 'axes', 'claws', 'polearms', 'chainsaws',
+          'staves', 'canes', 'wands', 'books', 'spellblades', 'bows', 'guns',
+          'throwing weapons'
+        ];
+        let allWeapons = [];
+        for (const cat of weaponCategories) {
+          // Tentar com underline se falhar? Normalmente ids sao lowercase e slugified
+          // Vamos assumir que os IDs das categorias seguem o padrão slug
+          let catId = cat.replace(/\s+/g, '_');
+          // Mas populate-items usa ids simples ou slugified. Vamos tentar ambos se necessário.
+          // O código existente usa id.toLowerCase().endsWith('s')
+          
+          // Vamos tentar buscar direto pelo slug esperado
+          let colRef = collection(db, 'item_categories', catId, 'items');
+          let snap = await getDocs(colRef);
+          
+          if (snap.empty && cat.includes(' ')) {
+             // Tentar com espaço se com underline falhou (improvável mas possível)
+             colRef = collection(db, 'item_categories', cat, 'items');
+             snap = await getDocs(colRef);
+          }
+          
+          snap.forEach(s => allWeapons.push({ id: s.id, category: cat, ...s.data() }));
+        }
+        // Remove duplicates if any
+        allWeapons = Array.from(new Map(allWeapons.map(item => [item.id, item])).values());
+        allWeapons.sort((a, b) => (a.name || '').localeCompare(b.name || ''));
+        setWeaponOptions(allWeapons);
+
+        // Carregar Body Armors
+        // Tentar variações comuns de ID para body armors
+        const armorCandidates = ['body_armors', 'body-armors', 'body armors'];
+        let allArmors = [];
+        
+        for (const ac of armorCandidates) {
+            const armorColRef = collection(db, 'item_categories', ac, 'items');
+            const armorSnap = await getDocs(armorColRef);
+            if (!armorSnap.empty) {
+                armorSnap.forEach(s => allArmors.push({ id: s.id, category: 'body_armors', ...s.data() }));
+                break; // Achou, para
+            }
+        }
+        
+        allArmors.sort((a, b) => (a.name || '').localeCompare(b.name || ''));
+        setBodyArmorOptions(allArmors);
+        
+      } catch (e) {
+        console.error("Erro ao carregar itens para build:", e);
+      } finally {
+        setLoadingBuildItems(false);
+      }
+    };
+    
+    loadBuildItems();
+  }, [newBuildOpen]);
+
   const loadItemCategories = async () => {
     setItemsLoading(true);
     try {
@@ -2057,6 +2132,20 @@ const NewDesign = ({ onBack, initialView = 'home' }) => {
 
     const tryIds = [baseId, ...alternates];
 
+    // Helper para substituir imagens da Wiki por locais
+    const processHtmlWithLocalImages = (html, className) => {
+      if (!html) return html;
+      const classFolder = className.toLowerCase().replace(/\s+/g, '_'); // Ex: demon_slayer
+      return html.replace(/src="(https:\/\/herosiege\.wiki\.gg\/images\/([^"]+))"/g, (match, fullUrl, filename) => {
+         let localName = filename;
+         // Ajuste específico para Bard: Wiki usa Monk_, Local usa Bard_
+         if (classFolder === 'bard' && filename.startsWith('Monk_')) {
+             localName = filename.replace('Monk_', 'Bard_');
+         }
+         return `src="/images/${classFolder}/${localName}" onerror="this.onerror=null;this.src='${fullUrl}'"`;
+      });
+    };
+
     try {
       let data = null;
       for (const id of tryIds) {
@@ -2070,16 +2159,45 @@ const NewDesign = ({ onBack, initialView = 'home' }) => {
 
       if (data) {
         let mainSections = data.especializacoes || [{ title: "Geral", html: "<div>Sem dados de especialização.</div>" }];
-        const extraSections = (data.extra_info || []).map(s => ({ ...s, isExtra: true }));
+        
+        // Processar imagens nas seções carregadas do banco
+        mainSections = mainSections.map(section => ({
+            ...section,
+            html: processHtmlWithLocalImages(section.html, nome)
+        }));
+
+        const extraSections = (data.extra_info || []).map(s => ({ 
+            ...s, 
+            isExtra: true,
+            html: processHtmlWithLocalImages(s.html, nome)
+        }));
+
         if (nome === 'Bard') {
           const chest = '/images/herosiege.png';
-          const iconPrimary = (base) => `https://herosiege.wiki.gg/images/Monk_${base}.png`;
-          const iconAlt = (base) => `https://herosiege.wiki.gg/images/Icon_Monk_${base}.png`;
+          // URLs da Wiki
+          const iconPrimaryWiki = (base) => `https://herosiege.wiki.gg/images/Monk_${base}.png`;
+          const iconAltWiki = (base) => `https://herosiege.wiki.gg/images/Icon_Monk_${base}.png`;
+          
+          // URLs Locais
+          const iconPrimaryLocal = (base) => `/images/bard/Bard_${base}.png`;
+          
           const row = (n, r, l) => {
             const base = String(n).trim().replace(/['’!]/g, '').replace(/\s+/g, '_');
+            // Tenta carregar local -> fallback para Wiki Primary -> fallback para Wiki Alt -> fallback para Chest
+            const imgTag = `<img src="${iconPrimaryLocal(base)}" alt="${n}" 
+                onerror="this.onerror=function(){
+                    this.onerror=function(){
+                        this.onerror=null;
+                        this.src='${chest}'
+                    };
+                    this.src='${iconAltWiki(base)}'
+                };
+                this.src='${iconPrimaryWiki(base)}'"
+            />`;
+            
             return `
               <tr>
-                <td><img src="${iconPrimary(base)}" alt="${n}" onerror="this.onerror=function(){this.onerror=null;this.src='${chest}'};this.src='${iconAlt(base)}'"/></td>
+                <td>${imgTag}</td>
                 <td>${n}</td>
                 <td>${r}</td>
                 <td>${l}</td>
@@ -2185,13 +2303,30 @@ const NewDesign = ({ onBack, initialView = 'home' }) => {
         console.error("Documento não encontrado para:", tryIds.join(', '));
         if (nome === 'Bard') {
           const chest = '/images/herosiege.png';
-          const iconPrimary = (base) => `https://herosiege.wiki.gg/images/Monk_${base}.png`;
-          const iconAlt = (base) => `https://herosiege.wiki.gg/images/Icon_Monk_${base}.png`;
+          // URLs da Wiki
+          const iconPrimaryWiki = (base) => `https://herosiege.wiki.gg/images/Monk_${base}.png`;
+          const iconAltWiki = (base) => `https://herosiege.wiki.gg/images/Icon_Monk_${base}.png`;
+          
+          // URLs Locais
+          const iconPrimaryLocal = (base) => `/images/bard/Bard_${base}.png`;
+
           const row = (n, r, l) => {
             const base = String(n).trim().replace(/['’!]/g, '').replace(/\s+/g, '_');
+            // Tenta carregar local -> fallback para Wiki Primary -> fallback para Wiki Alt -> fallback para Chest
+            const imgTag = `<img src="${iconPrimaryLocal(base)}" alt="${n}" 
+                onerror="this.onerror=function(){
+                    this.onerror=function(){
+                        this.onerror=null;
+                        this.src='${chest}'
+                    };
+                    this.src='${iconAltWiki(base)}'
+                };
+                this.src='${iconPrimaryWiki(base)}'"
+            />`;
+
             return `
               <tr>
-                <td><img src="${iconPrimary(base)}" alt="${n}" onerror="this.onerror=function(){this.onerror=null;this.src='${chest}'};this.src='${iconAlt(base)}'"/></td>
+                <td>${imgTag}</td>
                 <td>${n}</td>
                 <td>${r}</td>
                 <td>${l}</td>
@@ -4034,6 +4169,238 @@ const NewDesign = ({ onBack, initialView = 'home' }) => {
                                   )}
                                 </div>
 
+                                {/* WEAPONS SECTION */}
+                                <div className="mt-4">
+                                  <div className="text-[11px] font-bold uppercase tracking-widest text-yellow-400 mb-2">
+                                    Weapons
+                                  </div>
+                                  <div className="flex flex-wrap gap-2">
+                                    {nbWeapons.map((weapon, idx) => {
+                                      const isBiS = idx === 0;
+                                      const label = isBiS ? 'BiS' : idx === 1 ? 'Segunda Opção' : idx === 2 ? 'Terceira Opção' : 'Quarta Opção';
+                                      const pub = process.env.PUBLIC_URL || '';
+                                      const basePath = pub ? `${pub}/images` : `images`;
+                                      // Se o weapon tem image (url completa) usa, senão tenta montar
+                                      const img = weapon ? (weapon.image || (weapon.file ? `${basePath}/${weapon.file}` : null)) : null;
+
+                                      return (
+                                        <button
+                                          key={idx}
+                                          type="button"
+                                          className={`relative w-20 h-24 flex flex-col items-center justify-center border border-dashed transition-colors ${
+                                            isBiS 
+                                              ? 'border-green-500/50 bg-green-500/5 hover:bg-green-500/10 hover:border-green-400 shadow-[0_0_10px_rgba(34,197,94,0.1)]' 
+                                              : 'border-white/20 bg-white/5 text-gray-400 hover:bg-white/10 hover:border-white/40 hover:text-white'
+                                          }`}
+                                          onClick={() => setNbWeaponPickerIndex(idx)}
+                                        >
+                                          {isBiS && (
+                                            <div className="absolute -top-2 left-1/2 -translate-x-1/2 bg-green-600 text-black text-[9px] font-bold px-1.5 rounded uppercase tracking-widest shadow-sm">
+                                              BiS
+                                            </div>
+                                          )}
+                                          <div className="text-[9px] text-gray-500 mb-1 mt-1 text-center leading-tight px-1">
+                                            {label}
+                                          </div>
+                                          
+                                          {img ? (
+                                            <>
+                                              <img 
+                                                src={img} 
+                                                alt={weapon.name} 
+                                                className="w-8 h-8 object-contain mb-1" 
+                                                onError={(e) => { e.currentTarget.style.display = 'none'; }}
+                                              />
+                                              <span className="text-[9px] text-center px-1 truncate w-full text-white">
+                                                {weapon.name}
+                                              </span>
+                                            </>
+                                          ) : (
+                                            <span className="text-2xl opacity-20">+</span>
+                                          )}
+                                        </button>
+                                      );
+                                    })}
+                                  </div>
+
+                                  {/* Weapon Picker */}
+                                  {nbWeaponPickerIndex !== null && (
+                                    <div className="mt-2 border border-white/10 bg-[#0b0d16] max-h-64 overflow-y-auto custom-scrollbar">
+                                      <div className="flex items-center justify-between px-3 py-2 border-b border-white/10 text-[11px] text-gray-400 sticky top-0 bg-[#0b0d16] z-10">
+                                        <span>Selecionar Weapon ({nbWeaponPickerIndex === 0 ? 'BiS' : `${nbWeaponPickerIndex + 1}ª Opção`})</span>
+                                        <button
+                                          type="button"
+                                          className="text-[10px] px-2 py-0.5 border border-white/20 rounded hover:bg-white hover:text-black"
+                                          onClick={() => setNbWeaponPickerIndex(null)}
+                                        >
+                                          Fechar
+                                        </button>
+                                      </div>
+                                      
+                                      <button
+                                          type="button"
+                                          className="w-full flex items-center gap-3 px-3 py-2 text-xs text-red-400 hover:bg-red-900/20 border-b border-white/5"
+                                          onClick={() => {
+                                            setNbWeapons(prev => {
+                                              const next = [...prev];
+                                              next[nbWeaponPickerIndex] = null;
+                                              return next;
+                                            });
+                                            setNbWeaponPickerIndex(null);
+                                          }}
+                                        >
+                                          <div className="w-7 h-7 flex items-center justify-center border border-red-500/20 text-[13px]">×</div>
+                                          <span>Remover item</span>
+                                      </button>
+
+                                      {loadingBuildItems ? (
+                                        <div className="p-4 text-center text-xs text-gray-500">Carregando itens...</div>
+                                      ) : (
+                                        weaponOptions.map((item, idx) => (
+                                          <button
+                                            key={item.id || idx}
+                                            type="button"
+                                            className="w-full flex items-center gap-3 px-3 py-2 text-xs text-gray-200 hover:bg-white/10 border-b border-white/5 text-left"
+                                            onClick={() => {
+                                              setNbWeapons(prev => {
+                                                const next = [...prev];
+                                                next[nbWeaponPickerIndex] = item;
+                                                return next;
+                                              });
+                                              setNbWeaponPickerIndex(null);
+                                            }}
+                                          >
+                                            {item.image ? (
+                                              <img src={item.image} alt={item.name} className="w-7 h-7 object-contain" />
+                                            ) : (
+                                              <div className="w-7 h-7 flex items-center justify-center border border-white/20 text-[11px]">?</div>
+                                            )}
+                                            <div className="flex flex-col">
+                                                <span>{item.name}</span>
+                                                <span className="text-[9px] text-gray-500">{item.category}</span>
+                                            </div>
+                                          </button>
+                                        ))
+                                      )}
+                                    </div>
+                                  )}
+                                </div>
+
+                                {/* BODY ARMORS SECTION */}
+                                <div className="mt-4">
+                                  <div className="text-[11px] font-bold uppercase tracking-widest text-yellow-400 mb-2">
+                                    Body Armors
+                                  </div>
+                                  <div className="flex flex-wrap gap-2">
+                                    {nbBodyArmors.map((armor, idx) => {
+                                      const isBiS = idx === 0;
+                                      const label = isBiS ? 'BiS' : idx === 1 ? 'Segunda Opção' : idx === 2 ? 'Terceira Opção' : 'Quarta Opção';
+                                      
+                                      const img = armor ? armor.image : null;
+
+                                      return (
+                                        <button
+                                          key={idx}
+                                          type="button"
+                                          className={`relative w-20 h-24 flex flex-col items-center justify-center border border-dashed transition-colors ${
+                                            isBiS 
+                                              ? 'border-green-500/50 bg-green-500/5 hover:bg-green-500/10 hover:border-green-400 shadow-[0_0_10px_rgba(34,197,94,0.1)]' 
+                                              : 'border-white/20 bg-white/5 text-gray-400 hover:bg-white/10 hover:border-white/40 hover:text-white'
+                                          }`}
+                                          onClick={() => setNbBodyArmorPickerIndex(idx)}
+                                        >
+                                          {isBiS && (
+                                            <div className="absolute -top-2 left-1/2 -translate-x-1/2 bg-green-600 text-black text-[9px] font-bold px-1.5 rounded uppercase tracking-widest shadow-sm">
+                                              BiS
+                                            </div>
+                                          )}
+                                          <div className="text-[9px] text-gray-500 mb-1 mt-1 text-center leading-tight px-1">
+                                            {label}
+                                          </div>
+                                          
+                                          {img ? (
+                                            <>
+                                              <img 
+                                                src={img} 
+                                                alt={armor.name} 
+                                                className="w-8 h-8 object-contain mb-1" 
+                                                onError={(e) => { e.currentTarget.style.display = 'none'; }}
+                                              />
+                                              <span className="text-[9px] text-center px-1 truncate w-full text-white">
+                                                {armor.name}
+                                              </span>
+                                            </>
+                                          ) : (
+                                            <span className="text-2xl opacity-20">+</span>
+                                          )}
+                                        </button>
+                                      );
+                                    })}
+                                  </div>
+
+                                  {/* Body Armor Picker */}
+                                  {nbBodyArmorPickerIndex !== null && (
+                                    <div className="mt-2 border border-white/10 bg-[#0b0d16] max-h-64 overflow-y-auto custom-scrollbar">
+                                      <div className="flex items-center justify-between px-3 py-2 border-b border-white/10 text-[11px] text-gray-400 sticky top-0 bg-[#0b0d16] z-10">
+                                        <span>Selecionar Body Armor ({nbBodyArmorPickerIndex === 0 ? 'BiS' : `${nbBodyArmorPickerIndex + 1}ª Opção`})</span>
+                                        <button
+                                          type="button"
+                                          className="text-[10px] px-2 py-0.5 border border-white/20 rounded hover:bg-white hover:text-black"
+                                          onClick={() => setNbBodyArmorPickerIndex(null)}
+                                        >
+                                          Fechar
+                                        </button>
+                                      </div>
+                                      
+                                      <button
+                                          type="button"
+                                          className="w-full flex items-center gap-3 px-3 py-2 text-xs text-red-400 hover:bg-red-900/20 border-b border-white/5"
+                                          onClick={() => {
+                                            setNbBodyArmors(prev => {
+                                              const next = [...prev];
+                                              next[nbBodyArmorPickerIndex] = null;
+                                              return next;
+                                            });
+                                            setNbBodyArmorPickerIndex(null);
+                                          }}
+                                        >
+                                          <div className="w-7 h-7 flex items-center justify-center border border-red-500/20 text-[13px]">×</div>
+                                          <span>Remover item</span>
+                                      </button>
+
+                                      {loadingBuildItems ? (
+                                        <div className="p-4 text-center text-xs text-gray-500">Carregando itens...</div>
+                                      ) : (
+                                        bodyArmorOptions.map((item, idx) => (
+                                          <button
+                                            key={item.id || idx}
+                                            type="button"
+                                            className="w-full flex items-center gap-3 px-3 py-2 text-xs text-gray-200 hover:bg-white/10 border-b border-white/5 text-left"
+                                            onClick={() => {
+                                              setNbBodyArmors(prev => {
+                                                const next = [...prev];
+                                                next[nbBodyArmorPickerIndex] = item;
+                                                return next;
+                                              });
+                                              setNbBodyArmorPickerIndex(null);
+                                            }}
+                                          >
+                                            {item.image ? (
+                                              <img src={item.image} alt={item.name} className="w-7 h-7 object-contain" />
+                                            ) : (
+                                              <div className="w-7 h-7 flex items-center justify-center border border-white/20 text-[11px]">?</div>
+                                            )}
+                                            <div className="flex flex-col">
+                                                <span>{item.name}</span>
+                                                <span className="text-[9px] text-gray-500">{item.category}</span>
+                                            </div>
+                                          </button>
+                                        ))
+                                      )}
+                                    </div>
+                                  )}
+                                </div>
+
                                 <div className="mt-4">
                                   <div className="text-[11px] font-bold uppercase tracking-widest text-yellow-400 mb-2">
                                     Mercenário
@@ -4191,6 +4558,58 @@ const NewDesign = ({ onBack, initialView = 'home' }) => {
                                     };
                                   })
                                   .filter(Boolean);
+
+                                const charmSlots = Array.isArray(nbCharms) ? nbCharms : [];
+                                const charmItems = charmSlots
+                                  .map((charm, idx) => {
+                                    if (!charm) return null;
+                                    const pub = process.env.PUBLIC_URL || '';
+                                    const basePath = pub ? `${pub}/images` : `images`;
+                                    const img = charm.image || (charm.file ? `${basePath}/${charm.file}` : null);
+                                    const nameStr = typeof charm.name === 'string' ? charm.name : (charm.id || 'Charm');
+                                    return {
+                                      key: `${charm.id}-${idx}`,
+                                      name: nameStr,
+                                      img: img,
+                                      rarity: charm.rarity,
+                                    };
+                                  })
+                                  .filter(Boolean);
+
+                                const weaponSlots = Array.isArray(nbWeapons) ? nbWeapons : [];
+                                const weaponItems = weaponSlots
+                                  .map((weapon, idx) => {
+                                    if (!weapon) return null;
+                                    const pub = process.env.PUBLIC_URL || '';
+                                    const basePath = pub ? `${pub}/images` : `images`;
+                                    const img = weapon.image || (weapon.file ? `${basePath}/${weapon.file}` : null);
+                                    const nameStr = typeof weapon.name === 'string' ? weapon.name : (weapon.id || 'Weapon');
+                                    return {
+                                      key: `${weapon.id}-${idx}`,
+                                      name: nameStr,
+                                      img: img,
+                                      isBiS: idx === 0,
+                                    };
+                                  })
+                                  .filter(Boolean);
+
+                                const armorSlots = Array.isArray(nbBodyArmors) ? nbBodyArmors : [];
+                                const armorItems = armorSlots
+                                  .map((armor, idx) => {
+                                    if (!armor) return null;
+                                    const pub = process.env.PUBLIC_URL || '';
+                                    const basePath = pub ? `${pub}/images` : `images`;
+                                    const img = armor.image || (armor.file ? `${basePath}/${armor.file}` : null);
+                                    const nameStr = typeof armor.name === 'string' ? armor.name : (armor.id || 'Armor');
+                                    return {
+                                      key: `${armor.id}-${idx}`,
+                                      name: nameStr,
+                                      img: img,
+                                      isBiS: idx === 0,
+                                    };
+                                  })
+                                  .filter(Boolean);
+
                                 const mercInfo = (() => {
                                   if (!nbMercenary) return null;
                                   const all = [
@@ -4246,7 +4665,7 @@ const NewDesign = ({ onBack, initialView = 'home' }) => {
                                         </div>
                                       )}
                                     </div>
-                                    {(badgeLabel || statItems.length > 0 || relicItems.length > 0 || potionItems.length > 0 || mercInfo) && (
+                                    {(badgeLabel || statItems.length > 0 || relicItems.length > 0 || potionItems.length > 0 || mercInfo || charmItems.length > 0 || weaponItems.length > 0 || armorItems.length > 0) && (
                                       <div className="mt-4 space-y-3">
                                         {statItems.length > 0 && (
                                           <div>
@@ -4264,6 +4683,103 @@ const NewDesign = ({ onBack, initialView = 'home' }) => {
                                                   </div>
                                                   <span className="text-xs" style={{ color }}>{label}</span>
                                                   <span className="ml-auto text-xs text-gray-300">{stats[key]}</span>
+                                                </div>
+                                              ))}
+                                            </div>
+                                          </div>
+                                        )}
+                                        {weaponItems.length > 0 && (
+                                          <div>
+                                            <div className="text-[11px] uppercase tracking-widest text-yellow-400 mb-2">
+                                              Weapons
+                                            </div>
+                                            <div className="flex flex-wrap gap-2">
+                                              {weaponItems.map((w) => (
+                                                <div
+                                                  key={w.key}
+                                                  className={`flex items-center gap-2 border px-2 py-1 ${
+                                                    w.isBiS ? 'border-green-500/60 bg-green-900/20' : 'border-white/10 bg-black/30'
+                                                  }`}
+                                                >
+                                                  {w.img ? (
+                                                    <img
+                                                      src={w.img}
+                                                      alt={w.name}
+                                                      className="w-5 h-5 object-contain"
+                                                      onError={(e) => { e.currentTarget.style.display = 'none'; }}
+                                                    />
+                                                  ) : (
+                                                    <span className="text-[10px] text-gray-500">?</span>
+                                                  )}
+                                                  <span className="text-[11px] text-gray-200">
+                                                    {w.name}
+                                                  </span>
+                                                  {w.isBiS && (
+                                                    <span className="text-[9px] text-green-400 font-bold ml-1">BiS</span>
+                                                  )}
+                                                </div>
+                                              ))}
+                                            </div>
+                                          </div>
+                                        )}
+                                        {armorItems.length > 0 && (
+                                          <div>
+                                            <div className="text-[11px] uppercase tracking-widest text-yellow-400 mb-2">
+                                              Body Armors
+                                            </div>
+                                            <div className="flex flex-wrap gap-2">
+                                              {armorItems.map((a) => (
+                                                <div
+                                                  key={a.key}
+                                                  className={`flex items-center gap-2 border px-2 py-1 ${
+                                                    a.isBiS ? 'border-green-500/60 bg-green-900/20' : 'border-white/10 bg-black/30'
+                                                  }`}
+                                                >
+                                                  {a.img ? (
+                                                    <img
+                                                      src={a.img}
+                                                      alt={a.name}
+                                                      className="w-5 h-5 object-contain"
+                                                      onError={(e) => { e.currentTarget.style.display = 'none'; }}
+                                                    />
+                                                  ) : (
+                                                    <span className="text-[10px] text-gray-500">?</span>
+                                                  )}
+                                                  <span className="text-[11px] text-gray-200">
+                                                    {a.name}
+                                                  </span>
+                                                  {a.isBiS && (
+                                                    <span className="text-[9px] text-green-400 font-bold ml-1">BiS</span>
+                                                  )}
+                                                </div>
+                                              ))}
+                                            </div>
+                                          </div>
+                                        )}
+                                        {charmItems.length > 0 && (
+                                          <div>
+                                            <div className="text-[11px] uppercase tracking-widest text-yellow-400 mb-2">
+                                              Charms
+                                            </div>
+                                            <div className="flex flex-wrap gap-2">
+                                              {charmItems.map((c) => (
+                                                <div
+                                                  key={c.key}
+                                                  className="flex items-center gap-2 border px-2 py-1 border-white/10 bg-black/30"
+                                                >
+                                                  {c.img ? (
+                                                    <img
+                                                      src={c.img}
+                                                      alt={c.name}
+                                                      className="w-5 h-5 object-contain"
+                                                      onError={(e) => { e.currentTarget.style.display = 'none'; }}
+                                                    />
+                                                  ) : (
+                                                    <span className="text-[10px] text-gray-500">?</span>
+                                                  )}
+                                                  <span className="text-[11px] text-gray-200">
+                                                    {c.name}
+                                                  </span>
                                                 </div>
                                               ))}
                                             </div>
@@ -4390,6 +4906,9 @@ const NewDesign = ({ onBack, initialView = 'home' }) => {
                                     stats: { ...nbStats, total: NB_TOTAL },
                                     relics: Array.isArray(nbRelics) ? nbRelics.map((r) => (r || null)) : [null, null, null, null, null],
                                     potions: Array.isArray(nbPotions) ? nbPotions.map((p) => (p || null)) : [null, null, null, null],
+                                    charms: Array.isArray(nbCharms) ? nbCharms.map(c => c || null) : [],
+                                    weapons: Array.isArray(nbWeapons) ? nbWeapons.map(w => w || null) : [null, null, null, null],
+                                    bodyArmors: Array.isArray(nbBodyArmors) ? nbBodyArmors.map(b => b || null) : [null, null, null, null],
                                     mercenary: nbMercenary || null,
                                     createdAt: serverTimestamp(),
                                     updatedAt: serverTimestamp(),
@@ -4410,6 +4929,9 @@ const NewDesign = ({ onBack, initialView = 'home' }) => {
                                   });
                                   setNbRelics([null, null, null, null, null]);
                                   setNbPotions([null, null, null, null]);
+                                  setNbCharms([]);
+                                  setNbWeapons([null, null, null, null]);
+                                  setNbBodyArmors([null, null, null, null]);
                                   setNbMercenary('');
                                 } catch {
                                 }
