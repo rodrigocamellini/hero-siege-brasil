@@ -264,6 +264,36 @@ const NewDesign = ({ onBack, initialView = 'home' }) => {
   const [nbBodyArmors, setNbBodyArmors] = useState([null, null, null, null]);
   const [nbBodyArmorPickerIndex, setNbBodyArmorPickerIndex] = useState(null);
   const [bodyArmorOptions, setBodyArmorOptions] = useState([]);
+  
+  // New Categories
+  const [nbBoots, setNbBoots] = useState([null, null, null, null]);
+  const [nbBootPickerIndex, setNbBootPickerIndex] = useState(null);
+  const [bootOptions, setBootOptions] = useState([]);
+
+  const [nbGloves, setNbGloves] = useState([null, null, null, null]);
+  const [nbGlovePickerIndex, setNbGlovePickerIndex] = useState(null);
+  const [gloveOptions, setGloveOptions] = useState([]);
+
+  const [nbHelmets, setNbHelmets] = useState([null, null, null, null]);
+  const [nbHelmetPickerIndex, setNbHelmetPickerIndex] = useState(null);
+  const [helmetOptions, setHelmetOptions] = useState([]);
+
+  const [nbShields, setNbShields] = useState([null, null, null, null]);
+  const [nbShieldPickerIndex, setNbShieldPickerIndex] = useState(null);
+  const [shieldOptions, setShieldOptions] = useState([]);
+
+  const [nbAmulets, setNbAmulets] = useState([null, null, null, null]);
+  const [nbAmuletPickerIndex, setNbAmuletPickerIndex] = useState(null);
+  const [amuletOptions, setAmuletOptions] = useState([]);
+
+  const [nbBelts, setNbBelts] = useState([null, null, null, null]);
+  const [nbBeltPickerIndex, setNbBeltPickerIndex] = useState(null);
+  const [beltOptions, setBeltOptions] = useState([]);
+
+  const [nbRings, setNbRings] = useState([null, null, null, null]);
+  const [nbRingPickerIndex, setNbRingPickerIndex] = useState(null);
+  const [ringOptions, setRingOptions] = useState([]);
+
   const [loadingBuildItems, setLoadingBuildItems] = useState(false);
 
   const [nbMercenary, setNbMercenary] = useState('');
@@ -2009,9 +2039,47 @@ const NewDesign = ({ onBack, initialView = 'home' }) => {
         }
         
         allArmors.sort((a, b) => (a.name || '').localeCompare(b.name || ''));
-        setBodyArmorOptions(allArmors);
-        
-      } catch (e) {
+              setBodyArmorOptions(allArmors);
+
+              // Helper for other categories
+              const loadCategoryItems = async (catName) => {
+                  const candidates = [
+                    catName, 
+                    catName + 's', 
+                    catName.replace(/s$/, ''),
+                    catName.charAt(0).toUpperCase() + catName.slice(1),
+                    (catName.charAt(0).toUpperCase() + catName.slice(1)) + 's',
+                    (catName.charAt(0).toUpperCase() + catName.slice(1)).replace(/s$/, '')
+                  ];
+                  let items = [];
+                  for (const c of candidates) {
+                      const ref = collection(db, 'item_categories', c, 'items');
+                      const snap = await getDocs(ref);
+                      if (!snap.empty) {
+                          snap.forEach(s => items.push({ id: s.id, category: catName, ...s.data() }));
+                          break;
+                      }
+                  }
+                  items.sort((a, b) => (a.name || '').localeCompare(b.name || ''));
+                  return items;
+              };
+
+              setBootOptions(await loadCategoryItems('boots'));
+              setGloveOptions(await loadCategoryItems('gloves'));
+              setHelmetOptions(await loadCategoryItems('helmets'));
+              
+              let loadedShields = await loadCategoryItems('shields');
+              if (loadedShields.length === 0 && typeof EXTRA_SHIELDS !== 'undefined' && EXTRA_SHIELDS.length > 0) {
+                 // Map EXTRA_SHIELDS to match the structure if needed, or use as is since they have 'image'
+                 loadedShields = EXTRA_SHIELDS.map(s => ({...s, img: s.image})); 
+              }
+              setShieldOptions(loadedShields);
+
+              setAmuletOptions(await loadCategoryItems('amulets'));
+              setBeltOptions(await loadCategoryItems('belts'));
+              setRingOptions(await loadCategoryItems('rings'));
+              
+            } catch (e) {
         console.error("Erro ao carregar itens para build:", e);
       } finally {
         setLoadingBuildItems(false);
@@ -4038,6 +4106,216 @@ const NewDesign = ({ onBack, initialView = 'home' }) => {
                                   )}
                                 </div>
 
+                                {/* BOOTS SECTION */}
+                                <div className="mt-4">
+                                  <div className="text-[11px] font-bold uppercase tracking-widest text-yellow-400 mb-2">Boots</div>
+                                  <div className="flex flex-wrap gap-2">
+                                    {nbBoots.map((item, idx) => {
+                                      const isBiS = idx === 0;
+                                      const label = isBiS ? 'BiS' : idx === 1 ? 'Segunda Opção' : idx === 2 ? 'Terceira Opção' : 'Quarta Opção';
+                                      const img = item ? (item.image || item.img) : null;
+                                      return (
+                                        <button key={idx} type="button" className={`relative w-20 h-24 flex flex-col items-center justify-center border border-dashed transition-colors ${isBiS ? 'border-green-500/50 bg-green-500/5 hover:bg-green-500/10 hover:border-green-400 shadow-[0_0_10px_rgba(34,197,94,0.1)]' : 'border-white/20 bg-white/5 text-gray-400 hover:bg-white/10 hover:border-white/40 hover:text-white'}`} onClick={() => setNbBootPickerIndex(idx)}>
+                                          {isBiS && <div className="absolute -top-2 left-1/2 -translate-x-1/2 bg-green-600 text-black text-[9px] font-bold px-1.5 rounded uppercase tracking-widest shadow-sm">BiS</div>}
+                                          <div className="text-[9px] text-gray-500 mb-1 mt-1 text-center leading-tight px-1">{label}</div>
+                                          {img ? <><img src={img} alt={item.name} className="w-8 h-8 object-contain mb-1" onError={(e) => { e.currentTarget.style.display = 'none'; }} /><span className="text-[9px] text-center px-1 truncate w-full text-white">{item.name}</span></> : <span className="text-2xl opacity-20">+</span>}
+                                        </button>
+                                      );
+                                    })}
+                                  </div>
+                                  {nbBootPickerIndex !== null && (
+                                    <div className="mt-2 border border-white/10 bg-[#0b0d16] max-h-64 overflow-y-auto custom-scrollbar">
+                                      <div className="flex items-center justify-between px-3 py-2 border-b border-white/10 text-[11px] text-gray-400 sticky top-0 bg-[#0b0d16] z-10"><span>Selecionar Boot ({nbBootPickerIndex === 0 ? 'BiS' : `${nbBootPickerIndex + 1}ª Opção`})</span><button type="button" className="text-[10px] px-2 py-0.5 border border-white/20 rounded hover:bg-white hover:text-black" onClick={() => setNbBootPickerIndex(null)}>Fechar</button></div>
+                                      <button type="button" className="w-full flex items-center gap-3 px-3 py-2 text-xs text-red-400 hover:bg-red-900/20 border-b border-white/5" onClick={() => { setNbBoots(prev => { const next = [...prev]; next[nbBootPickerIndex] = null; return next; }); setNbBootPickerIndex(null); }}><div className="w-7 h-7 flex items-center justify-center border border-red-500/20 text-[13px]">×</div><span>Remover item</span></button>
+                                      {loadingBuildItems ? <div className="p-4 text-center text-xs text-gray-500">Carregando itens...</div> : bootOptions.map((item, idx) => (
+                                        <button key={item.id || idx} type="button" className="w-full flex items-center gap-3 px-3 py-2 text-xs text-gray-200 hover:bg-white/10 border-b border-white/5 text-left" onClick={() => { setNbBoots(prev => { const next = [...prev]; next[nbBootPickerIndex] = item; return next; }); setNbBootPickerIndex(null); }}>
+                                          {item.image || item.img ? <img src={item.image || item.img} alt={item.name} className="w-7 h-7 object-contain" /> : <div className="w-7 h-7 flex items-center justify-center border border-white/20 text-[11px]">?</div>}<div className="flex flex-col"><span>{item.name}</span><span className="text-[9px] text-gray-500">{item.category}</span></div>
+                                        </button>
+                                      ))}
+                                    </div>
+                                  )}
+                                </div>
+
+                                {/* GLOVES SECTION */}
+                                <div className="mt-4">
+                                  <div className="text-[11px] font-bold uppercase tracking-widest text-yellow-400 mb-2">Gloves</div>
+                                  <div className="flex flex-wrap gap-2">
+                                    {nbGloves.map((item, idx) => {
+                                      const isBiS = idx === 0;
+                                      const label = isBiS ? 'BiS' : idx === 1 ? 'Segunda Opção' : idx === 2 ? 'Terceira Opção' : 'Quarta Opção';
+                                      const img = item ? (item.image || item.img) : null;
+                                      return (
+                                        <button key={idx} type="button" className={`relative w-20 h-24 flex flex-col items-center justify-center border border-dashed transition-colors ${isBiS ? 'border-green-500/50 bg-green-500/5 hover:bg-green-500/10 hover:border-green-400 shadow-[0_0_10px_rgba(34,197,94,0.1)]' : 'border-white/20 bg-white/5 text-gray-400 hover:bg-white/10 hover:border-white/40 hover:text-white'}`} onClick={() => setNbGlovePickerIndex(idx)}>
+                                          {isBiS && <div className="absolute -top-2 left-1/2 -translate-x-1/2 bg-green-600 text-black text-[9px] font-bold px-1.5 rounded uppercase tracking-widest shadow-sm">BiS</div>}
+                                          <div className="text-[9px] text-gray-500 mb-1 mt-1 text-center leading-tight px-1">{label}</div>
+                                          {img ? <><img src={img} alt={item.name} className="w-8 h-8 object-contain mb-1" onError={(e) => { e.currentTarget.style.display = 'none'; }} /><span className="text-[9px] text-center px-1 truncate w-full text-white">{item.name}</span></> : <span className="text-2xl opacity-20">+</span>}
+                                        </button>
+                                      );
+                                    })}
+                                  </div>
+                                  {nbGlovePickerIndex !== null && (
+                                    <div className="mt-2 border border-white/10 bg-[#0b0d16] max-h-64 overflow-y-auto custom-scrollbar">
+                                      <div className="flex items-center justify-between px-3 py-2 border-b border-white/10 text-[11px] text-gray-400 sticky top-0 bg-[#0b0d16] z-10"><span>Selecionar Glove ({nbGlovePickerIndex === 0 ? 'BiS' : `${nbGlovePickerIndex + 1}ª Opção`})</span><button type="button" className="text-[10px] px-2 py-0.5 border border-white/20 rounded hover:bg-white hover:text-black" onClick={() => setNbGlovePickerIndex(null)}>Fechar</button></div>
+                                      <button type="button" className="w-full flex items-center gap-3 px-3 py-2 text-xs text-red-400 hover:bg-red-900/20 border-b border-white/5" onClick={() => { setNbGloves(prev => { const next = [...prev]; next[nbGlovePickerIndex] = null; return next; }); setNbGlovePickerIndex(null); }}><div className="w-7 h-7 flex items-center justify-center border border-red-500/20 text-[13px]">×</div><span>Remover item</span></button>
+                                      {loadingBuildItems ? <div className="p-4 text-center text-xs text-gray-500">Carregando itens...</div> : gloveOptions.map((item, idx) => (
+                                        <button key={item.id || idx} type="button" className="w-full flex items-center gap-3 px-3 py-2 text-xs text-gray-200 hover:bg-white/10 border-b border-white/5 text-left" onClick={() => { setNbGloves(prev => { const next = [...prev]; next[nbGlovePickerIndex] = item; return next; }); setNbGlovePickerIndex(null); }}>
+                                          {item.image || item.img ? <img src={item.image || item.img} alt={item.name} className="w-7 h-7 object-contain" /> : <div className="w-7 h-7 flex items-center justify-center border border-white/20 text-[11px]">?</div>}<div className="flex flex-col"><span>{item.name}</span><span className="text-[9px] text-gray-500">{item.category}</span></div>
+                                        </button>
+                                      ))}
+                                    </div>
+                                  )}
+                                </div>
+
+                                {/* HELMETS SECTION */}
+                                <div className="mt-4">
+                                  <div className="text-[11px] font-bold uppercase tracking-widest text-yellow-400 mb-2">Helmets</div>
+                                  <div className="flex flex-wrap gap-2">
+                                    {nbHelmets.map((item, idx) => {
+                                      const isBiS = idx === 0;
+                                      const label = isBiS ? 'BiS' : idx === 1 ? 'Segunda Opção' : idx === 2 ? 'Terceira Opção' : 'Quarta Opção';
+                                      const img = item ? (item.image || item.img) : null;
+                                      return (
+                                        <button key={idx} type="button" className={`relative w-20 h-24 flex flex-col items-center justify-center border border-dashed transition-colors ${isBiS ? 'border-green-500/50 bg-green-500/5 hover:bg-green-500/10 hover:border-green-400 shadow-[0_0_10px_rgba(34,197,94,0.1)]' : 'border-white/20 bg-white/5 text-gray-400 hover:bg-white/10 hover:border-white/40 hover:text-white'}`} onClick={() => setNbHelmetPickerIndex(idx)}>
+                                          {isBiS && <div className="absolute -top-2 left-1/2 -translate-x-1/2 bg-green-600 text-black text-[9px] font-bold px-1.5 rounded uppercase tracking-widest shadow-sm">BiS</div>}
+                                          <div className="text-[9px] text-gray-500 mb-1 mt-1 text-center leading-tight px-1">{label}</div>
+                                          {img ? <><img src={img} alt={item.name} className="w-8 h-8 object-contain mb-1" onError={(e) => { e.currentTarget.style.display = 'none'; }} /><span className="text-[9px] text-center px-1 truncate w-full text-white">{item.name}</span></> : <span className="text-2xl opacity-20">+</span>}
+                                        </button>
+                                      );
+                                    })}
+                                  </div>
+                                  {nbHelmetPickerIndex !== null && (
+                                    <div className="mt-2 border border-white/10 bg-[#0b0d16] max-h-64 overflow-y-auto custom-scrollbar">
+                                      <div className="flex items-center justify-between px-3 py-2 border-b border-white/10 text-[11px] text-gray-400 sticky top-0 bg-[#0b0d16] z-10"><span>Selecionar Helmet ({nbHelmetPickerIndex === 0 ? 'BiS' : `${nbHelmetPickerIndex + 1}ª Opção`})</span><button type="button" className="text-[10px] px-2 py-0.5 border border-white/20 rounded hover:bg-white hover:text-black" onClick={() => setNbHelmetPickerIndex(null)}>Fechar</button></div>
+                                      <button type="button" className="w-full flex items-center gap-3 px-3 py-2 text-xs text-red-400 hover:bg-red-900/20 border-b border-white/5" onClick={() => { setNbHelmets(prev => { const next = [...prev]; next[nbHelmetPickerIndex] = null; return next; }); setNbHelmetPickerIndex(null); }}><div className="w-7 h-7 flex items-center justify-center border border-red-500/20 text-[13px]">×</div><span>Remover item</span></button>
+                                      {loadingBuildItems ? <div className="p-4 text-center text-xs text-gray-500">Carregando itens...</div> : helmetOptions.map((item, idx) => (
+                                        <button key={item.id || idx} type="button" className="w-full flex items-center gap-3 px-3 py-2 text-xs text-gray-200 hover:bg-white/10 border-b border-white/5 text-left" onClick={() => { setNbHelmets(prev => { const next = [...prev]; next[nbHelmetPickerIndex] = item; return next; }); setNbHelmetPickerIndex(null); }}>
+                                          {item.image || item.img ? <img src={item.image || item.img} alt={item.name} className="w-7 h-7 object-contain" /> : <div className="w-7 h-7 flex items-center justify-center border border-white/20 text-[11px]">?</div>}<div className="flex flex-col"><span>{item.name}</span><span className="text-[9px] text-gray-500">{item.category}</span></div>
+                                        </button>
+                                      ))}
+                                    </div>
+                                  )}
+                                </div>
+
+                                {/* SHIELD SECTION */}
+                                <div className="mt-4">
+                                  <div className="text-[11px] font-bold uppercase tracking-widest text-yellow-400 mb-2">Shields</div>
+                                  <div className="flex flex-wrap gap-2">
+                                    {nbShields.map((item, idx) => {
+                                      const isBiS = idx === 0;
+                                      const label = isBiS ? 'BiS' : idx === 1 ? 'Segunda Opção' : idx === 2 ? 'Terceira Opção' : 'Quarta Opção';
+                                      const img = item ? (item.image || item.img) : null;
+                                      return (
+                                        <button key={idx} type="button" className={`relative w-20 h-24 flex flex-col items-center justify-center border border-dashed transition-colors ${isBiS ? 'border-green-500/50 bg-green-500/5 hover:bg-green-500/10 hover:border-green-400 shadow-[0_0_10px_rgba(34,197,94,0.1)]' : 'border-white/20 bg-white/5 text-gray-400 hover:bg-white/10 hover:border-white/40 hover:text-white'}`} onClick={() => setNbShieldPickerIndex(idx)}>
+                                          {isBiS && <div className="absolute -top-2 left-1/2 -translate-x-1/2 bg-green-600 text-black text-[9px] font-bold px-1.5 rounded uppercase tracking-widest shadow-sm">BiS</div>}
+                                          <div className="text-[9px] text-gray-500 mb-1 mt-1 text-center leading-tight px-1">{label}</div>
+                                          {img ? <><img src={img} alt={item.name} className="w-8 h-8 object-contain mb-1" onError={(e) => { e.currentTarget.style.display = 'none'; }} /><span className="text-[9px] text-center px-1 truncate w-full text-white">{item.name}</span></> : <span className="text-2xl opacity-20">+</span>}
+                                        </button>
+                                      );
+                                    })}
+                                  </div>
+                                  {nbShieldPickerIndex !== null && (
+                                    <div className="mt-2 border border-white/10 bg-[#0b0d16] max-h-64 overflow-y-auto custom-scrollbar">
+                                      <div className="flex items-center justify-between px-3 py-2 border-b border-white/10 text-[11px] text-gray-400 sticky top-0 bg-[#0b0d16] z-10"><span>Selecionar Shield ({nbShieldPickerIndex === 0 ? 'BiS' : `${nbShieldPickerIndex + 1}ª Opção`})</span><button type="button" className="text-[10px] px-2 py-0.5 border border-white/20 rounded hover:bg-white hover:text-black" onClick={() => setNbShieldPickerIndex(null)}>Fechar</button></div>
+                                      <button type="button" className="w-full flex items-center gap-3 px-3 py-2 text-xs text-red-400 hover:bg-red-900/20 border-b border-white/5" onClick={() => { setNbShields(prev => { const next = [...prev]; next[nbShieldPickerIndex] = null; return next; }); setNbShieldPickerIndex(null); }}><div className="w-7 h-7 flex items-center justify-center border border-red-500/20 text-[13px]">×</div><span>Remover item</span></button>
+                                      {loadingBuildItems ? <div className="p-4 text-center text-xs text-gray-500">Carregando itens...</div> : shieldOptions.map((item, idx) => (
+                                        <button key={item.id || idx} type="button" className="w-full flex items-center gap-3 px-3 py-2 text-xs text-gray-200 hover:bg-white/10 border-b border-white/5 text-left" onClick={() => { setNbShields(prev => { const next = [...prev]; next[nbShieldPickerIndex] = item; return next; }); setNbShieldPickerIndex(null); }}>
+                                          {item.image || item.img ? <img src={item.image || item.img} alt={item.name} className="w-7 h-7 object-contain" /> : <div className="w-7 h-7 flex items-center justify-center border border-white/20 text-[11px]">?</div>}<div className="flex flex-col"><span>{item.name}</span><span className="text-[9px] text-gray-500">{item.category}</span></div>
+                                        </button>
+                                      ))}
+                                    </div>
+                                  )}
+                                </div>
+
+                                {/* AMULETS SECTION */}
+                                <div className="mt-4">
+                                  <div className="text-[11px] font-bold uppercase tracking-widest text-yellow-400 mb-2">Amulets</div>
+                                  <div className="flex flex-wrap gap-2">
+                                    {nbAmulets.map((item, idx) => {
+                                      const isBiS = idx === 0;
+                                      const label = isBiS ? 'BiS' : idx === 1 ? 'Segunda Opção' : idx === 2 ? 'Terceira Opção' : 'Quarta Opção';
+                                      const img = item ? (item.image || item.img) : null;
+                                      return (
+                                        <button key={idx} type="button" className={`relative w-20 h-24 flex flex-col items-center justify-center border border-dashed transition-colors ${isBiS ? 'border-green-500/50 bg-green-500/5 hover:bg-green-500/10 hover:border-green-400 shadow-[0_0_10px_rgba(34,197,94,0.1)]' : 'border-white/20 bg-white/5 text-gray-400 hover:bg-white/10 hover:border-white/40 hover:text-white'}`} onClick={() => setNbAmuletPickerIndex(idx)}>
+                                          {isBiS && <div className="absolute -top-2 left-1/2 -translate-x-1/2 bg-green-600 text-black text-[9px] font-bold px-1.5 rounded uppercase tracking-widest shadow-sm">BiS</div>}
+                                          <div className="text-[9px] text-gray-500 mb-1 mt-1 text-center leading-tight px-1">{label}</div>
+                                          {img ? <><img src={img} alt={item.name} className="w-8 h-8 object-contain mb-1" onError={(e) => { e.currentTarget.style.display = 'none'; }} /><span className="text-[9px] text-center px-1 truncate w-full text-white">{item.name}</span></> : <span className="text-2xl opacity-20">+</span>}
+                                        </button>
+                                      );
+                                    })}
+                                  </div>
+                                  {nbAmuletPickerIndex !== null && (
+                                    <div className="mt-2 border border-white/10 bg-[#0b0d16] max-h-64 overflow-y-auto custom-scrollbar">
+                                      <div className="flex items-center justify-between px-3 py-2 border-b border-white/10 text-[11px] text-gray-400 sticky top-0 bg-[#0b0d16] z-10"><span>Selecionar Amulet ({nbAmuletPickerIndex === 0 ? 'BiS' : `${nbAmuletPickerIndex + 1}ª Opção`})</span><button type="button" className="text-[10px] px-2 py-0.5 border border-white/20 rounded hover:bg-white hover:text-black" onClick={() => setNbAmuletPickerIndex(null)}>Fechar</button></div>
+                                      <button type="button" className="w-full flex items-center gap-3 px-3 py-2 text-xs text-red-400 hover:bg-red-900/20 border-b border-white/5" onClick={() => { setNbAmulets(prev => { const next = [...prev]; next[nbAmuletPickerIndex] = null; return next; }); setNbAmuletPickerIndex(null); }}><div className="w-7 h-7 flex items-center justify-center border border-red-500/20 text-[13px]">×</div><span>Remover item</span></button>
+                                      {loadingBuildItems ? <div className="p-4 text-center text-xs text-gray-500">Carregando itens...</div> : amuletOptions.map((item, idx) => (
+                                        <button key={item.id || idx} type="button" className="w-full flex items-center gap-3 px-3 py-2 text-xs text-gray-200 hover:bg-white/10 border-b border-white/5 text-left" onClick={() => { setNbAmulets(prev => { const next = [...prev]; next[nbAmuletPickerIndex] = item; return next; }); setNbAmuletPickerIndex(null); }}>
+                                          {item.image || item.img ? <img src={item.image || item.img} alt={item.name} className="w-7 h-7 object-contain" /> : <div className="w-7 h-7 flex items-center justify-center border border-white/20 text-[11px]">?</div>}<div className="flex flex-col"><span>{item.name}</span><span className="text-[9px] text-gray-500">{item.category}</span></div>
+                                        </button>
+                                      ))}
+                                    </div>
+                                  )}
+                                </div>
+
+                                {/* BELTS SECTION */}
+                                <div className="mt-4">
+                                  <div className="text-[11px] font-bold uppercase tracking-widest text-yellow-400 mb-2">Belts</div>
+                                  <div className="flex flex-wrap gap-2">
+                                    {nbBelts.map((item, idx) => {
+                                      const isBiS = idx === 0;
+                                      const label = isBiS ? 'BiS' : idx === 1 ? 'Segunda Opção' : idx === 2 ? 'Terceira Opção' : 'Quarta Opção';
+                                      const img = item ? (item.image || item.img) : null;
+                                      return (
+                                        <button key={idx} type="button" className={`relative w-20 h-24 flex flex-col items-center justify-center border border-dashed transition-colors ${isBiS ? 'border-green-500/50 bg-green-500/5 hover:bg-green-500/10 hover:border-green-400 shadow-[0_0_10px_rgba(34,197,94,0.1)]' : 'border-white/20 bg-white/5 text-gray-400 hover:bg-white/10 hover:border-white/40 hover:text-white'}`} onClick={() => setNbBeltPickerIndex(idx)}>
+                                          {isBiS && <div className="absolute -top-2 left-1/2 -translate-x-1/2 bg-green-600 text-black text-[9px] font-bold px-1.5 rounded uppercase tracking-widest shadow-sm">BiS</div>}
+                                          <div className="text-[9px] text-gray-500 mb-1 mt-1 text-center leading-tight px-1">{label}</div>
+                                          {img ? <><img src={img} alt={item.name} className="w-8 h-8 object-contain mb-1" onError={(e) => { e.currentTarget.style.display = 'none'; }} /><span className="text-[9px] text-center px-1 truncate w-full text-white">{item.name}</span></> : <span className="text-2xl opacity-20">+</span>}
+                                        </button>
+                                      );
+                                    })}
+                                  </div>
+                                  {nbBeltPickerIndex !== null && (
+                                    <div className="mt-2 border border-white/10 bg-[#0b0d16] max-h-64 overflow-y-auto custom-scrollbar">
+                                      <div className="flex items-center justify-between px-3 py-2 border-b border-white/10 text-[11px] text-gray-400 sticky top-0 bg-[#0b0d16] z-10"><span>Selecionar Belt ({nbBeltPickerIndex === 0 ? 'BiS' : `${nbBeltPickerIndex + 1}ª Opção`})</span><button type="button" className="text-[10px] px-2 py-0.5 border border-white/20 rounded hover:bg-white hover:text-black" onClick={() => setNbBeltPickerIndex(null)}>Fechar</button></div>
+                                      <button type="button" className="w-full flex items-center gap-3 px-3 py-2 text-xs text-red-400 hover:bg-red-900/20 border-b border-white/5" onClick={() => { setNbBelts(prev => { const next = [...prev]; next[nbBeltPickerIndex] = null; return next; }); setNbBeltPickerIndex(null); }}><div className="w-7 h-7 flex items-center justify-center border border-red-500/20 text-[13px]">×</div><span>Remover item</span></button>
+                                      {loadingBuildItems ? <div className="p-4 text-center text-xs text-gray-500">Carregando itens...</div> : beltOptions.map((item, idx) => (
+                                        <button key={item.id || idx} type="button" className="w-full flex items-center gap-3 px-3 py-2 text-xs text-gray-200 hover:bg-white/10 border-b border-white/5 text-left" onClick={() => { setNbBelts(prev => { const next = [...prev]; next[nbBeltPickerIndex] = item; return next; }); setNbBeltPickerIndex(null); }}>
+                                          {item.image || item.img ? <img src={item.image || item.img} alt={item.name} className="w-7 h-7 object-contain" /> : <div className="w-7 h-7 flex items-center justify-center border border-white/20 text-[11px]">?</div>}<div className="flex flex-col"><span>{item.name}</span><span className="text-[9px] text-gray-500">{item.category}</span></div>
+                                        </button>
+                                      ))}
+                                    </div>
+                                  )}
+                                </div>
+
+                                {/* RINGS SECTION */}
+                                <div className="mt-4">
+                                  <div className="text-[11px] font-bold uppercase tracking-widest text-yellow-400 mb-2">Rings</div>
+                                  <div className="flex flex-wrap gap-2">
+                                    {nbRings.map((item, idx) => {
+                                      const isBiS = idx === 0;
+                                      const label = isBiS ? 'BiS' : idx === 1 ? 'Segunda Opção' : idx === 2 ? 'Terceira Opção' : 'Quarta Opção';
+                                      const img = item ? (item.image || item.img) : null;
+                                      return (
+                                        <button key={idx} type="button" className={`relative w-20 h-24 flex flex-col items-center justify-center border border-dashed transition-colors ${isBiS ? 'border-green-500/50 bg-green-500/5 hover:bg-green-500/10 hover:border-green-400 shadow-[0_0_10px_rgba(34,197,94,0.1)]' : 'border-white/20 bg-white/5 text-gray-400 hover:bg-white/10 hover:border-white/40 hover:text-white'}`} onClick={() => setNbRingPickerIndex(idx)}>
+                                          {isBiS && <div className="absolute -top-2 left-1/2 -translate-x-1/2 bg-green-600 text-black text-[9px] font-bold px-1.5 rounded uppercase tracking-widest shadow-sm">BiS</div>}
+                                          <div className="text-[9px] text-gray-500 mb-1 mt-1 text-center leading-tight px-1">{label}</div>
+                                          {img ? <><img src={img} alt={item.name} className="w-8 h-8 object-contain mb-1" onError={(e) => { e.currentTarget.style.display = 'none'; }} /><span className="text-[9px] text-center px-1 truncate w-full text-white">{item.name}</span></> : <span className="text-2xl opacity-20">+</span>}
+                                        </button>
+                                      );
+                                    })}
+                                  </div>
+                                  {nbRingPickerIndex !== null && (
+                                    <div className="mt-2 border border-white/10 bg-[#0b0d16] max-h-64 overflow-y-auto custom-scrollbar">
+                                      <div className="flex items-center justify-between px-3 py-2 border-b border-white/10 text-[11px] text-gray-400 sticky top-0 bg-[#0b0d16] z-10"><span>Selecionar Ring ({nbRingPickerIndex === 0 ? 'BiS' : `${nbRingPickerIndex + 1}ª Opção`})</span><button type="button" className="text-[10px] px-2 py-0.5 border border-white/20 rounded hover:bg-white hover:text-black" onClick={() => setNbRingPickerIndex(null)}>Fechar</button></div>
+                                      <button type="button" className="w-full flex items-center gap-3 px-3 py-2 text-xs text-red-400 hover:bg-red-900/20 border-b border-white/5" onClick={() => { setNbRings(prev => { const next = [...prev]; next[nbRingPickerIndex] = null; return next; }); setNbRingPickerIndex(null); }}><div className="w-7 h-7 flex items-center justify-center border border-red-500/20 text-[13px]">×</div><span>Remover item</span></button>
+                                      {loadingBuildItems ? <div className="p-4 text-center text-xs text-gray-500">Carregando itens...</div> : ringOptions.map((item, idx) => (
+                                        <button key={item.id || idx} type="button" className="w-full flex items-center gap-3 px-3 py-2 text-xs text-gray-200 hover:bg-white/10 border-b border-white/5 text-left" onClick={() => { setNbRings(prev => { const next = [...prev]; next[nbRingPickerIndex] = item; return next; }); setNbRingPickerIndex(null); }}>
+                                          {item.image || item.img ? <img src={item.image || item.img} alt={item.name} className="w-7 h-7 object-contain" /> : <div className="w-7 h-7 flex items-center justify-center border border-white/20 text-[11px]">?</div>}<div className="flex flex-col"><span>{item.name}</span><span className="text-[9px] text-gray-500">{item.category}</span></div>
+                                        </button>
+                                      ))}
+                                    </div>
+                                  )}
+                                </div>
+
                                 <div className="mt-4">
                                   <div className="text-[11px] font-bold uppercase tracking-widest text-yellow-400 mb-2">
                                     Charms
@@ -4610,6 +4888,48 @@ const NewDesign = ({ onBack, initialView = 'home' }) => {
                                   })
                                   .filter(Boolean);
 
+                                const bootItems = (Array.isArray(nbBoots) ? nbBoots : []).map((item, idx) => {
+                                  if (!item) return null;
+                                  const nameStr = typeof item.name === 'string' ? item.name : (item.id || 'Boot');
+                                  return { key: idx, name: nameStr, img: item.image || item.img, isBiS: idx === 0 };
+                                }).filter(Boolean);
+
+                                const gloveItems = (Array.isArray(nbGloves) ? nbGloves : []).map((item, idx) => {
+                                  if (!item) return null;
+                                  const nameStr = typeof item.name === 'string' ? item.name : (item.id || 'Glove');
+                                  return { key: idx, name: nameStr, img: item.image || item.img, isBiS: idx === 0 };
+                                }).filter(Boolean);
+
+                                const helmetItems = (Array.isArray(nbHelmets) ? nbHelmets : []).map((item, idx) => {
+                                  if (!item) return null;
+                                  const nameStr = typeof item.name === 'string' ? item.name : (item.id || 'Helmet');
+                                  return { key: idx, name: nameStr, img: item.image || item.img, isBiS: idx === 0 };
+                                }).filter(Boolean);
+
+                                const shieldItems = (Array.isArray(nbShields) ? nbShields : []).map((item, idx) => {
+                                  if (!item) return null;
+                                  const nameStr = typeof item.name === 'string' ? item.name : (item.id || 'Shield');
+                                  return { key: idx, name: nameStr, img: item.image || item.img, isBiS: idx === 0 };
+                                }).filter(Boolean);
+
+                                const amuletItems = (Array.isArray(nbAmulets) ? nbAmulets : []).map((item, idx) => {
+                                  if (!item) return null;
+                                  const nameStr = typeof item.name === 'string' ? item.name : (item.id || 'Amulet');
+                                  return { key: idx, name: nameStr, img: item.image || item.img, isBiS: idx === 0 };
+                                }).filter(Boolean);
+
+                                const beltItems = (Array.isArray(nbBelts) ? nbBelts : []).map((item, idx) => {
+                                  if (!item) return null;
+                                  const nameStr = typeof item.name === 'string' ? item.name : (item.id || 'Belt');
+                                  return { key: idx, name: nameStr, img: item.image || item.img, isBiS: idx === 0 };
+                                }).filter(Boolean);
+
+                                const ringItems = (Array.isArray(nbRings) ? nbRings : []).map((item, idx) => {
+                                  if (!item) return null;
+                                  const nameStr = typeof item.name === 'string' ? item.name : (item.id || 'Ring');
+                                  return { key: idx, name: nameStr, img: item.image || item.img, isBiS: idx === 0 };
+                                }).filter(Boolean);
+
                                 const mercInfo = (() => {
                                   if (!nbMercenary) return null;
                                   const all = [
@@ -4665,7 +4985,7 @@ const NewDesign = ({ onBack, initialView = 'home' }) => {
                                         </div>
                                       )}
                                     </div>
-                                    {(badgeLabel || statItems.length > 0 || relicItems.length > 0 || potionItems.length > 0 || mercInfo || charmItems.length > 0 || weaponItems.length > 0 || armorItems.length > 0) && (
+                                    {(badgeLabel || statItems.length > 0 || relicItems.length > 0 || potionItems.length > 0 || mercInfo || charmItems.length > 0 || weaponItems.length > 0 || armorItems.length > 0 || bootItems.length > 0 || gloveItems.length > 0 || helmetItems.length > 0 || shieldItems.length > 0 || amuletItems.length > 0 || beltItems.length > 0 || ringItems.length > 0) && (
                                       <div className="mt-4 space-y-3">
                                         {statItems.length > 0 && (
                                           <div>
@@ -4683,6 +5003,91 @@ const NewDesign = ({ onBack, initialView = 'home' }) => {
                                                   </div>
                                                   <span className="text-xs" style={{ color }}>{label}</span>
                                                   <span className="ml-auto text-xs text-gray-300">{stats[key]}</span>
+                                                </div>
+                                              ))}
+                                            </div>
+                                          </div>
+                                        )}
+                                        {relicItems.length > 0 && (
+                                          <div>
+                                            <div className="text-[11px] uppercase tracking-widest text-yellow-400 mb-2">
+                                              Relíquias
+                                            </div>
+                                            <div className="flex flex-wrap gap-2">
+                                              {relicItems.map((rel) => (
+                                                <div
+                                                  key={rel.key}
+                                                  className={`flex items-center gap-2 border px-2 py-1 ${
+                                                    rel.quest ? 'border-red-500/60 bg-red-900/20' : 'border-white/10 bg-black/30'
+                                                  }`}
+                                                >
+                                                  <img
+                                                    src={rel.img}
+                                                    alt={rel.name}
+                                                    className="w-5 h-5 object-contain"
+                                                  />
+                                                  <span className="text-[11px] text-gray-200">
+                                                    {rel.name}
+                                                  </span>
+                                                </div>
+                                              ))}
+                                            </div>
+                                          </div>
+                                        )}
+                                        {potionItems.length > 0 && (
+                                          <div>
+                                            <div className="text-[11px] uppercase tracking-widest text-yellow-400 mb-2">
+                                              Poções
+                                            </div>
+                                            <div className="flex flex-wrap gap-2">
+                                              {potionItems.map((pot) => (
+                                                <div
+                                                  key={pot.key}
+                                                  className="flex items-center gap-2 border px-2 py-1 border-white/10 bg-black/30"
+                                                >
+                                                  {pot.img ? (
+                                                    <img
+                                                      src={pot.img}
+                                                      alt={pot.name}
+                                                      className="w-5 h-5 object-contain"
+                                                    />
+                                                  ) : (
+                                                    <div className="w-5 h-5 flex items-center justify-center border border-white/20 text-[10px] text-gray-400">
+                                                      ?
+                                                    </div>
+                                                  )}
+                                                  <span className="text-[11px] text-gray-200">
+                                                    {pot.name}
+                                                  </span>
+                                                </div>
+                                              ))}
+                                            </div>
+                                          </div>
+                                        )}
+                                        {charmItems.length > 0 && (
+                                          <div>
+                                            <div className="text-[11px] uppercase tracking-widest text-yellow-400 mb-2">
+                                              Charms
+                                            </div>
+                                            <div className="flex flex-wrap gap-2">
+                                              {charmItems.map((c) => (
+                                                <div
+                                                  key={c.key}
+                                                  className="flex items-center gap-2 border px-2 py-1 border-white/10 bg-black/30"
+                                                >
+                                                  {c.img ? (
+                                                    <img
+                                                      src={c.img}
+                                                      alt={c.name}
+                                                      className="w-5 h-5 object-contain"
+                                                      onError={(e) => { e.currentTarget.style.display = 'none'; }}
+                                                    />
+                                                  ) : (
+                                                    <span className="text-[10px] text-gray-500">?</span>
+                                                  )}
+                                                  <span className="text-[11px] text-gray-200">
+                                                    {c.name}
+                                                  </span>
                                                 </div>
                                               ))}
                                             </div>
@@ -4756,86 +5161,99 @@ const NewDesign = ({ onBack, initialView = 'home' }) => {
                                             </div>
                                           </div>
                                         )}
-                                        {charmItems.length > 0 && (
+                                        {bootItems.length > 0 && (
                                           <div>
-                                            <div className="text-[11px] uppercase tracking-widest text-yellow-400 mb-2">
-                                              Charms
-                                            </div>
+                                            <div className="text-[11px] uppercase tracking-widest text-yellow-400 mb-2">Boots</div>
                                             <div className="flex flex-wrap gap-2">
-                                              {charmItems.map((c) => (
-                                                <div
-                                                  key={c.key}
-                                                  className="flex items-center gap-2 border px-2 py-1 border-white/10 bg-black/30"
-                                                >
-                                                  {c.img ? (
-                                                    <img
-                                                      src={c.img}
-                                                      alt={c.name}
-                                                      className="w-5 h-5 object-contain"
-                                                      onError={(e) => { e.currentTarget.style.display = 'none'; }}
-                                                    />
-                                                  ) : (
-                                                    <span className="text-[10px] text-gray-500">?</span>
-                                                  )}
-                                                  <span className="text-[11px] text-gray-200">
-                                                    {c.name}
-                                                  </span>
+                                              {bootItems.map((item) => (
+                                                <div key={item.key} className={`flex items-center gap-2 border px-2 py-1 ${item.isBiS ? 'border-green-500/60 bg-green-900/20' : 'border-white/10 bg-black/30'}`}>
+                                                  {item.img ? <img src={item.img} alt={item.name} className="w-5 h-5 object-contain" onError={(e) => { e.currentTarget.style.display = 'none'; }} /> : <span className="text-[10px] text-gray-500">?</span>}
+                                                  <span className="text-[11px] text-gray-200">{item.name}</span>
+                                                  {item.isBiS && <span className="text-[9px] text-green-400 font-bold ml-1">BiS</span>}
                                                 </div>
                                               ))}
                                             </div>
                                           </div>
                                         )}
-                                        {relicItems.length > 0 && (
+                                        {gloveItems.length > 0 && (
                                           <div>
-                                  <div className="text-[11px] uppercase tracking-widest text-yellow-400 mb-2">
-                                    Relíquias
-                                  </div>
+                                            <div className="text-[11px] uppercase tracking-widest text-yellow-400 mb-2">Gloves</div>
                                             <div className="flex flex-wrap gap-2">
-                                              {relicItems.map((rel) => (
-                                                <div
-                                                  key={rel.key}
-                                                  className={`flex items-center gap-2 border px-2 py-1 ${
-                                                    rel.quest ? 'border-red-500/60 bg-red-900/20' : 'border-white/10 bg-black/30'
-                                                  }`}
-                                                >
-                                                  <img
-                                                    src={rel.img}
-                                                    alt={rel.name}
-                                                    className="w-5 h-5 object-contain"
-                                                  />
-                                                  <span className="text-[11px] text-gray-200">
-                                                    {rel.name}
-                                                  </span>
+                                              {gloveItems.map((item) => (
+                                                <div key={item.key} className={`flex items-center gap-2 border px-2 py-1 ${item.isBiS ? 'border-green-500/60 bg-green-900/20' : 'border-white/10 bg-black/30'}`}>
+                                                  {item.img ? <img src={item.img} alt={item.name} className="w-5 h-5 object-contain" onError={(e) => { e.currentTarget.style.display = 'none'; }} /> : <span className="text-[10px] text-gray-500">?</span>}
+                                                  <span className="text-[11px] text-gray-200">{item.name}</span>
+                                                  {item.isBiS && <span className="text-[9px] text-green-400 font-bold ml-1">BiS</span>}
                                                 </div>
                                               ))}
                                             </div>
                                           </div>
                                         )}
-                                        {potionItems.length > 0 && (
+                                        {helmetItems.length > 0 && (
                                           <div>
-                                  <div className="text-[11px] uppercase tracking-widest text-yellow-400 mb-2">
-                                    Poções
-                                  </div>
+                                            <div className="text-[11px] uppercase tracking-widest text-yellow-400 mb-2">Helmets</div>
                                             <div className="flex flex-wrap gap-2">
-                                              {potionItems.map((pot) => (
-                                                <div
-                                                  key={pot.key}
-                                                  className="flex items-center gap-2 border px-2 py-1 border-white/10 bg-black/30"
-                                                >
-                                                  {pot.img ? (
-                                                    <img
-                                                      src={pot.img}
-                                                      alt={pot.name}
-                                                      className="w-5 h-5 object-contain"
-                                                    />
-                                                  ) : (
-                                                    <div className="w-5 h-5 flex items-center justify-center border border-white/20 text-[10px] text-gray-400">
-                                                      ?
-                                                    </div>
-                                                  )}
-                                                  <span className="text-[11px] text-gray-200">
-                                                    {pot.name}
-                                                  </span>
+                                              {helmetItems.map((item) => (
+                                                <div key={item.key} className={`flex items-center gap-2 border px-2 py-1 ${item.isBiS ? 'border-green-500/60 bg-green-900/20' : 'border-white/10 bg-black/30'}`}>
+                                                  {item.img ? <img src={item.img} alt={item.name} className="w-5 h-5 object-contain" onError={(e) => { e.currentTarget.style.display = 'none'; }} /> : <span className="text-[10px] text-gray-500">?</span>}
+                                                  <span className="text-[11px] text-gray-200">{item.name}</span>
+                                                  {item.isBiS && <span className="text-[9px] text-green-400 font-bold ml-1">BiS</span>}
+                                                </div>
+                                              ))}
+                                            </div>
+                                          </div>
+                                        )}
+                                        {shieldItems.length > 0 && (
+                                          <div>
+                                            <div className="text-[11px] uppercase tracking-widest text-yellow-400 mb-2">Shields</div>
+                                            <div className="flex flex-wrap gap-2">
+                                              {shieldItems.map((item) => (
+                                                <div key={item.key} className={`flex items-center gap-2 border px-2 py-1 ${item.isBiS ? 'border-green-500/60 bg-green-900/20' : 'border-white/10 bg-black/30'}`}>
+                                                  {item.img ? <img src={item.img} alt={item.name} className="w-5 h-5 object-contain" onError={(e) => { e.currentTarget.style.display = 'none'; }} /> : <span className="text-[10px] text-gray-500">?</span>}
+                                                  <span className="text-[11px] text-gray-200">{item.name}</span>
+                                                  {item.isBiS && <span className="text-[9px] text-green-400 font-bold ml-1">BiS</span>}
+                                                </div>
+                                              ))}
+                                            </div>
+                                          </div>
+                                        )}
+                                        {amuletItems.length > 0 && (
+                                          <div>
+                                            <div className="text-[11px] uppercase tracking-widest text-yellow-400 mb-2">Amulets</div>
+                                            <div className="flex flex-wrap gap-2">
+                                              {amuletItems.map((item) => (
+                                                <div key={item.key} className={`flex items-center gap-2 border px-2 py-1 ${item.isBiS ? 'border-green-500/60 bg-green-900/20' : 'border-white/10 bg-black/30'}`}>
+                                                  {item.img ? <img src={item.img} alt={item.name} className="w-5 h-5 object-contain" onError={(e) => { e.currentTarget.style.display = 'none'; }} /> : <span className="text-[10px] text-gray-500">?</span>}
+                                                  <span className="text-[11px] text-gray-200">{item.name}</span>
+                                                  {item.isBiS && <span className="text-[9px] text-green-400 font-bold ml-1">BiS</span>}
+                                                </div>
+                                              ))}
+                                            </div>
+                                          </div>
+                                        )}
+                                        {beltItems.length > 0 && (
+                                          <div>
+                                            <div className="text-[11px] uppercase tracking-widest text-yellow-400 mb-2">Belts</div>
+                                            <div className="flex flex-wrap gap-2">
+                                              {beltItems.map((item) => (
+                                                <div key={item.key} className={`flex items-center gap-2 border px-2 py-1 ${item.isBiS ? 'border-green-500/60 bg-green-900/20' : 'border-white/10 bg-black/30'}`}>
+                                                  {item.img ? <img src={item.img} alt={item.name} className="w-5 h-5 object-contain" onError={(e) => { e.currentTarget.style.display = 'none'; }} /> : <span className="text-[10px] text-gray-500">?</span>}
+                                                  <span className="text-[11px] text-gray-200">{item.name}</span>
+                                                  {item.isBiS && <span className="text-[9px] text-green-400 font-bold ml-1">BiS</span>}
+                                                </div>
+                                              ))}
+                                            </div>
+                                          </div>
+                                        )}
+                                        {ringItems.length > 0 && (
+                                          <div>
+                                            <div className="text-[11px] uppercase tracking-widest text-yellow-400 mb-2">Rings</div>
+                                            <div className="flex flex-wrap gap-2">
+                                              {ringItems.map((item) => (
+                                                <div key={item.key} className={`flex items-center gap-2 border px-2 py-1 ${item.isBiS ? 'border-green-500/60 bg-green-900/20' : 'border-white/10 bg-black/30'}`}>
+                                                  {item.img ? <img src={item.img} alt={item.name} className="w-5 h-5 object-contain" onError={(e) => { e.currentTarget.style.display = 'none'; }} /> : <span className="text-[10px] text-gray-500">?</span>}
+                                                  <span className="text-[11px] text-gray-200">{item.name}</span>
+                                                  {item.isBiS && <span className="text-[9px] text-green-400 font-bold ml-1">BiS</span>}
                                                 </div>
                                               ))}
                                             </div>
@@ -4843,9 +5261,9 @@ const NewDesign = ({ onBack, initialView = 'home' }) => {
                                         )}
                                         {mercInfo && (
                                           <div>
-                                  <div className="text-[11px] uppercase tracking-widest text-yellow-400 mb-2">
-                                    Mercenário
-                                  </div>
+                                            <div className="text-[11px] uppercase tracking-widest text-yellow-400 mb-2">
+                                              Mercenário
+                                            </div>
                                             <div className="flex flex-wrap gap-2">
                                               <div className="flex items-center gap-2 border px-2 py-1 border-white/10 bg-black/30">
                                                 <img
@@ -4909,6 +5327,13 @@ const NewDesign = ({ onBack, initialView = 'home' }) => {
                                     charms: Array.isArray(nbCharms) ? nbCharms.map(c => c || null) : [],
                                     weapons: Array.isArray(nbWeapons) ? nbWeapons.map(w => w || null) : [null, null, null, null],
                                     bodyArmors: Array.isArray(nbBodyArmors) ? nbBodyArmors.map(b => b || null) : [null, null, null, null],
+                                    boots: Array.isArray(nbBoots) ? nbBoots.map(b => b || null) : [null, null, null, null],
+                                    gloves: Array.isArray(nbGloves) ? nbGloves.map(g => g || null) : [null, null, null, null],
+                                    helmets: Array.isArray(nbHelmets) ? nbHelmets.map(h => h || null) : [null, null, null, null],
+                                    shields: Array.isArray(nbShields) ? nbShields.map(s => s || null) : [null, null, null, null],
+                                    amulets: Array.isArray(nbAmulets) ? nbAmulets.map(a => a || null) : [null, null, null, null],
+                                    belts: Array.isArray(nbBelts) ? nbBelts.map(b => b || null) : [null, null, null, null],
+                                    rings: Array.isArray(nbRings) ? nbRings.map(r => r || null) : [null, null, null, null],
                                     mercenary: nbMercenary || null,
                                     createdAt: serverTimestamp(),
                                     updatedAt: serverTimestamp(),
@@ -4932,6 +5357,13 @@ const NewDesign = ({ onBack, initialView = 'home' }) => {
                                   setNbCharms([]);
                                   setNbWeapons([null, null, null, null]);
                                   setNbBodyArmors([null, null, null, null]);
+                                  setNbBoots([null, null, null, null]);
+                                  setNbGloves([null, null, null, null]);
+                                  setNbHelmets([null, null, null, null]);
+                                  setNbShields([null, null, null, null]);
+                                  setNbAmulets([null, null, null, null]);
+                                  setNbBelts([null, null, null, null]);
+                                  setNbRings([null, null, null, null]);
                                   setNbMercenary('');
                                 } catch {
                                 }
