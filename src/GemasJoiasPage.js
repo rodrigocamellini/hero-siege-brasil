@@ -89,7 +89,10 @@ const GemasJoiasPage = () => {
                         <span className="item-name">Pristine Ruby</span>
                       </div>
                     </td>
-                    <td className="stat-blue">+750 Fire Dmg</td>
+                    <td className="stat-blue">
+                      <div>+512 to Additive Fire DMG</div>
+                      <div>+20 to Fire Skill DMG</div>
+                    </td>
                   </tr>
                   <tr>
                     <td>
@@ -102,7 +105,10 @@ const GemasJoiasPage = () => {
                         <span className="item-name">Pristine Sapphire</span>
                       </div>
                     </td>
-                    <td className="stat-blue">+750 Cold Dmg</td>
+                    <td className="stat-blue">
+                      <div>+512 to Additive Cold DMG</div>
+                      <div>+20 to Cold Skill DMG</div>
+                    </td>
                   </tr>
                   <tr>
                     <td>
@@ -115,7 +121,10 @@ const GemasJoiasPage = () => {
                         <span className="item-name">Pristine Topaz</span>
                       </div>
                     </td>
-                    <td className="stat-blue">+750 Light Dmg</td>
+                    <td className="stat-blue">
+                      <div>+512 to Additive Light DMG</div>
+                      <div>+20 to Light Skill DMG</div>
+                    </td>
                   </tr>
                   <tr>
                     <td>
@@ -128,7 +137,10 @@ const GemasJoiasPage = () => {
                         <span className="item-name">Pristine Emerald</span>
                       </div>
                     </td>
-                    <td className="stat-blue">+750 Pois Dmg</td>
+                    <td className="stat-blue">
+                      <div>+512 to Additive Poison DMG</div>
+                      <div>+20 to Poison Skill DMG</div>
+                    </td>
                   </tr>
                   <tr>
                     <td>
@@ -141,7 +153,10 @@ const GemasJoiasPage = () => {
                         <span className="item-name">Pristine Amethyst</span>
                       </div>
                     </td>
-                    <td className="stat-blue">+750 Magic Dmg</td>
+                    <td className="stat-blue">
+                      <div>+512 to Additive Arcane DMG</div>
+                      <div>+20 to Arcane Skill DMG</div>
+                    </td>
                   </tr>
                   <tr>
                     <td>
@@ -151,10 +166,12 @@ const GemasJoiasPage = () => {
                           className="item-icon"
                           alt="Pristine Citrine"
                         />
-                        <span className="item-name">Pristine Citrine</span>
+                        <span className="item-name">Pristine Diamond</span>
                       </div>
                     </td>
-                    <td className="stat-blue">+750 Wind Dmg</td>
+                    <td className="stat-blue">
+                      <div>+20 to Physical DMG</div>                      
+                    </td>
                   </tr>
                   <tr>
                     <td>
@@ -167,7 +184,10 @@ const GemasJoiasPage = () => {
                         <span className="item-name">Pristine Skull</span>
                       </div>
                     </td>
-                    <td className="stat-blue">+750 Phys Dmg</td>
+                    <td className="stat-blue">
+                      <div>+12% Life Stolen per Hit</div>
+                      <div>Replenish Life 12%</div>
+                    </td>
                   </tr>
                 </tbody>
               </table>
@@ -191,7 +211,7 @@ const GemasJoiasPage = () => {
                         </div>
                       </div>
                     </td>
-                    <td className="stat-blue">800 Elem Dmg</td>
+                    <td className="stat-blue">+10 Todos os Atributos</td>
                   </tr>
                   <tr>
                     <td>
@@ -207,7 +227,10 @@ const GemasJoiasPage = () => {
                         </div>
                       </div>
                     </td>
-                    <td className="stat-blue">5% All Stats</td>
+                    <td className="stat-blue">
+                      <div>+10 Inteligência</div>
+                      <div>+10% Dano Mágico</div>
+                    </td>
                   </tr>
                   <tr>
                     <td>
@@ -220,7 +243,7 @@ const GemasJoiasPage = () => {
                         <span className="item-name">Angelic Gem</span>
                       </div>
                     </td>
-                    <td className="stat-blue">2 All Talents</td>
+                    <td className="stat-blue">+1 Todas as Habilidades</td>
                   </tr>
                   <tr>
                     <td>
@@ -236,7 +259,7 @@ const GemasJoiasPage = () => {
                         </div>
                       </div>
                     </td>
-                    <td className="stat-blue">10% ATK Speed</td>
+                    <td className="stat-blue">+10% Vel. de Ataque</td>
                   </tr>
                 </tbody>
               </table>

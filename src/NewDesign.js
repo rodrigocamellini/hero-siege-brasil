@@ -111,6 +111,43 @@ const EXTRA_SHIELDS = [
   { id: 'st-tomis-vibrant-aura', name: "St. Tomi's Vibrant Aura", rarity: 'Angelic', image: 'https://herosiege.wiki.gg/images/Shields_St._Tomis_Vibrant_Aura.png', data: { Tier: 'SS', Level: 100, Resumo: 'Holy Auras' } }
 ];
 
+const SOCKET_ITEMS = [
+  // Runes
+  ...['Old', 'Ol', 'Tor', 'Naf', 'Uth', 'Eth', 'Tul', 'Rex', 'Ert', 'Thal', 'Ymn', 'Nut', 'Del', 'Hel', 'Io', 'Lum', 'Co', 'Fel', 'Lem', 'Pul', 'Um', 'Mal', 'Ist', 'Gul', 'Vex', 'Qi', 'Xo', 'Sur', 'Ber', 'Jah', 'Drax', 'Zed', 'Fawn', 'Flo', 'Nju', 'Jol'].map(name => ({
+    name,
+    type: 'Rune',
+    category: 'Rune',
+    img: `https://herosiege.wiki.gg/images/Rune_${name}.png`
+  })),
+  // Gems
+  { name: 'Pristine Ruby', type: 'Gem', category: 'Gem', img: 'https://static.wikia.nocookie.net/herosiege/images/3/3f/Pristine_ruby.png' },
+  { name: 'Pristine Sapphire', type: 'Gem', category: 'Gem', img: 'https://static.wikia.nocookie.net/herosiege/images/a/a2/Pristine_sapphire.png' },
+  { name: 'Pristine Topaz', type: 'Gem', category: 'Gem', img: 'https://static.wikia.nocookie.net/herosiege/images/0/0a/Pristine_topaz.png' },
+  { name: 'Pristine Emerald', type: 'Gem', category: 'Gem', img: 'https://static.wikia.nocookie.net/herosiege/images/f/f0/Pristine_emerald.png' },
+  { name: 'Pristine Amethyst', type: 'Gem', category: 'Gem', img: 'https://static.wikia.nocookie.net/herosiege/images/0/08/Pristine_amethyst.png' },
+  { name: 'Pristine Citrine', type: 'Gem', category: 'Gem', img: 'https://static.wikia.nocookie.net/herosiege/images/4/4b/Pristine_citrine.png' },
+  { name: 'Pristine Skull', type: 'Gem', category: 'Gem', img: 'https://static.wikia.nocookie.net/herosiege/images/6/64/Pristine_skull.png' },
+  { name: 'Elemental Gem', type: 'Gem', category: 'Unique Gem', img: 'https://static.wikia.nocookie.net/herosiege/images/5/50/Elemental_Gem.gif' },
+  { name: 'Chaos Gem', type: 'Gem', category: 'Unique Gem', img: 'https://static.wikia.nocookie.net/herosiege/images/1/12/Chaos_Gem.gif' },
+  { name: 'Angelic Gem', type: 'Gem', category: 'Unique Gem', img: 'https://static.wikia.nocookie.net/herosiege/images/f/f7/Angelic_gem.gif' },
+  { name: 'Moonstone Gem', type: 'Gem', category: 'Unique Gem', img: 'https://static.wikia.nocookie.net/herosiege/images/2/2a/Moonstone.gif' },
+  // Jewels
+  { name: 'Exan Jewel', type: 'Jewel', category: 'Jewel', img: 'https://static.wikia.nocookie.net/herosiege/images/c/c0/Jewel_Exan_spr.png' },
+  { name: 'Wildren Jewel', type: 'Jewel', category: 'Jewel', img: 'https://static.wikia.nocookie.net/herosiege/images/b/bf/Jewel_Wilrden_spr.png' },
+  { name: 'Volcon Jewel', type: 'Jewel', category: 'Jewel', img: 'https://static.wikia.nocookie.net/herosiege/images/7/7b/Jewel_Volcon_spr.png' },
+  { name: 'Aether Jewel', type: 'Jewel', category: 'Jewel', img: 'https://static.wikia.nocookie.net/herosiege/images/d/dd/Jewel_Aether_spr.png' },
+  { name: 'Helmon Jewel', type: 'Jewel', category: 'Jewel', img: 'https://static.wikia.nocookie.net/herosiege/images/3/3a/Jewel_Helmon_spr.png' },
+  { name: 'Mariane Jewel', type: 'Jewel', category: 'Jewel', img: 'https://static.wikia.nocookie.net/herosiege/images/7/7c/Jewel_Mariane_spr.png' },
+  { name: 'Lyrcon Jewel', type: 'Jewel', category: 'Jewel', img: 'https://static.wikia.nocookie.net/herosiege/images/d/dd/Jewel_Lyrcon_spr.png' },
+  { name: 'Fieryzen Jewel', type: 'Jewel', category: 'Jewel', img: 'https://static.wikia.nocookie.net/herosiege/images/0/05/Jewel_Fieryzen_spr.png' },
+  { name: 'Lapis-Lazuli Jewel', type: 'Jewel', category: 'Jewel', img: 'https://static.wikia.nocookie.net/herosiege/images/1/14/Lapis.gif' },
+  { name: 'Omnipearl Jewel', type: 'Jewel', category: 'Jewel', img: 'https://static.wikia.nocookie.net/herosiege/images/b/b0/Omnipearl.gif' },
+  { name: 'Agathetheum Jewel', type: 'Jewel', category: 'Jewel', img: 'https://static.wikia.nocookie.net/herosiege/images/f/f7/Agathetheum.gif' },
+  { name: 'Tramal Jewel', type: 'Jewel', category: 'Jewel', img: 'https://static.wikia.nocookie.net/herosiege/images/f/f2/Tramal.gif' },
+  { name: 'Pearlescento Jewel', type: 'Jewel', category: 'Jewel', img: 'https://static.wikia.nocookie.net/herosiege/images/4/4b/Pearlescento.gif' },
+  { name: 'Mythgonlion Jewel', type: 'Jewel', category: 'Jewel', img: 'https://static.wikia.nocookie.net/herosiege/images/c/c2/Mythgonlion.gif' },
+];
+
 const NewDesign = ({ onBack, initialView = 'home' }) => {
   const navigate = useNavigate();
   const { postId, buildId } = useParams();
@@ -293,6 +330,9 @@ const NewDesign = ({ onBack, initialView = 'home' }) => {
   const [nbRings, setNbRings] = useState([null, null, null, null]);
   const [nbRingPickerIndex, setNbRingPickerIndex] = useState(null);
   const [ringOptions, setRingOptions] = useState([]);
+
+  const [nbSockets, setNbSockets] = useState([null, null, null, null, null, null, null, null, null, null]);
+  const [nbSocketPickerIndex, setNbSocketPickerIndex] = useState(null);
 
   const [loadingBuildItems, setLoadingBuildItems] = useState(false);
 
@@ -5150,6 +5190,47 @@ const NewDesign = ({ onBack, initialView = 'home' }) => {
                                   )}
                                 </div>
 
+                                {/* SOCKETS SECTION */}
+                                <div className="mt-4">
+                                  <div className="text-[11px] font-bold uppercase tracking-widest text-yellow-400 mb-1">Runas, Gemas e Jóias</div>
+                                  <div className="text-[10px] text-gray-500 mb-2">Runa, Joia ou Gema mais indicada para cada tipo de item</div>
+                                  <div className="grid grid-cols-2 gap-2">
+                                    {['Arma', 'Peitoral', 'Elmo', 'Luva', 'Bota', 'Cinto', 'Escudo', 'Amuleto', 'Anel Esquerdo', 'Anel Direito'].map((label, idx) => {
+                                      const item = nbSockets[idx];
+                                      const img = item ? (item.image || item.img) : null;
+                                      return (
+                                        <div key={idx} className="flex items-center justify-between bg-white/5 border border-white/10 p-2 rounded">
+                                          <span className="text-[10px] text-gray-400 font-medium">{label}</span>
+                                          <button
+                                            type="button"
+                                            className={`w-8 h-8 flex items-center justify-center border ${item ? 'border-amber-500/50 bg-amber-500/10' : 'border-white/20 bg-black/40'} hover:border-amber-400 transition-colors`}
+                                            onClick={() => setNbSocketPickerIndex(idx)}
+                                          >
+                                            {img ? <img src={img} alt={item.name} className="w-6 h-6 object-contain" /> : <span className="text-white/20 text-xs">+</span>}
+                                          </button>
+                                        </div>
+                                      );
+                                    })}
+                                  </div>
+                                  {nbSocketPickerIndex !== null && (
+                                    <div className="mt-2 border border-white/10 bg-[#0b0d16] max-h-64 overflow-y-auto custom-scrollbar">
+                                      <div className="flex items-center justify-between px-3 py-2 border-b border-white/10 text-[11px] text-gray-400 sticky top-0 bg-[#0b0d16] z-10">
+                                        <span>Selecionar para {['Arma', 'Peitoral', 'Elmo', 'Luva', 'Bota', 'Cinto', 'Escudo', 'Amuleto', 'Anel Esquerdo', 'Anel Direito'][nbSocketPickerIndex]}</span>
+                                        <button type="button" className="text-[10px] px-2 py-0.5 border border-white/20 rounded hover:bg-white hover:text-black" onClick={() => setNbSocketPickerIndex(null)}>Fechar</button>
+                                      </div>
+                                      <button type="button" className="w-full flex items-center gap-3 px-3 py-2 text-xs text-red-400 hover:bg-red-900/20 border-b border-white/5" onClick={() => { setNbSockets(prev => { const next = [...prev]; next[nbSocketPickerIndex] = null; return next; }); setNbSocketPickerIndex(null); }}>
+                                        <div className="w-7 h-7 flex items-center justify-center border border-red-500/20 text-[13px]">×</div><span>Remover item</span>
+                                      </button>
+                                      {SOCKET_ITEMS.map((item, idx) => (
+                                        <button key={idx} type="button" className="w-full flex items-center gap-3 px-3 py-2 text-xs text-gray-200 hover:bg-white/10 border-b border-white/5 text-left" onClick={() => { setNbSockets(prev => { const next = [...prev]; next[nbSocketPickerIndex] = item; return next; }); setNbSocketPickerIndex(null); }}>
+                                          {item.img ? <img src={item.img} alt={item.name} className="w-7 h-7 object-contain" /> : <div className="w-7 h-7 flex items-center justify-center border border-white/20 text-[11px]">?</div>}
+                                          <div className="flex flex-col"><span>{item.name}</span><span className="text-[9px] text-gray-500">{item.category}</span></div>
+                                        </button>
+                                      ))}
+                                    </div>
+                                  )}
+                                </div>
+
                                 <div className="mt-4">
                                   <div className="text-[11px] font-bold uppercase tracking-widest text-yellow-400 mb-2">
                                     Mercenário
@@ -5412,6 +5493,18 @@ const NewDesign = ({ onBack, initialView = 'home' }) => {
                                   return { key: idx, name: nameStr, img: item.image || item.img, isBiS: idx === 0 || idx === 1 };
                                 }).filter(Boolean);
 
+                                const socketSlots = Array.isArray(nbSockets) ? nbSockets : [];
+                                const socketItems = socketSlots.map((item, idx) => {
+                                  if (!item) return null;
+                                  const labels = ['Arma', 'Peitoral', 'Elmo', 'Luva', 'Bota', 'Cinto', 'Escudo', 'Amuleto', 'Anel Esq.', 'Anel Dir.'];
+                                  return {
+                                    key: idx,
+                                    name: item.name,
+                                    img: item.img || item.image,
+                                    slot: labels[idx]
+                                  };
+                                }).filter(Boolean);
+
                                 const mercInfo = (() => {
                                   if (!nbMercenary) return null;
                                   const all = [
@@ -5467,7 +5560,7 @@ const NewDesign = ({ onBack, initialView = 'home' }) => {
                                         </div>
                                       )}
                                     </div>
-                                    {(badgeLabel || statItems.length > 0 || relicItems.length > 0 || potionItems.length > 0 || mercInfo || charmItems.length > 0 || weaponItems.length > 0 || armorItems.length > 0 || bootItems.length > 0 || gloveItems.length > 0 || helmetItems.length > 0 || shieldItems.length > 0 || amuletItems.length > 0 || beltItems.length > 0 || ringItems.length > 0) && (
+                                    {(badgeLabel || statItems.length > 0 || relicItems.length > 0 || potionItems.length > 0 || mercInfo || charmItems.length > 0 || weaponItems.length > 0 || armorItems.length > 0 || bootItems.length > 0 || gloveItems.length > 0 || helmetItems.length > 0 || shieldItems.length > 0 || amuletItems.length > 0 || beltItems.length > 0 || ringItems.length > 0 || socketItems.length > 0) && (
                                       <div className="mt-4 space-y-3">
                                         {statItems.length > 0 && (
                                           <div>
@@ -5485,6 +5578,24 @@ const NewDesign = ({ onBack, initialView = 'home' }) => {
                                                   </div>
                                                   <span className="text-xs" style={{ color }}>{label}</span>
                                                   <span className="ml-auto text-xs text-gray-300">{stats[key]}</span>
+                                                </div>
+                                              ))}
+                                            </div>
+                                          </div>
+                                        )}
+                                        {socketItems.length > 0 && (
+                                          <div>
+                                            <div className="text-[11px] uppercase tracking-widest text-yellow-400 mb-2">
+                                              Runas, Gemas e Jóias
+                                            </div>
+                                            <div className="grid grid-cols-2 gap-2">
+                                              {socketItems.map((item) => (
+                                                <div key={item.key} className="flex items-center gap-2 border px-2 py-1 border-amber-500/30 bg-amber-500/5">
+                                                  {item.img && <img src={item.img} alt={item.name} className="w-6 h-6 object-contain" />}
+                                                  <div className="flex flex-col">
+                                                    <span className="text-[10px] text-gray-400">{item.slot}</span>
+                                                    <span className="text-xs text-gray-200">{item.name}</span>
+                                                  </div>
                                                 </div>
                                               ))}
                                             </div>
