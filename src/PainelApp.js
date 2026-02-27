@@ -9,6 +9,8 @@ import {
   onAuthStateChanged,
   signInWithEmailAndPassword,
   signOut,
+  EmailAuthProvider,
+  reauthenticateWithCredential,
 } from 'firebase/auth';
 import {
   addDoc,
@@ -21,6 +23,7 @@ import {
   onSnapshot,
   serverTimestamp,
   setDoc,
+  writeBatch,
 } from 'firebase/firestore';
 
 const ALLOWED_EMAIL = 'rodrigo@dev.com';
@@ -61,6 +64,7 @@ function parseViewFromHash() {
   if (hash.startsWith('#painel/login')) return 'login';
   if (hash.startsWith('#painel/forum')) return 'forum';
   if (hash.startsWith('#painel/homepage')) return 'homepage';
+  if (hash.startsWith('#painel/backup')) return 'backup';
   if (hash.startsWith('#painel/configuracoes')) return 'settings';
   return 'dashboard';
 }
@@ -350,6 +354,8 @@ function PainelSidebar({ view, onChange }) {
       window.location.hash = '#painel/forum';
     } else if (target === 'homepage') {
       window.location.hash = '#painel/homepage';
+    } else if (target === 'backup') {
+      window.location.hash = '#painel/backup';
     } else if (target === 'settings') {
       window.location.hash = '#painel/configuracoes';
     }
@@ -400,6 +406,13 @@ function PainelSidebar({ view, onChange }) {
         >
           <span>Homepage</span>
           {view === 'homepage' && <span className="painel-nav-badge">Atual</span>}
+        </div>
+        <div
+          className={`painel-nav-item ${view === 'backup' ? 'active' : ''}`}
+          onClick={() => go('backup')}
+        >
+          <span>Backup</span>
+          {view === 'backup' && <span className="painel-nav-badge">Atual</span>}
         </div>
         <div
           className={`painel-nav-item ${view === 'settings' ? 'active' : ''}`}
@@ -3306,9 +3319,392 @@ function PainelApp() {
         {effectiveView === 'messages' && <PainelMessages />}
         {effectiveView === 'forum' && <PainelForum />}
         {effectiveView === 'homepage' && <PainelHomepage />}
+        {effectiveView === 'backup' && <PainelBackup />}
         {effectiveView === 'settings' && <PainelSettings />}
       </div>
     </>
+  );
+}
+
+function PainelBackup() {
+  const [backups, setBackups] = useState([]);
+  const [loading, setLoading] = useState(false);
+  const [generating, setGenerating] = useState(false);
+  const [restoreModalOpen, setRestoreModalOpen] = useState(false);
+  const [password, setPassword] = useState('');
+  const [selectedBackup, setSelectedBackup] = useState(null);
+  const [error, setError] = useState('');
+  const [success, setSuccess] = useState('');
+
+  useEffect(() => {
+    const q = collection(db, 'backups');
+    const unsub = onSnapshot(q, (snap) => {
+      const list = [];
+      snap.forEach((d) => list.push({ id: d.id, ...d.data() }));
+      list.sort((a, b) => (b.createdAt?.seconds || 0) - (a.createdAt?.seconds || 0));
+      setBackups(list);
+    });
+    return () => unsub();
+  }, []);
+
+  const handleGenerateBackup = async () => {
+    if (!window.confirm('Tem certeza que deseja gerar um backup completo agora?')) return;
+    setGenerating(true);
+    setError('');
+    setSuccess('');
+    try {
+      const postsSnap = await getDocs(collection(db, 'posts'));
+      const posts = postsSnap.docs.map(d => ({ id: d.id, ...d.data() }));
+
+      const buildsSnap = await getDocs(collection(db, 'builds'));
+      const builds = buildsSnap.docs.map(d => ({ id: d.id, ...d.data() }));
+
+      const teamSnap = await getDocs(collection(db, 'team'));
+      const team = teamSnap.docs.map(d => ({ id: d.id, ...d.data() }));
+
+      const msgsSnap = await getDocs(collection(db, 'messages'));
+      const messages = msgsSnap.docs.map(d => ({ id: d.id, ...d.data() }));
+
+      const configSnap = await getDocs(collection(db, 'config'));
+      const config = configSnap.docs.map(d => ({ id: d.id, ...d.data() }));
+
+      const classesSnap = await getDocs(collection(db, 'classes'));
+      const classes = classesSnap.docs.map(d => ({ id: d.id, ...d.data() }));
+
+      const itemCatsSnap = await getDocs(collection(db, 'item_categories'));
+      const itemCategories = itemCatsSnap.docs.map(d => ({ id: d.id, ...d.data() }));
+
+      const commentsSnap = await getDocs(collectionGroup(db, 'comments'));
+      const comments = commentsSnap.docs.map(d => {
+         const parentPostId = d.ref.parent.parent ? d.ref.parent.parent.id : null;
+         return { 
+           id: d.id, 
+           postId: parentPostId,
+           ...d.data() 
+         };
+      });
+
+      const itemsSnap = await getDocs(collectionGroup(db, 'items'));
+      const items = itemsSnap.docs.map(d => {
+         const catId = d.ref.parent.parent ? d.ref.parent.parent.id : null;
+         return { 
+           id: d.id, 
+           catId: catId,
+           ...d.data() 
+         };
+      });
+
+      const backupData = {
+        version: 1,
+        timestamp: Date.now(),
+        posts,
+        builds,
+        team,
+        messages,
+        config,
+        classes,
+        itemCategories,
+        comments,
+        items
+      };
+
+      const jsonString = JSON.stringify(backupData);
+      
+      await addDoc(collection(db, 'backups'), {
+        createdAt: serverTimestamp(),
+        size: jsonString.length,
+        data: jsonString,
+        type: 'full'
+      });
+
+      setSuccess('Backup gerado e salvo com sucesso!');
+    } catch (e) {
+      console.error(e);
+      setError('Erro ao gerar backup: ' + e.message);
+    } finally {
+      setGenerating(false);
+    }
+  };
+
+  const handleDownload = (backup) => {
+    try {
+      const blob = new Blob([backup.data], { type: 'application/json' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `backup-hsb-${new Date(backup.createdAt?.seconds * 1000).toISOString().split('T')[0]}.json`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+    } catch (e) {
+      setError('Erro ao baixar: ' + e.message);
+    }
+  };
+
+  const openRestore = (b) => {
+    setSelectedBackup(b);
+    setPassword('');
+    setRestoreModalOpen(true);
+    setError('');
+  };
+
+  const handleRestore = async (e) => {
+    e.preventDefault();
+    if (!password) return;
+    setLoading(true);
+    setError('');
+    setSuccess('');
+
+    try {
+      const auth = getAuth(app);
+      const user = auth.currentUser;
+      if (!user) throw new Error('Usuário não autenticado.');
+
+      const credential = EmailAuthProvider.credential(user.email, password);
+      await reauthenticateWithCredential(user, credential);
+
+      const data = JSON.parse(selectedBackup.data);
+      if (!data || !data.version) throw new Error('Formato de backup inválido.');
+      
+      const batchArray = [];
+      let currentBatch = writeBatch(db);
+      let count = 0;
+
+      const addToBatch = (ref, docData) => {
+        currentBatch.set(ref, docData);
+        count++;
+        if (count >= 490) {
+          batchArray.push(currentBatch);
+          currentBatch = writeBatch(db);
+          count = 0;
+        }
+      };
+
+      if (data.posts) {
+        for (const p of data.posts) {
+          const { id, ...rest } = p;
+          addToBatch(doc(db, 'posts', id), rest);
+        }
+      }
+      
+      if (data.builds) {
+        for (const b of data.builds) {
+          const { id, ...rest } = b;
+          addToBatch(doc(db, 'builds', id), rest);
+        }
+      }
+
+      if (data.team) {
+        for (const t of data.team) {
+          const { id, ...rest } = t;
+          addToBatch(doc(db, 'team', id), rest);
+        }
+      }
+
+      if (data.messages) {
+        for (const m of data.messages) {
+          const { id, ...rest } = m;
+          addToBatch(doc(db, 'messages', id), rest);
+        }
+      }
+
+      if (data.config) {
+        for (const c of data.config) {
+          const { id, ...rest } = c;
+          addToBatch(doc(db, 'config', id), rest);
+        }
+      }
+
+      if (data.classes) {
+        for (const c of data.classes) {
+          const { id, ...rest } = c;
+          addToBatch(doc(db, 'classes', id), rest);
+        }
+      }
+
+      if (data.itemCategories) {
+        for (const c of data.itemCategories) {
+          const { id, ...rest } = c;
+          addToBatch(doc(db, 'item_categories', id), rest);
+        }
+      }
+
+      if (data.comments) {
+        for (const c of data.comments) {
+          const { id, postId, ...rest } = c;
+          if (postId) {
+             addToBatch(doc(db, 'posts', postId, 'comments', id), rest);
+          }
+        }
+      }
+
+      if (data.items) {
+        for (const i of data.items) {
+          const { id, catId, ...rest } = i;
+          if (catId) {
+             addToBatch(doc(db, 'item_categories', catId, 'items', id), rest);
+          }
+        }
+      }
+
+      if (count > 0) batchArray.push(currentBatch);
+
+      for (const batch of batchArray) {
+        await batch.commit();
+      }
+
+      setSuccess('Restauração concluída com sucesso!');
+      setRestoreModalOpen(false);
+    } catch (e) {
+      console.error(e);
+      if (e.code === 'auth/wrong-password') {
+        setError('Senha incorreta.');
+      } else {
+        setError('Falha na restauração: ' + e.message);
+      }
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleDeleteBackup = async (id) => {
+    if (!window.confirm('Excluir este backup permanentemente?')) return;
+    try {
+      await deleteDoc(doc(db, 'backups', id));
+      setSuccess('Backup excluído.');
+    } catch (e) {
+      setError('Erro ao excluir: ' + e.message);
+    }
+  };
+
+  return (
+    <div className="painel-main">
+      <div className="painel-page-header">
+        <div>
+          <div className="painel-page-title">Backups</div>
+          <div className="painel-page-sub">
+            Gerencie backups completos do site (Posts, Builds, Equipe, Configs).
+          </div>
+        </div>
+        <button 
+          className="painel-button" 
+          onClick={handleGenerateBackup}
+          disabled={generating}
+        >
+          {generating ? 'Gerando...' : 'Gerar Novo Backup'}
+        </button>
+      </div>
+
+      {error && (
+        <div className="painel-card" style={{ borderColor: '#ef4444', background: '#fef2f2', minHeight: 'auto' }}>
+           <p style={{ color: '#b91c1c' }}>{error}</p>
+        </div>
+      )}
+      
+      {success && (
+        <div className="painel-card" style={{ borderColor: '#22c55e', background: '#f0fdf4', minHeight: 'auto' }}>
+           <p style={{ color: '#15803d' }}>{success}</p>
+        </div>
+      )}
+
+      <div className="painel-card">
+        <div className="painel-table-wrapper">
+          <table className="painel-table">
+            <thead>
+              <tr>
+                <th>Data</th>
+                <th>Tamanho</th>
+                <th>Tipo</th>
+                <th style={{ textAlign: 'right' }}>Ações</th>
+              </tr>
+            </thead>
+            <tbody>
+              {backups.map(b => (
+                <tr key={b.id}>
+                  <td>
+                    {b.createdAt?.seconds 
+                      ? new Date(b.createdAt.seconds * 1000).toLocaleString() 
+                      : 'Processando...'}
+                  </td>
+                  <td>
+                    {b.size ? (b.size / 1024).toFixed(2) + ' KB' : '–'}
+                  </td>
+                  <td>
+                    <span className="painel-tag">{b.type || 'Full'}</span>
+                  </td>
+                  <td className="painel-actions-cell">
+                    <button 
+                       className="painel-action-btn painel-action-view" 
+                       title="Download JSON"
+                       onClick={() => handleDownload(b)}
+                    >
+                      ⬇️
+                    </button>
+                    <button 
+                       className="painel-action-btn painel-action-edit" 
+                       title="Restaurar"
+                       onClick={() => openRestore(b)}
+                    >
+                      ♻️
+                    </button>
+                    <button 
+                       className="painel-action-btn painel-action-delete" 
+                       title="Excluir"
+                       onClick={() => handleDeleteBackup(b.id)}
+                    >
+                      🗑️
+                    </button>
+                  </td>
+                </tr>
+              ))}
+              {backups.length === 0 && (
+                <tr>
+                  <td colSpan="4" style={{ textAlign: 'center', padding: 20, color: '#9ca3af' }}>
+                    Nenhum backup encontrado.
+                  </td>
+                </tr>
+              )}
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      {restoreModalOpen && (
+        <div className="painel-modal">
+          <div className="painel-modal-backdrop" onClick={() => setRestoreModalOpen(false)} />
+          <div className="painel-modal-content small">
+            <div className="painel-modal-header">
+              <div className="painel-modal-title">Confirmar Restauração</div>
+              <div className="painel-modal-close" onClick={() => setRestoreModalOpen(false)}>✕</div>
+            </div>
+            <div className="painel-modal-body">
+              <p className="painel-muted" style={{ marginBottom: 16 }}>
+                Atenção: Isso irá sobrescrever os dados atuais do site com os dados deste backup ({selectedBackup?.createdAt?.seconds ? new Date(selectedBackup.createdAt.seconds * 1000).toLocaleDateString() : ''}).
+                <br/><br/>
+                Confirme sua senha para continuar:
+              </p>
+              <form onSubmit={handleRestore}>
+                <input 
+                  type="password" 
+                  className="painel-input" 
+                  placeholder="Sua senha atual"
+                  value={password}
+                  onChange={e => setPassword(e.target.value)}
+                  autoFocus
+                />
+                <div style={{ marginTop: 16, display: 'flex', justifyContent: 'flex-end', gap: 10 }}>
+                  <button type="button" className="painel-button" style={{ background: 'transparent', color: '#6b7280', border: 'none' }} onClick={() => setRestoreModalOpen(false)}>Cancelar</button>
+                  <button type="submit" className="painel-button" style={{ background: '#b91c1c', borderColor: '#b91c1c' }} disabled={loading}>
+                    {loading ? 'Restaurando...' : 'Confirmar e Restaurar'}
+                  </button>
+                </div>
+              </form>
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
   );
 }
 
