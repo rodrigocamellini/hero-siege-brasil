@@ -1,4 +1,5 @@
 import React, { useMemo, useState } from 'react';
+import relicMap from './relicsMap.json';
 
 export const PASSIVE_RELICS = [
   { name: 'Barbed Shield', stats: ['Dmg Returned'], l1: ['10%'], l5: ['60%'], l10: ['200%'] },
@@ -9,7 +10,7 @@ export const PASSIVE_RELICS = [
   { name: 'Charmed Blood', stats: ['Life Stolen'], l1: ['1%'], l5: ['5%'], l10: ['10%'] },
   { name: 'Cheese Burger', stats: ['Replenish Life', 'Life'], l1: ['5%', '+25'], l5: ['25%', '+245'], l10: ['50%', '+580'] },
   { name: "Commander's Sword", stats: ['Move Speed', 'Atk Damage'], l1: ['-2%', '10%'], l5: ['-10%', '50%'], l10: ['-20%', '100%'] },
-  { name: 'Cookies & Milk', img: 'https://herosiege.wiki.gg/images/Relics_Cookies_%26_Milk.png', stats: ['Replenish Life', 'Replenish Mana'], l1: ['3%', '3%'], l5: ['15%', '15%'], l10: ['30%', '30%'] },
+  { name: 'Cookies & Milk', stats: ['Replenish Life', 'Replenish Mana'], l1: ['3%', '3%'], l5: ['15%', '15%'], l10: ['30%', '30%'] },
   { name: 'Damned Buckler', stats: ['Armor', 'FHR'], l1: ['+5', '2%'], l5: ['+16', '10%'], l10: ['+32', '20%'] },
   { name: 'Dirge', stats: ['Atk Rating', 'Add Phys Dmg'], l1: ['+12', '+8'], l5: ['+110', '+128'], l10: ['+475', '+1896'] },
   { name: 'Doom Flute', stats: ['Strength', 'Dexterity'], l1: ['+4', '+4'], l5: ['+12', '+12'], l10: ['+22', '+22'] },
@@ -19,12 +20,12 @@ export const PASSIVE_RELICS = [
   { name: 'Hand Scythe', stats: ['Atk Speed', 'Atk Rating'], l1: ['+3%', '+2%'], l5: ['+15%', '+10%'], l10: ['+30%', '+20%'] },
   { name: 'Hellscream Axe', stats: ['Add Phys Dmg', 'Add Fire Dmg'], l1: ['+8', '+8'], l5: ['+128', '+128'], l10: ['+1696', '+1696'] },
   { name: 'Horned Mask', stats: ['Dmg Returned', 'Phys Dmg Reduct'], l1: ['2%', '1%'], l5: ['10%', '5%'], l10: ['20%', '10%'] },
-  { name: "Jefre's Subscription", img: 'https://herosiege.wiki.gg/images/Relics_Jefre%27s_Subscription.png', stats: ['Light Radius', 'Magic Find'], l1: ['+1', '3%'], l5: ['+5', '15%'], l10: ['+10', '30%'] },
-  { name: "King's Crown", img: 'https://herosiege.wiki.gg/images/Relics_King%27s_Crown.png', stats: ['Extra Gold'], l1: ['3%'], l5: ['18%'], l10: ['35%'] },
+  { name: "Jefre's Subscription", stats: ['Light Radius', 'Magic Find'], l1: ['+1', '3%'], l5: ['+5', '15%'], l10: ['+10', '30%'] },
+  { name: "King's Crown", stats: ['Extra Gold'], l1: ['3%'], l5: ['18%'], l10: ['35%'] },
   { name: 'Light Katana', stats: ['Atk Speed'], l1: ['+4%'], l5: ['+20%'], l10: ['+40%'] },
   { name: 'Lost Wand', stats: ['Cast Rate', 'Energy'], l1: ['+4%', '+5'], l5: ['+20%', '+25'], l10: ['+40%', '+50'] },
   { name: 'Magic Mushroom', stats: ['All Attributes'], l1: ['+3'], l5: ['+15'], l10: ['+30'] },
-  { name: "Mayo's Old Sock", img: 'https://herosiege.wiki.gg/images/Relics_Mayo%27s_Old_Sock.png', stats: ['Vitality', 'Life'], l1: ['+2', '+10'], l5: ['+10', '+110'], l10: ['+20', '+600'] },
+  { name: "Mayo's Old Sock", stats: ['Vitality', 'Life'], l1: ['+2', '+10'], l5: ['+10', '+110'], l10: ['+20', '+600'] },
   { name: 'Monkey King Bar', stats: ['Move Speed', 'Atk Damage'], l1: ['3%', '2%'], l5: ['+15%', '10%'], l10: ['+30%', '20%'] },
   { name: 'Newt Tail', stats: ['Move Speed', 'Magic Find'], l1: ['3%', '2%'], l5: ['15%', '10%'], l10: ['30%', '20%'] },
   { name: 'Nunchucks', stats: ['Atk Speed', 'Crit Dmg'], l1: ['3%', '3%'], l5: ['15%', '15%'], l10: ['30%', '30%'] },
@@ -76,11 +77,11 @@ export const EXTRA_RELICS = [
   { name: "Basilisk's Tooth" },
   { name: "Butcher's Knife" },
   { name: "Death's Scythe Relic" },
-  { name: 'Fire & Ice', img: 'https://herosiege.wiki.gg/images/Relics_Fire_%26_Ice.png' },
+  { name: 'Fire & Ice' },
   { name: 'Frozen Orb' },
   { name: 'Ogre Club' },
   { name: 'Razorwire' },
-  { name: 'Rice & Chopsticks', img: 'https://herosiege.wiki.gg/images/Relics_Rice_%26_Chopsticks.png' },
+  { name: 'Rice & Chopsticks' },
   { name: 'Storm Dagger' },
   // Ao Castar
   { name: 'Cactus' },
@@ -121,22 +122,17 @@ const passiveRelics = PASSIVE_RELICS.slice().sort((a, b) =>
   a.name.localeCompare(b.name)
 );
 
-const handleRelicError = (e, name) => {
-  const target = e.target;
-  const originalName = String(name || '');
-  const safeName = originalName.replace(/ /g, '_').replace(/'/g, '%27');
-  const noApostrophe = originalName.replace(/'/g, '').replace(/ /g, '_');
-  const src = target.src;
-  
-  if (src.includes('Relics_') && !src.includes(noApostrophe)) {
-     target.src = `https://herosiege.wiki.gg/images/Relic_${safeName}.png`;
-  } else if (src.includes('Relic_') && !src.includes(noApostrophe)) {
-     target.src = `https://herosiege.wiki.gg/images/${safeName}.png`;
-  } else if (!src.includes(noApostrophe) && originalName.includes("'")) {
-     target.src = `https://herosiege.wiki.gg/images/Relics_${noApostrophe}.png`;
-  } else {
-     target.style.display = 'none';
-  }
+export const getRelicImageSrc = (name) => {
+  if (!name) return '';
+  const cleanName = name.trim();
+  if (relicMap[cleanName]) return `/images/reliquias/${relicMap[cleanName]}`;
+  const lower = cleanName.toLowerCase();
+  if (relicMap[lower]) return `/images/reliquias/${relicMap[lower]}`;
+  return '';
+};
+
+const handleRelicError = (e) => {
+  e.target.style.display = 'none';
 };
 
 const RelicsView = () => {
@@ -175,11 +171,7 @@ const RelicsView = () => {
   };
 
   const imgFor = (rel) => {
-    if (rel.img) return normalizeRelicImageUrl(rel.img);
-    const safeName = String(rel.name || '')
-      .replace(/ /g, '_')
-      .replace(/'/g, '%27');
-    return `https://herosiege.wiki.gg/images/Relics_${safeName}.png`;
+    return getRelicImageSrc(rel.name);
   };
 
   return (
@@ -229,7 +221,7 @@ const RelicsView = () => {
                       src={imgFor(r)}
                       alt={r.name}
                       className="w-8 h-8 object-contain"
-                      onError={(e) => handleRelicError(e, r.name)}
+                      onError={handleRelicError}
                     />
                     <span className="text-sm font-bold text-white">{r.name}</span>
                   </div>
@@ -277,7 +269,7 @@ const RelicsView = () => {
                     <div className="flex items-center justify-center">
                       <img
                         alt="Relics Demon Sheep"
-                        src="https://herosiege.wiki.gg/images/Relics_Demon_Sheep.png"
+                        src={getRelicImageSrc("Demon Sheep")}
                         width="30"
                         height="26"
                         className="object-contain"
@@ -312,7 +304,7 @@ const RelicsView = () => {
                     <div className="flex items-center justify-center">
                       <img
                         alt="Relics F.E.T.U.S"
-                        src="https://herosiege.wiki.gg/images/Relics_F.E.T.U.S.png"
+                        src={getRelicImageSrc("F.E.T.U.S")}
                         width="19"
                         height="30"
                         className="object-contain"
@@ -347,7 +339,7 @@ const RelicsView = () => {
                     <div className="flex items-center justify-center">
                       <img
                         alt="Relics Guardian Angel"
-                        src="https://herosiege.wiki.gg/images/Relics_Guardian_Angel.png"
+                        src={getRelicImageSrc("Guardian Angel")}
                         width="30"
                         height="27"
                         className="object-contain"
@@ -382,7 +374,7 @@ const RelicsView = () => {
                     <div className="flex items-center justify-center">
                       <img
                         alt="Relics Shredder"
-                        src="https://herosiege.wiki.gg/images/Relics_Shredder.png"
+                        src={getRelicImageSrc("Shredder")}
                         width="30"
                         height="30"
                         className="object-contain"
@@ -417,7 +409,7 @@ const RelicsView = () => {
                     <div className="flex items-center justify-center">
                       <img
                         alt="Relics Steve's Dirty Head"
-                        src="https://herosiege.wiki.gg/images/Relics_Steve%27s_Dirty_Head.png"
+                        src={getRelicImageSrc("Steve's Dirty Head")}
                         width="30"
                         height="27"
                         className="object-contain"
@@ -452,7 +444,7 @@ const RelicsView = () => {
                     <div className="flex items-center justify-center">
                       <img
                         alt="Relics Templar Shield"
-                        src="https://herosiege.wiki.gg/images/Relics_Templar_Shield.png"
+                        src={getRelicImageSrc("Templar Shield")}
                         width="23"
                         height="30"
                         className="object-contain"
@@ -509,7 +501,7 @@ const RelicsView = () => {
                     <div className="flex items-center justify-center">
                       <img
                         alt="Relics Ancient Rock"
-                        src="https://herosiege.wiki.gg/images/Relics_Ancient_Rock.png"
+                        src={getRelicImageSrc("Ancient Rock")}
                         width="29"
                         height="30"
                         className="object-contain"
@@ -544,7 +536,7 @@ const RelicsView = () => {
                     <div className="flex items-center justify-center">
                       <img
                         alt="Relics Honey Bee"
-                        src="https://herosiege.wiki.gg/images/Relics_Honey_Bee.png"
+                        src={getRelicImageSrc("Honey Bee")}
                         width="30"
                         height="20"
                         className="object-contain"
@@ -579,7 +571,7 @@ const RelicsView = () => {
                     <div className="flex items-center justify-center">
                       <img
                         alt="Relics Karp Head"
-                        src="https://herosiege.wiki.gg/images/Relics_Karp_Head.png"
+                        src={getRelicImageSrc("Karp Head")}
                         width="23"
                         height="30"
                         className="object-contain"
@@ -614,7 +606,7 @@ const RelicsView = () => {
                     <div className="flex items-center justify-center">
                       <img
                         alt="Relics Minisect"
-                        src="https://herosiege.wiki.gg/images/Relics_Minisect.png"
+                        src={getRelicImageSrc("Minisect")}
                         width="30"
                         height="30"
                         className="object-contain"
@@ -649,7 +641,7 @@ const RelicsView = () => {
                     <div className="flex items-center justify-center">
                       <img
                         alt="Relics Shrunken Head"
-                        src="https://herosiege.wiki.gg/images/Relics_Shrunken_Head.png"
+                        src={getRelicImageSrc("Shrunken Head")}
                         width="13"
                         height="30"
                         className="object-contain"
@@ -684,7 +676,7 @@ const RelicsView = () => {
                     <div className="flex items-center justify-center">
                       <img
                         alt="Relics Skullbat"
-                        src="https://herosiege.wiki.gg/images/Relics_Skullbat.png"
+                        src={getRelicImageSrc("Skullbat")}
                         width="30"
                         height="14"
                         className="object-contain"
@@ -719,7 +711,7 @@ const RelicsView = () => {
                     <div className="flex items-center justify-center">
                       <img
                         alt="Relics The Allmighty Fedora"
-                        src="https://herosiege.wiki.gg/images/Relics_The_Allmighty_Fedora.png"
+                        src={getRelicImageSrc("The Allmighty Fedora")}
                         width="30"
                         height="26"
                         className="object-contain"
@@ -754,7 +746,7 @@ const RelicsView = () => {
                     <div className="flex items-center justify-center">
                       <img
                         alt="Relics The Eye"
-                        src="https://herosiege.wiki.gg/images/Relics_The_Eye.png"
+                        src={getRelicImageSrc("The Eye")}
                         width="19"
                         height="30"
                         className="object-contain"
@@ -789,7 +781,7 @@ const RelicsView = () => {
                     <div className="flex items-center justify-center">
                       <img
                         alt="Relics War Zeppelin"
-                        src="https://herosiege.wiki.gg/images/Relics_War_Zeppelin.png"
+                        src={getRelicImageSrc("War Zeppelin")}
                         width="30"
                         height="21"
                         className="object-contain"
@@ -850,7 +842,7 @@ const RelicsView = () => {
                     <div className="flex items-center justify-center">
                       <img
                         alt="Relics Lottery Ticket"
-                        src="https://herosiege.wiki.gg/images/Relics_Lottery_Ticket.png"
+                        src={getRelicImageSrc("Lottery Ticket")}
                         width="24"
                         height="30"
                         className="object-contain"
@@ -923,7 +915,7 @@ const RelicsView = () => {
                     <div className="flex items-center justify-center">
                       <img
                         alt="Relics Assassin's Shuriken"
-                        src="https://herosiege.wiki.gg/images/Relics_Assassin%27s_Shuriken.png"
+                        src={getRelicImageSrc("Assassin's Shuriken")}
                         width="30"
                         height="30"
                         className="object-contain"
@@ -970,7 +962,7 @@ const RelicsView = () => {
                     <div className="flex items-center justify-center">
                       <img
                         alt="Relics Devil Skull"
-                        src="https://herosiege.wiki.gg/images/Relics_Devil_Skull.png"
+                        src={getRelicImageSrc("Devil Skull")}
                         width="30"
                         height="30"
                         className="object-contain"
@@ -1035,7 +1027,7 @@ const RelicsView = () => {
                     <div className="flex items-center justify-center">
                       <img
                         alt="Relics Razor Leaf"
-                        src="https://herosiege.wiki.gg/images/Relics_Razor_Leaf.png"
+                        src={getRelicImageSrc("Razor Leaf")}
                         width="29"
                         height="30"
                         className="object-contain"
@@ -1082,7 +1074,7 @@ const RelicsView = () => {
                     <div className="flex items-center justify-center">
                       <img
                         alt="Relics Witch Claw"
-                        src="https://herosiege.wiki.gg/images/Relics_Witch_Claw.png"
+                        src={getRelicImageSrc("Witch Claw")}
                         width="23"
                         height="30"
                         className="object-contain"
@@ -1129,7 +1121,7 @@ const RelicsView = () => {
                     <div className="flex items-center justify-center">
                       <img
                         alt="Relics Hungering Blade of Frost"
-                        src="https://herosiege.wiki.gg/images/Relics_Hungering_Blade_of_Frost.png"
+                        src={getRelicImageSrc("Hungering Blade of Frost")}
                         width="9"
                         height="30"
                         className="object-contain"
@@ -1196,7 +1188,7 @@ const RelicsView = () => {
                     <div className="flex items-center justify-center">
                       <img
                         alt="Relics Odin's Sword"
-                        src="https://herosiege.wiki.gg/images/Relics_Odin%27s_Sword.png"
+                        src={getRelicImageSrc("Odin's Sword")}
                         width="15"
                         height="30"
                         className="object-contain"
@@ -1245,7 +1237,7 @@ const RelicsView = () => {
                     <div className="flex items-center justify-center">
                       <img
                         alt="Relics Amazon's Spears"
-                        src="https://herosiege.wiki.gg/images/Relics_Amazon%27s_Spears.png"
+                        src={getRelicImageSrc("Amazon's Spears")}
                         width="30"
                         height="12"
                         className="object-contain"
@@ -1292,7 +1284,7 @@ const RelicsView = () => {
                     <div className="flex items-center justify-center">
                       <img
                         alt="Relics Basilisk's Tooth"
-                        src="https://herosiege.wiki.gg/images/Relics_Basilisk%27s_Tooth.png"
+                        src={getRelicImageSrc("Basilisk's Tooth")}
                         width="12"
                         height="30"
                         className="object-contain"
@@ -1339,7 +1331,7 @@ const RelicsView = () => {
                     <div className="flex items-center justify-center">
                       <img
                         alt="Relics Butcher's Knife"
-                        src="https://herosiege.wiki.gg/images/Relics_Butcher%27s_Knife.png"
+                        src={getRelicImageSrc("Butcher's Knife")}
                         width="28"
                         height="30"
                         className="object-contain"
@@ -1388,7 +1380,7 @@ const RelicsView = () => {
                     <div className="flex items-center justify-center">
                       <img
                         alt="Relics Death's Scythe Relic"
-                        src="https://herosiege.wiki.gg/images/Relics_Death%27s_Scythe_Relic.png"
+                        src={getRelicImageSrc("Death's Scythe Relic")}
                         width="30"
                         height="27"
                         className="object-contain"
@@ -1435,7 +1427,7 @@ const RelicsView = () => {
                     <div className="flex items-center justify-center">
                       <img
                         alt="Relics Fire & Ice"
-                        src="https://herosiege.wiki.gg/images/Relics_Fire_%26_Ice.png"
+                        src={getRelicImageSrc("Fire %26 Ice")}
                         width="30"
                         height="27"
                         className="object-contain"
@@ -1500,7 +1492,7 @@ const RelicsView = () => {
                     <div className="flex items-center justify-center">
                       <img
                         alt="Relics Frozen Orb"
-                        src="https://herosiege.wiki.gg/images/Relics_Frozen_Orb.png"
+                        src={getRelicImageSrc("Frozen Orb")}
                         width="28"
                         height="30"
                         className="object-contain"
@@ -1567,7 +1559,7 @@ const RelicsView = () => {
                     <div className="flex items-center justify-center">
                       <img
                         alt="Relics Hungering Blade of Frost"
-                        src="https://herosiege.wiki.gg/images/Relics_Hungering_Blade_of_Frost.png"
+                        src={getRelicImageSrc("Hungering Blade of Frost")}
                         width="9"
                         height="30"
                         className="object-contain"
@@ -1634,7 +1626,7 @@ const RelicsView = () => {
                     <div className="flex items-center justify-center">
                       <img
                         alt="Relics Odin's Sword"
-                        src="https://herosiege.wiki.gg/images/Relics_Odin%27s_Sword.png"
+                        src={getRelicImageSrc("Odin's Sword")}
                         width="15"
                         height="30"
                         className="object-contain"
@@ -1683,7 +1675,7 @@ const RelicsView = () => {
                     <div className="flex items-center justify-center">
                       <img
                         alt="Relics Ogre Club"
-                        src="https://herosiege.wiki.gg/images/Relics_Ogre_Club.png"
+                        src={getRelicImageSrc("Ogre Club")}
                         width="25"
                         height="30"
                         className="object-contain"
@@ -1748,7 +1740,7 @@ const RelicsView = () => {
                     <div className="flex items-center justify-center">
                       <img
                         alt="Relics Razorwire"
-                        src="https://herosiege.wiki.gg/images/Relics_Razorwire.png"
+                        src={getRelicImageSrc("Razorwire")}
                         width="30"
                         height="19"
                         className="object-contain"
@@ -1825,7 +1817,7 @@ const RelicsView = () => {
                     <div className="flex items-center justify-center">
                       <img
                         alt="Relics Rice & Chopsticks"
-                        src="https://herosiege.wiki.gg/images/Relics_Rice_%26_Chopsticks.png"
+                        src={getRelicImageSrc("Rice %26 Chopsticks")}
                         width="24"
                         height="30"
                         className="object-contain"
@@ -1872,7 +1864,7 @@ const RelicsView = () => {
                     <div className="flex items-center justify-center">
                       <img
                         alt="Relics Storm Dagger"
-                        src="https://herosiege.wiki.gg/images/Relics_Storm_Dagger.png"
+                        src={getRelicImageSrc("Storm Dagger")}
                         width="30"
                         height="27"
                         className="object-contain"
@@ -1947,7 +1939,7 @@ const RelicsView = () => {
                     <div className="flex items-center justify-center">
                       <img
                         alt="Relics Amazon's Spears"
-                        src="https://herosiege.wiki.gg/images/Relics_Amazon%27s_Spears.png"
+                        src={getRelicImageSrc("Amazon's Spears")}
                         width="30"
                         height="12"
                         className="object-contain"
@@ -1994,7 +1986,7 @@ const RelicsView = () => {
                     <div className="flex items-center justify-center">
                       <img
                         alt="Relics Basilisk's Tooth"
-                        src="https://herosiege.wiki.gg/images/Relics_Basilisk%27s_Tooth.png"
+                        src={getRelicImageSrc("Basilisk's Tooth")}
                         width="12"
                         height="30"
                         className="object-contain"
@@ -2041,7 +2033,7 @@ const RelicsView = () => {
                     <div className="flex items-center justify-center">
                       <img
                         alt="Relics Butcher's Knife"
-                        src="https://herosiege.wiki.gg/images/Relics_Butcher%27s_Knife.png"
+                        src={getRelicImageSrc("Butcher's Knife")}
                         width="28"
                         height="30"
                         className="object-contain"
@@ -2090,7 +2082,7 @@ const RelicsView = () => {
                     <div className="flex items-center justify-center">
                       <img
                         alt="Relics Death's Scythe Relic"
-                        src="https://herosiege.wiki.gg/images/Relics_Death%27s_Scythe_Relic.png"
+                        src={getRelicImageSrc("Death's Scythe Relic")}
                         width="30"
                         height="27"
                         className="object-contain"
@@ -2137,7 +2129,7 @@ const RelicsView = () => {
                     <div className="flex items-center justify-center">
                       <img
                         alt="Relics Fire & Ice"
-                        src="https://herosiege.wiki.gg/images/Relics_Fire_%26_Ice.png"
+                        src={getRelicImageSrc("Fire %26 Ice")}
                         width="30"
                         height="27"
                         className="object-contain"
@@ -2202,7 +2194,7 @@ const RelicsView = () => {
                     <div className="flex items-center justify-center">
                       <img
                         alt="Relics Frozen Orb"
-                        src="https://herosiege.wiki.gg/images/Relics_Frozen_Orb.png"
+                        src={getRelicImageSrc("Frozen Orb")}
                         width="28"
                         height="30"
                         className="object-contain"
@@ -2269,7 +2261,7 @@ const RelicsView = () => {
                     <div className="flex items-center justify-center">
                       <img
                         alt="Relics Hungering Blade of Frost"
-                        src="https://herosiege.wiki.gg/images/Relics_Hungering_Blade_of_Frost.png"
+                        src={getRelicImageSrc("Hungering Blade of Frost")}
                         width="9"
                         height="30"
                         className="object-contain"
@@ -2336,7 +2328,7 @@ const RelicsView = () => {
                     <div className="flex items-center justify-center">
                       <img
                         alt="Relics Odin's Sword"
-                        src="https://herosiege.wiki.gg/images/Relics_Odin%27s_Sword.png"
+                        src={getRelicImageSrc("Odin's Sword")}
                         width="15"
                         height="30"
                         className="object-contain"
@@ -2385,7 +2377,7 @@ const RelicsView = () => {
                     <div className="flex items-center justify-center">
                       <img
                         alt="Relics Ogre Club"
-                        src="https://herosiege.wiki.gg/images/Relics_Ogre_Club.png"
+                        src={getRelicImageSrc("Ogre Club")}
                         width="25"
                         height="30"
                         className="object-contain"
@@ -2450,7 +2442,7 @@ const RelicsView = () => {
                     <div className="flex items-center justify-center">
                       <img
                         alt="Relics Razorwire"
-                        src="https://herosiege.wiki.gg/images/Relics_Razorwire.png"
+                        src={getRelicImageSrc("Razorwire")}
                         width="30"
                         height="19"
                         className="object-contain"
@@ -2527,7 +2519,7 @@ const RelicsView = () => {
                     <div className="flex items-center justify-center">
                       <img
                         alt="Relics Rice & Chopsticks"
-                        src="https://herosiege.wiki.gg/images/Relics_Rice_%26_Chopsticks.png"
+                        src={getRelicImageSrc("Rice %26 Chopsticks")}
                         width="24"
                         height="30"
                         className="object-contain"
@@ -2574,7 +2566,7 @@ const RelicsView = () => {
                     <div className="flex items-center justify-center">
                       <img
                         alt="Relics Storm Dagger"
-                        src="https://herosiege.wiki.gg/images/Relics_Storm_Dagger.png"
+                        src={getRelicImageSrc("Storm Dagger")}
                         width="30"
                         height="27"
                         className="object-contain"
@@ -2649,7 +2641,7 @@ const RelicsView = () => {
                     <div className="flex items-center justify-center">
                       <img
                         alt="Relics Cactus"
-                        src="https://herosiege.wiki.gg/images/Relics_Cactus.png"
+                        src={getRelicImageSrc("Cactus")}
                         width="14"
                         height="30"
                         className="object-contain"
@@ -2696,7 +2688,7 @@ const RelicsView = () => {
                     <div className="flex items-center justify-center">
                       <img
                         alt="Relics DaPlayer's Dislocated Head"
-                        src="https://herosiege.wiki.gg/images/Relics_DaPlayer%27s_Dislocated_Head.png"
+                        src={getRelicImageSrc("DaPlayer's Dislocated Head")}
                         width="27"
                         height="30"
                         className="object-contain"
@@ -2761,7 +2753,7 @@ const RelicsView = () => {
                     <div className="flex items-center justify-center">
                       <img
                         alt="Relics Mana Dice"
-                        src="https://herosiege.wiki.gg/images/Relics_Mana_Dice.png"
+                        src={getRelicImageSrc("Mana Dice")}
                         width="25"
                         height="30"
                         className="object-contain"
@@ -2808,7 +2800,7 @@ const RelicsView = () => {
                     <div className="flex items-center justify-center">
                       <img
                         alt="Relics The Holy Grail"
-                        src="https://herosiege.wiki.gg/images/Relics_The_Holy_Grail.png"
+                        src={getRelicImageSrc("The Holy Grail")}
                         width="21"
                         height="30"
                         className="object-contain"
@@ -2873,7 +2865,7 @@ const RelicsView = () => {
                     <div className="flex items-center justify-center">
                       <img
                         alt="Relics Winner's Drug"
-                        src="https://herosiege.wiki.gg/images/Relics_Winner%27s_Drug.png"
+                        src={getRelicImageSrc("Winner's Drug")}
                         width="30"
                         height="30"
                         className="object-contain"

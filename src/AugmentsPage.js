@@ -2,7 +2,7 @@
 import React, { useEffect } from 'react';
 import './AugmentsPage.css';
 
-const AUGMENTS_DATA = [
+export const AUGMENTS_DATA = [
   { en: "Artful Dodger", pt: "Esquiva Astuta", d: "Esquivar ou bloquear ataques concede bônus de velocidade e dano.", icon: "fa-person-running" },
   { en: "Artillery Aid", pt: "Apoio de Artilharia", d: "Chama artilharia, chovendo flechas nos monstros ao redor.", icon: "fa-arrow-down-long" },
   { en: "Avariciousness", pt: "Avareza", d: "Coletar ouro concede stacks que aumentam Magic Find e Gold Find.", icon: "fa-coins" },

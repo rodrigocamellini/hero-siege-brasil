@@ -114,7 +114,8 @@
     border-radius: 10px;
     padding: 18px;
     transition: 0.3s;
-    height: 135px;
+    min-height: 135px;
+    height: auto;
     display: flex;
     flex-direction: column;
 }

@@ -3,7 +3,7 @@ import { useNavigate, useParams } from 'react-router-dom';
 import { db } from './firebase';
 import { doc, getDoc, collection, getDocs, addDoc, serverTimestamp, query, where, orderBy, onSnapshot } from 'firebase/firestore';
 import BlogComments from './BlogComments';
-import RelicsView, { PASSIVE_RELICS, EXTRA_RELICS, normalizeRelicImageUrl } from './RelicsView';
+import RelicsView, { PASSIVE_RELICS, EXTRA_RELICS, normalizeRelicImageUrl, getRelicImageSrc } from './RelicsView';
 import ClassesView from './ClassesView';
 import ItemsView from './ItemsView';
 import RunesView from './RunesView';
@@ -11,7 +11,7 @@ import ChaosTowerPage from './ChaosTowerPage';
 import MercenariosPage from './MercenariosPage';
 import MineracaoPage from './MineracaoPage';
 import ChavesPage from './ChavesPage';
-import AugmentsPage from './AugmentsPage';
+import AugmentsPage, { AUGMENTS_DATA } from './AugmentsPage';
 import GemasJoiasPage from './GemasJoiasPage';
 import CharmsPage, { CHARM_DB } from './CharmsPage';
 
@@ -22,44 +22,11 @@ const TWITCH_CONTAINER_ID = 'twitch-embed-spacezone';
 const ALL_RELICS = [...PASSIVE_RELICS, ...EXTRA_RELICS];
 
 const relicImageFor = (rel) => {
-    if (rel && rel.img) return normalizeRelicImageUrl(rel.img);
-    const safeName = String(rel?.name || '')
-      .replace(/ /g, '_')
-      .replace(/'/g, '%27');
-    return `https://herosiege.wiki.gg/images/Relics_${safeName}.png`;
+    return getRelicImageSrc(rel?.name);
   };
 
-  const handleRelicError = (e, name) => {
-    const target = e.target;
-    // Tenta diferentes variações de nome para encontrar a imagem na wiki
-    const originalName = String(name || '');
-    const safeName = originalName.replace(/ /g, '_').replace(/'/g, '%27');
-    const noApostrophe = originalName.replace(/'/g, '').replace(/ /g, '_');
-    const src = target.src;
-    
-    // Lista de tentativas de URL
-    // 1. Relics_Name.png (Padrão)
-    // 2. Relic_Name.png (Singular)
-    // 3. Name.png (Apenas nome)
-    // 4. Relics_NameNoApostrophe.png (Sem apóstrofo)
-    
-    if (src.includes('Relics_') && !src.includes(noApostrophe)) {
-       // Se falhou o padrão, tenta singular
-       target.src = `https://herosiege.wiki.gg/images/Relic_${safeName}.png`;
-    } else if (src.includes('Relic_') && !src.includes(noApostrophe)) {
-       // Se falhou singular, tenta apenas o nome
-       target.src = `https://herosiege.wiki.gg/images/${safeName}.png`;
-    } else if (!src.includes(noApostrophe) && originalName.includes("'")) {
-       // Se tem apóstrofo e falhou as anteriores, tenta remover o apóstrofo
-       target.src = `https://herosiege.wiki.gg/images/Relics_${noApostrophe}.png`;
-    } else {
-       // Se tudo falhar, esconde a imagem e mostra um placeholder
-       target.style.display = 'none';
-       // Opcional: Poderíamos injetar um elemento de texto ou ícone aqui, 
-       // mas o layout já tem o nome ao lado ou embaixo.
-       // Vamos tentar forçar um ícone genérico se possível, ou deixar invisível.
-       // target.src = 'https://herosiege.wiki.gg/images/3/30/Unknown.png'; // Exemplo genérico
-    }
+  const handleRelicError = (e) => {
+    e.target.style.display = 'none';
   };
 
 const CLASS_DATA = [
@@ -335,6 +302,11 @@ const NewDesign = ({ onBack, initialView = 'home' }) => {
   const [nbBodyArmors, setNbBodyArmors] = useState([null, null, null, null]);
   const [nbBodyArmorPickerIndex, setNbBodyArmorPickerIndex] = useState(null);
   const [bodyArmorOptions, setBodyArmorOptions] = useState([]);
+
+  // Augments
+  const [nbAugments, setNbAugments] = useState([null]);
+  const [nbAugmentPickerIndex, setNbAugmentPickerIndex] = useState(null);
+
   
   // New Categories
   const [nbBoots, setNbBoots] = useState([null, null, null, null]);
@@ -5057,6 +5029,43 @@ const NewDesign = ({ onBack, initialView = 'home' }) => {
                                   )}
                                 </div>
 
+                                {/* AUGMENTS SECTION */}
+                                <div className="mt-4">
+                                  <div className="text-[11px] font-bold uppercase tracking-widest text-yellow-400 mb-2">Augments (Body Armor)</div>
+                                  <div className="flex flex-wrap gap-2">
+                                    {nbAugments.map((item, idx) => {
+                                      const isBiS = idx === 0;
+                                      const label = isBiS ? 'BiS' : idx === 1 ? 'Segunda Opção' : idx === 2 ? 'Terceira Opção' : 'Quarta Opção';
+                                      return (
+                                        <button key={idx} type="button" className={`relative w-20 h-24 flex flex-col items-center justify-center border border-dashed transition-colors ${isBiS ? 'border-orange-500/50 bg-orange-500/5 hover:bg-orange-500/10 hover:border-orange-400 shadow-[0_0_10px_rgba(249,115,22,0.1)]' : 'border-white/20 bg-white/5 text-gray-400 hover:bg-white/10 hover:border-white/40 hover:text-white'}`} onClick={() => setNbAugmentPickerIndex(idx)}>
+                                          {isBiS && <div className="absolute -top-2 left-1/2 -translate-x-1/2 bg-orange-600 text-black text-[9px] font-bold px-1.5 rounded uppercase tracking-widest shadow-sm">BiS</div>}
+                                          <div className="text-[9px] text-gray-500 mb-1 mt-1 text-center leading-tight px-1">{label}</div>
+                                          {item ? (
+                                            <>
+                                              <i className={`fa-solid ${item.icon} text-xl mb-1`} />
+                                              <span className="text-[9px] text-center px-1 truncate w-full text-white">{item.en}</span>
+                                            </>
+                                          ) : (
+                                            <span className="text-2xl opacity-20">+</span>
+                                          )}
+                                        </button>
+                                      );
+                                    })}
+                                  </div>
+                                  {nbAugmentPickerIndex !== null && (
+                                    <div className="mt-2 border border-white/10 bg-[#0b0d16] max-h-64 overflow-y-auto custom-scrollbar">
+                                      <div className="flex items-center justify-between px-3 py-2 border-b border-white/10 text-[11px] text-gray-400 sticky top-0 bg-[#0b0d16] z-10"><span>Selecionar Augment ({nbAugmentPickerIndex === 0 ? 'BiS' : `${nbAugmentPickerIndex + 1}ª Opção`})</span><button type="button" className="text-[10px] px-2 py-0.5 border border-white/20 rounded hover:bg-white hover:text-black" onClick={() => setNbAugmentPickerIndex(null)}>Fechar</button></div>
+                                      <button type="button" className="w-full flex items-center gap-3 px-3 py-2 text-xs text-red-400 hover:bg-red-900/20 border-b border-white/5" onClick={() => { setNbAugments(prev => { const next = [...prev]; next[nbAugmentPickerIndex] = null; return next; }); setNbAugmentPickerIndex(null); }}><div className="w-7 h-7 flex items-center justify-center border border-red-500/20 text-[13px]">×</div><span>Remover item</span></button>
+                                      {AUGMENTS_DATA.map((item, idx) => (
+                                        <button key={idx} type="button" className="w-full flex items-center gap-3 px-3 py-2 text-xs text-gray-200 hover:bg-white/10 border-b border-white/5 text-left" onClick={() => { setNbAugments(prev => { const next = [...prev]; next[nbAugmentPickerIndex] = item; return next; }); setNbAugmentPickerIndex(null); }}>
+                                          <div className="w-7 h-7 flex items-center justify-center border border-white/20 text-[11px]"><i className={`fa-solid ${item.icon}`} /></div>
+                                          <div className="flex flex-col"><span>{item.en}</span><span className="text-[9px] text-gray-500">{item.pt}</span></div>
+                                        </button>
+                                      ))}
+                                    </div>
+                                  )}
+                                </div>
+
                                 {/* BOOTS SECTION */}
                                 <div className="mt-4">
                                   <div className="text-[11px] font-bold uppercase tracking-widest text-yellow-400 mb-2">Boots</div>
@@ -5835,6 +5844,35 @@ const NewDesign = ({ onBack, initialView = 'home' }) => {
                                             </div>
                                           </div>
                                         )}
+                                        {nbAugments.some(a => a !== null) && (
+                                          <div>
+                                            <div className="text-[11px] uppercase tracking-widest text-yellow-400 mb-2">
+                                              Augments
+                                            </div>
+                                            <div className="flex flex-wrap gap-2">
+                                              {nbAugments.map((a, idx) => {
+                                                if (!a) return null;
+                                                const isBiS = idx === 0;
+                                                return (
+                                                  <div
+                                                    key={idx}
+                                                    className={`flex items-center gap-2 border px-2 py-1 ${
+                                                      isBiS ? 'border-orange-500/60 bg-orange-900/20' : 'border-white/10 bg-black/30'
+                                                    }`}
+                                                  >
+                                                    <i className={`fa-solid ${a.icon} text-sm text-gray-200`} />
+                                                    <span className="text-[11px] text-gray-200">
+                                                      ({a.en}) {a.pt}
+                                                    </span>
+                                                    {isBiS && (
+                                                      <span className="text-[9px] text-orange-400 font-bold ml-1">BiS</span>
+                                                    )}
+                                                  </div>
+                                                );
+                                              })}
+                                            </div>
+                                          </div>
+                                        )}
                                         {bootItems.length > 0 && (
                                           <div>
                                             <div className="text-[11px] uppercase tracking-widest text-yellow-400 mb-2">Boots</div>
@@ -6001,6 +6039,7 @@ const NewDesign = ({ onBack, initialView = 'home' }) => {
                                     charms: Array.isArray(nbCharms) ? nbCharms.map(c => c || null) : [],
                                     weapons: Array.isArray(nbWeapons) ? nbWeapons.map(w => w || null) : [null, null, null, null],
                                     bodyArmors: Array.isArray(nbBodyArmors) ? nbBodyArmors.map(b => b || null) : [null, null, null, null],
+                                    augments: Array.isArray(nbAugments) ? nbAugments.map(a => a || null) : [null, null, null, null],
                                     boots: Array.isArray(nbBoots) ? nbBoots.map(b => b || null) : [null, null, null, null],
                                     gloves: Array.isArray(nbGloves) ? nbGloves.map(g => g || null) : [null, null, null, null],
                                     helmets: Array.isArray(nbHelmets) ? nbHelmets.map(h => h || null) : [null, null, null, null],
@@ -6031,6 +6070,7 @@ const NewDesign = ({ onBack, initialView = 'home' }) => {
                                   setNbCharms([]);
                                   setNbWeapons([null, null, null, null]);
                                   setNbBodyArmors([null, null, null, null]);
+                                  setNbAugments([null, null, null, null]);
                                   setNbBoots([null, null, null, null]);
                                   setNbGloves([null, null, null, null]);
                                   setNbHelmets([null, null, null, null]);
