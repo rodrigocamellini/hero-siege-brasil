@@ -1,0 +1,68 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // Helper para verificar admin
+    function isAdmin() {
+      return request.auth != null && request.auth.uid == "hfsHCehqYgen7OAfXUYl58fEPo02";
+    }
+
+    // Posts e comentários
+    match /posts/{postId} {
+      // Público vê publicados, Admin vê tudo
+      allow read: if resource.data.status == "published" || isAdmin();
+      allow write: if isAdmin();
+
+      match /comments/{commentId} {
+        allow create: if true;
+        allow read: if resource.data.approved == true || isAdmin();
+        allow update, delete: if isAdmin();
+      }
+    }
+
+    // Config da Homepage (imagem destacada/aleatória)
+    match /config/homepage {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+
+    // Tierlist (S/A/B/C/D/E)
+    match /config/tierlist {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+    
+    // Equipe / Colaboradores (NOVO)
+    match /team/{memberId} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+
+    // Builds do Forum (moderação)
+    match /builds/{buildId} {
+      // Público só enxerga builds já publicadas, Admin vê tudo
+      allow read: if resource.data.status == "published" || isAdmin();
+
+      // Qualquer um pode ENVIAR uma nova build (Nova Build no site)
+      allow create: if true;
+
+      // Só o admin pode editar/aprovar/deletar (via Painel)
+      allow update, delete: if isAdmin();
+    }
+
+    // Mensagens do formulário de contato
+    match /messages/{messageId} {
+      allow create: if true;
+      allow read, update, delete: if isAdmin();
+    }
+
+    // Padrão (Cuidado: isso torna tudo público para leitura se não houver regra mais restrita que negue. 
+    // No Firestore, se UMA regra permitir, o acesso é concedido. 
+    // Para restringir posts não publicados, idealmente remova o allow read: if true global e liste as coleções permitidas.)
+    match /{document=**} {
+      allow read: if true;
+      allow write: if false;
+    }
+  }
+}

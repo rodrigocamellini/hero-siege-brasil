@@ -1,6 +1,6 @@
 import React from 'react';
 
-const rarityStyle = (r) => {
+export const rarityStyle = (r) => {
   const t = (r || '').toLowerCase();
   if (t.includes('satanic set')) {
     return {

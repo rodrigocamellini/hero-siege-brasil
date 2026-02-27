@@ -2,6 +2,7 @@ import React, { useEffect, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
 import app, { db } from './firebase';
 import { PASSIVE_RELICS, EXTRA_RELICS, normalizeRelicImageUrl } from './RelicsView';
+import { AUGMENTS_DATA } from './AugmentsPage';
 import { CHARM_DB } from './CharmsPage';
 import {
   getAuth,
@@ -60,6 +61,7 @@ function parseViewFromHash() {
   if (hash.startsWith('#painel/login')) return 'login';
   if (hash.startsWith('#painel/forum')) return 'forum';
   if (hash.startsWith('#painel/homepage')) return 'homepage';
+  if (hash.startsWith('#painel/configuracoes')) return 'settings';
   return 'dashboard';
 }
 
@@ -348,6 +350,8 @@ function PainelSidebar({ view, onChange }) {
       window.location.hash = '#painel/forum';
     } else if (target === 'homepage') {
       window.location.hash = '#painel/homepage';
+    } else if (target === 'settings') {
+      window.location.hash = '#painel/configuracoes';
     }
     onChange(target);
   };
@@ -396,6 +400,13 @@ function PainelSidebar({ view, onChange }) {
         >
           <span>Homepage</span>
           {view === 'homepage' && <span className="painel-nav-badge">Atual</span>}
+        </div>
+        <div
+          className={`painel-nav-item ${view === 'settings' ? 'active' : ''}`}
+          onClick={() => go('settings')}
+        >
+          <span>Configurações</span>
+          {view === 'settings' && <span className="painel-nav-badge">Atual</span>}
         </div>
       </div>
     </aside>
@@ -655,6 +666,12 @@ function PainelForum() {
   const [charms, setCharms] = useState([]);
   const [charmPickerIndex, setCharmPickerIndex] = useState(null);
   const [mercenary, setMercenary] = useState('');
+  const [augments, setAugments] = useState([null, null, null]);
+  const [augmentPickerIndex, setAugmentPickerIndex] = useState(null);
+
+  const augmentOptions = useMemo(() => {
+    return AUGMENTS_DATA.sort((a, b) => (a.pt || a.en || '').localeCompare(b.pt || b.en || ''));
+  }, []);
 
   const relicOptions = useMemo(() => {
     const base = [...PASSIVE_RELICS, ...EXTRA_RELICS];
@@ -741,6 +758,7 @@ function PainelForum() {
     setPotions([null, null, null, null]);
     setCharms([]);
     setMercenary('');
+    setAugments([null, null, null]);
   };
 
   const openNew = () => {
@@ -785,6 +803,12 @@ function PainelForum() {
     setPotions(nextPotions);
     setCharms(Array.isArray(docObj.charms) ? docObj.charms : []);
     setMercenary(docObj.mercenary || '');
+    const docAugs = Array.isArray(docObj.augments) ? docObj.augments : [];
+    const nextAugs = [null, null, null];
+    for (let i = 0; i < nextAugs.length; i += 1) {
+      nextAugs[i] = docAugs[i] || null;
+    }
+    setAugments(nextAugs);
     setStatus(docObj.status || 'draft');
     setMsg(`Editando: ${docObj.title || docObj.id}`);
     setModalOpen(true);
@@ -829,6 +853,7 @@ function PainelForum() {
       potions: Array.isArray(potions) ? potions.map((p) => (p || null)) : [null, null, null, null],
       charms: Array.isArray(charms) ? charms : [],
       mercenary: mercenary || null,
+      augments: Array.isArray(augments) ? augments.map((a) => (a || null)) : [null, null, null],
     };
     try {
       if (editDoc && editDoc.id) {
@@ -1316,6 +1341,79 @@ function PainelForum() {
                       })}
                     </div>
                   </div>
+                  <div style={{ marginTop: 16 }}>
+                    <label className="painel-login-label">Augments</label>
+                    <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+                      {augments.map((augName, idx) => {
+                        const opt = augName ? augmentOptions.find((a) => a.en === augName || a.name === augName) : null;
+                        return (
+                          <button
+                            key={idx}
+                            type="button"
+                            onClick={() => setAugmentPickerIndex(idx)}
+                            style={{
+                              width: 90, height: 90, border: '1px solid #e5e7eb', background: '#f9fafb', display: 'flex',
+                              flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
+                              padding: 6, cursor: 'pointer'
+                            }}
+                            title="Selecionar Augment"
+                          >
+                            {opt ? (
+                              <>
+                                <i className={`fa-solid ${opt.icon}`} style={{ fontSize: 24, marginBottom: 6, color: '#374151' }}></i>
+                                <span style={{ fontSize: 10, textAlign: 'center', color: '#374151' }}>{opt.pt || opt.en}</span>
+                              </>
+                            ) : (
+                              <span style={{ fontSize: 11, color: '#6b7280', textAlign: 'center' }}>
+                                Selecionar
+                              </span>
+                            )}
+                          </button>
+                        );
+                      })}
+                    </div>
+                    {augmentPickerIndex !== null && (
+                      <div style={{ marginTop: 8, border: '1px solid #e5e7eb', background: '#ffffff', maxHeight: 240, overflow: 'auto' }}>
+                        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '6px 10px', borderBottom: '1px solid #e5e7eb', fontSize: 12, color: '#6b7280' }}>
+                          <span>Selecionar Augment para o slot {augmentPickerIndex + 1}</span>
+                          <button type="button" className="painel-modal-close" onClick={() => setAugmentPickerIndex(null)}>×</button>
+                        </div>
+                        <button
+                          type="button"
+                          style={{ width: '100%', display: 'flex', alignItems: 'center', gap: 8, padding: '8px 10px', fontSize: 12, color: '#374151', borderBottom: '1px solid #f3f4f6' }}
+                          onClick={() => {
+                            setAugments((prev) => {
+                              const next = prev.slice();
+                              next[augmentPickerIndex] = null;
+                              return next;
+                            });
+                            setAugmentPickerIndex(null);
+                          }}
+                        >
+                          <div style={{ width: 24, height: 24, display: 'grid', placeItems: 'center', border: '1px solid #e5e7eb' }}>×</div>
+                          <span>Nenhum Augment</span>
+                        </button>
+                        {augmentOptions.map((a) => (
+                          <button
+                            key={a.en}
+                            type="button"
+                            style={{ width: '100%', display: 'flex', alignItems: 'center', gap: 8, padding: '8px 10px', fontSize: 12, color: '#111827', borderBottom: '1px solid #f3f4f6' }}
+                            onClick={() => {
+                              setAugments((prev) => {
+                                const next = prev.slice();
+                                next[augmentPickerIndex] = a.en;
+                                return next;
+                              });
+                              setAugmentPickerIndex(null);
+                            }}
+                          >
+                            <i className={`fa-solid ${a.icon}`} style={{ width: 24, textAlign: 'center' }}></i>
+                            <span>{a.pt || a.en}</span>
+                          </button>
+                        ))}
+                      </div>
+                    )}
+                  </div>
                 </div>
                 <div className="painel-row" style={{ marginTop: 12, justifyContent: 'flex-end' }}>
                   <button type="button" className="painel-button" onClick={clearForm}>Limpar</button>
@@ -1429,6 +1527,23 @@ function PainelForum() {
                           </div>
                         );
                       })()}
+                    </div>
+                  </div>
+                ) : null}
+                {augments && augments.some(a => a) ? (
+                  <div style={{ marginTop: 8 }}>
+                    <div className="painel-login-label" style={{ marginBottom: 6 }}>Augments</div>
+                    <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+                      {augments.map((augName, idx) => {
+                        if (!augName) return null;
+                        const opt = augmentOptions.find((a) => a.en === augName || a.name === augName);
+                        return (
+                          <div key={idx} style={{ display: 'flex', alignItems: 'center', gap: 6, border: '1px solid #e5e7eb', padding: '4px 6px', background: '#f9fafb' }}>
+                            {opt ? <i className={`fa-solid ${opt.icon}`} style={{ fontSize: 14, color: '#374151' }}></i> : null}
+                            <span style={{ fontSize: 11 }}>{opt ? (opt.pt || opt.en) : augName}</span>
+                          </div>
+                        );
+                      })}
                     </div>
                   </div>
                 ) : null}
@@ -3191,8 +3306,282 @@ function PainelApp() {
         {effectiveView === 'messages' && <PainelMessages />}
         {effectiveView === 'forum' && <PainelForum />}
         {effectiveView === 'homepage' && <PainelHomepage />}
+        {effectiveView === 'settings' && <PainelSettings />}
       </div>
     </>
+  );
+}
+
+function PainelSettings() {
+  const [members, setMembers] = useState([]);
+  const [loading, setLoading] = useState(false);
+  const [editOpen, setEditOpen] = useState(false);
+  const [editingId, setEditingId] = useState(null);
+
+  // Form states
+  const [nick, setNick] = useState('');
+  const [name, setName] = useState('');
+  const [photo, setPhoto] = useState('');
+  const [role, setRole] = useState('common'); // default
+  const [desc, setDesc] = useState('');
+  const [discord, setDiscord] = useState('');
+  const [twitch, setTwitch] = useState('');
+  const [youtube, setYoutube] = useState('');
+  const [site, setSite] = useState('');
+  const [github, setGithub] = useState('');
+
+  const [confirmDelOpen, setConfirmDelOpen] = useState(false);
+  const [delId, setDelId] = useState(null);
+  const [delName, setDelName] = useState('');
+
+  const ROLES = [
+    { label: 'Desenvolvedor (Laranja)', value: 'legendary admin-main' },
+    { label: 'Moderador (Angelic)', value: 'angelic' },
+    { label: 'Colaborador (Satanic)', value: 'satanic' },
+    { label: 'Parceiro (Heroic)', value: 'heroic' },
+    { label: 'Designer (Set)', value: 'set' },
+    { label: 'Editor (Mythic)', value: 'mythic' },
+    { label: 'Suporte (Common)', value: 'common' },
+  ];
+
+  useEffect(() => {
+    const q = collection(db, 'team');
+    const unsub = onSnapshot(q, (snap) => {
+      const list = [];
+      snap.forEach((d) => list.push({ id: d.id, ...d.data() }));
+      // Sort by something? Maybe role priority? Or name?
+      // Let's sort by nick for now
+      list.sort((a, b) => (a.nick || '').localeCompare(b.nick || ''));
+      setMembers(list);
+    });
+    return () => unsub();
+  }, []);
+
+  const clearForm = () => {
+    setEditingId(null);
+    setNick('');
+    setName('');
+    setPhoto('');
+    setRole('common');
+    setDesc('');
+    setDiscord('');
+    setTwitch('');
+    setYoutube('');
+    setSite('');
+    setGithub('');
+  };
+
+  const openNew = () => {
+    clearForm();
+    setEditOpen(true);
+  };
+
+  const openEdit = (m) => {
+    setEditingId(m.id);
+    setNick(m.nick || '');
+    setName(m.name || '');
+    setPhoto(m.photo || '');
+    setRole(m.role || 'common');
+    setDesc(m.description || '');
+    setDiscord(m.socials?.discord || '');
+    setTwitch(m.socials?.twitch || '');
+    setYoutube(m.socials?.youtube || '');
+    setSite(m.socials?.site || '');
+    setGithub(m.socials?.github || '');
+    setEditOpen(true);
+  };
+
+  const handleSave = async () => {
+    if (!nick) return alert('Nick é obrigatório');
+    setLoading(true);
+    try {
+      const data = {
+        nick,
+        name,
+        photo,
+        role,
+        description: desc,
+        socials: {
+          discord,
+          twitch,
+          youtube,
+          site,
+          github,
+        },
+        updatedAt: serverTimestamp(),
+      };
+
+      if (editingId) {
+        await setDoc(doc(db, 'team', editingId), data, { merge: true });
+      } else {
+        await addDoc(collection(db, 'team'), data);
+      }
+      setEditOpen(false);
+      clearForm();
+    } catch (e) {
+      console.error(e);
+      alert('Erro ao salvar');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const askDelete = (m) => {
+    setDelId(m.id);
+    setDelName(m.nick);
+    setConfirmDelOpen(true);
+  };
+
+  const confirmDelete = async () => {
+    if (!delId) return;
+    try {
+      await deleteDoc(doc(db, 'team', delId));
+      setConfirmDelOpen(false);
+      setDelId(null);
+    } catch (e) {
+      console.error(e);
+      alert('Erro ao excluir');
+    }
+  };
+
+  return (
+    <div className="painel-main">
+      <div className="painel-page-header">
+        <div>
+          <div className="painel-page-title">Configurações</div>
+          <div className="painel-page-sub">Gerenciamento geral do site e equipe</div>
+        </div>
+        <button type="button" className="painel-button" onClick={openNew}>
+          + Novo Membro
+        </button>
+      </div>
+
+      <div className="painel-card">
+        <div className="painel-card-inner">
+          <h2>Equipe</h2>
+          <div className="painel-list" style={{ marginTop: 16 }}>
+            {members.length === 0 && <div className="painel-muted">Nenhum membro cadastrado.</div>}
+            {members.map((m) => (
+              <div key={m.id} className="painel-list-item" style={{ alignItems: 'flex-start' }}>
+                <div style={{ display: 'flex', gap: 12 }}>
+                  <img
+                    src={m.photo || 'https://via.placeholder.com/48'}
+                    alt={m.nick}
+                    style={{ width: 48, height: 48, borderRadius: '50%', objectFit: 'cover', background: '#333' }}
+                    onError={(e) => e.target.style.display = 'none'}
+                  />
+                  <div>
+                    <div style={{ fontWeight: 'bold', fontSize: 14 }}>
+                      {m.nick} <span style={{ fontWeight: 'normal', fontSize: 12, color: '#9ca3af' }}>({m.name})</span>
+                    </div>
+                    <div style={{ fontSize: 11, marginTop: 2, display: 'flex', gap: 6, alignItems: 'center' }}>
+                      <span className="painel-tag">{ROLES.find(r => r.value === m.role)?.label || m.role}</span>
+                    </div>
+                    <div style={{ fontSize: 12, color: '#6b7280', marginTop: 4 }}>{m.description}</div>
+                  </div>
+                </div>
+                <div style={{ display: 'flex', gap: 8 }}>
+                  <button type="button" className="painel-button" onClick={() => openEdit(m)}>✏️</button>
+                  <button type="button" className="painel-button painel-danger-text" onClick={() => askDelete(m)}>🗑️</button>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+
+      {/* Modal Edição/Criação */}
+      <div className={`painel-modal ${editOpen ? '' : 'hidden'}`}>
+        <div className="painel-modal-backdrop" onClick={() => setEditOpen(false)} />
+        <div className="painel-modal-content">
+          <div className="painel-modal-header">
+            <div className="painel-modal-title">{editingId ? 'Editar Membro' : 'Novo Membro'}</div>
+            <button type="button" className="painel-modal-close" onClick={() => setEditOpen(false)}>×</button>
+          </div>
+          <div className="painel-modal-body">
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
+              <div>
+                <label className="painel-login-label">Nick</label>
+                <input className="painel-input" value={nick} onChange={(e) => setNick(e.target.value)} />
+              </div>
+              <div>
+                <label className="painel-login-label">Nome Real</label>
+                <input className="painel-input" value={name} onChange={(e) => setName(e.target.value)} />
+              </div>
+            </div>
+            
+            <div style={{ marginTop: 12 }}>
+              <label className="painel-login-label">Foto (URL)</label>
+              <input className="painel-input" value={photo} onChange={(e) => setPhoto(e.target.value)} placeholder="https://..." />
+            </div>
+
+            <div style={{ marginTop: 12 }}>
+              <label className="painel-login-label">Função / Cor</label>
+              <select className="painel-select" value={role} onChange={(e) => setRole(e.target.value)}>
+                {ROLES.map((r) => (
+                  <option key={r.value} value={r.value}>{r.label}</option>
+                ))}
+              </select>
+            </div>
+
+            <div style={{ marginTop: 12 }}>
+              <label className="painel-login-label">Descrição</label>
+              <textarea className="painel-textarea" value={desc} onChange={(e) => setDesc(e.target.value)} rows={3} />
+            </div>
+
+            <div style={{ marginTop: 16 }}>
+              <label className="painel-login-label" style={{ marginBottom: 8, display: 'block' }}>Redes Sociais (Links)</label>
+              <div style={{ display: 'grid', gap: 8 }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                  <i className="fab fa-discord" style={{ width: 20 }}></i>
+                  <input className="painel-input" placeholder="Discord URL" value={discord} onChange={(e) => setDiscord(e.target.value)} />
+                </div>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                  <i className="fab fa-twitch" style={{ width: 20 }}></i>
+                  <input className="painel-input" placeholder="Twitch URL" value={twitch} onChange={(e) => setTwitch(e.target.value)} />
+                </div>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                  <i className="fab fa-youtube" style={{ width: 20 }}></i>
+                  <input className="painel-input" placeholder="YouTube URL" value={youtube} onChange={(e) => setYoutube(e.target.value)} />
+                </div>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                  <i className="fas fa-globe" style={{ width: 20 }}></i>
+                  <input className="painel-input" placeholder="Site/Outro URL" value={site} onChange={(e) => setSite(e.target.value)} />
+                </div>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                  <i className="fab fa-github" style={{ width: 20 }}></i>
+                  <input className="painel-input" placeholder="GitHub URL" value={github} onChange={(e) => setGithub(e.target.value)} />
+                </div>
+              </div>
+            </div>
+
+            <div className="painel-row" style={{ marginTop: 20, justifyContent: 'flex-end' }}>
+              <button type="button" className="painel-button" onClick={() => setEditOpen(false)}>Cancelar</button>
+              <button type="button" className="painel-button" onClick={handleSave} disabled={loading}>
+                {loading ? 'Salvando...' : 'Salvar'}
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Modal Delete */}
+      <div className={`painel-modal ${confirmDelOpen ? '' : 'hidden'}`}>
+        <div className="painel-modal-backdrop" onClick={() => setConfirmDelOpen(false)} />
+        <div className="painel-modal-content small">
+          <div className="painel-modal-header">
+            <div className="painel-modal-title">Confirmar exclusão</div>
+          </div>
+          <div className="painel-modal-body">
+            <p className="painel-muted">Tem certeza que deseja remover {delName} da equipe?</p>
+            <div className="painel-row" style={{ marginTop: 16, justifyContent: 'flex-end' }}>
+              <button type="button" className="painel-button" onClick={() => setConfirmDelOpen(false)}>Cancelar</button>
+              <button type="button" className="painel-button painel-danger-text" onClick={confirmDelete}>Excluir</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
   );
 }
 

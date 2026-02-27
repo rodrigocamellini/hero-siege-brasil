@@ -5,7 +5,7 @@ import { doc, getDoc, collection, getDocs, addDoc, serverTimestamp, query, where
 import BlogComments from './BlogComments';
 import RelicsView, { PASSIVE_RELICS, EXTRA_RELICS, normalizeRelicImageUrl, getRelicImageSrc } from './RelicsView';
 import ClassesView from './ClassesView';
-import ItemsView from './ItemsView';
+import ItemsView, { rarityStyle } from './ItemsView';
 import RunesView from './RunesView';
 import ChaosTowerPage from './ChaosTowerPage';
 import MercenariosPage from './MercenariosPage';
@@ -249,6 +249,8 @@ const NewDesign = ({ onBack, initialView = 'home' }) => {
   const [itemsList, setItemsList] = useState([]);
   const [itemsLoading, setItemsLoading] = useState(false);
   const [selectedItem, setSelectedItem] = useState(null);
+  const [hoveredItem, setHoveredItem] = useState(null);
+  const [hoverPos, setHoverPos] = useState({ x: 0, y: 0 });
   const [blogPosts, setBlogPosts] = useState([]);
   const [selectedBlogPost, setSelectedBlogPost] = useState(null);
   const postsUnsubRef = useRef(null);
@@ -3721,6 +3723,7 @@ const NewDesign = ({ onBack, initialView = 'home' }) => {
                                 }
 
                                 return {
+                                  ...base,
                                   key: `${name}-${idx}`,
                                   name,
                                   img,
@@ -3745,6 +3748,7 @@ const NewDesign = ({ onBack, initialView = 'home' }) => {
                                 }
 
                                 return {
+                                  ...base,
                                   key: `${name}-${idx}`,
                                   name,
                                   img,
@@ -3782,6 +3786,7 @@ const NewDesign = ({ onBack, initialView = 'home' }) => {
                                 const img = charm.image || (charm.file ? `${basePath}/${charm.file}` : null);
                                 const nameStr = (typeof charm === 'string' ? charm : charm.name) || charm.id || 'Charm';
                                 return {
+                                  ...charm,
                                   key: `${charm.id || idx}-${idx}`,
                                   name: nameStr,
                                   img: img,
@@ -3799,6 +3804,7 @@ const NewDesign = ({ onBack, initialView = 'home' }) => {
                                 const img = weapon.image || (weapon.file ? `${basePath}/${weapon.file}` : null);
                                 const nameStr = (typeof weapon === 'string' ? weapon : weapon.name) || weapon.id || 'Weapon';
                                 return {
+                                  ...weapon,
                                   key: `${weapon.id || idx}-${idx}`,
                                   name: nameStr,
                                   img: img,
@@ -3816,6 +3822,7 @@ const NewDesign = ({ onBack, initialView = 'home' }) => {
                                 const img = armor.image || (armor.file ? `${basePath}/${armor.file}` : null);
                                 const nameStr = (typeof armor === 'string' ? armor : armor.name) || armor.id || 'Armor';
                                 return {
+                                  ...armor,
                                   key: `${armor.id || idx}-${idx}`,
                                   name: nameStr,
                                   img: img,
@@ -3827,37 +3834,37 @@ const NewDesign = ({ onBack, initialView = 'home' }) => {
                             const bootItems = (Array.isArray(selectedBuild?.boots) ? selectedBuild.boots : []).map((item, idx) => {
                               if (!item) return null;
                               const nameStr = (typeof item === 'string' ? item : item.name) || item.id || 'Boot';
-                              return { key: idx, name: nameStr, img: item.image || item.img, isBiS: idx === 0 };
+                              return { ...item, key: idx, name: nameStr, img: item.image || item.img, isBiS: idx === 0 };
                             }).filter(Boolean);
 
                             const gloveItems = (Array.isArray(selectedBuild?.gloves) ? selectedBuild.gloves : []).map((item, idx) => {
                               if (!item) return null;
                               const nameStr = (typeof item === 'string' ? item : item.name) || item.id || 'Glove';
-                              return { key: idx, name: nameStr, img: item.image || item.img, isBiS: idx === 0 };
+                              return { ...item, key: idx, name: nameStr, img: item.image || item.img, isBiS: idx === 0 };
                             }).filter(Boolean);
 
                             const helmetItems = (Array.isArray(selectedBuild?.helmets) ? selectedBuild.helmets : []).map((item, idx) => {
                               if (!item) return null;
                               const nameStr = (typeof item === 'string' ? item : item.name) || item.id || 'Helmet';
-                              return { key: idx, name: nameStr, img: item.image || item.img, isBiS: idx === 0 };
+                              return { ...item, key: idx, name: nameStr, img: item.image || item.img, isBiS: idx === 0 };
                             }).filter(Boolean);
 
                             const shieldItems = (Array.isArray(selectedBuild?.shields) ? selectedBuild.shields : []).map((item, idx) => {
                               if (!item) return null;
                               const nameStr = (typeof item === 'string' ? item : item.name) || item.id || 'Shield';
-                              return { key: idx, name: nameStr, img: item.image || item.img, isBiS: idx === 0 };
+                              return { ...item, key: idx, name: nameStr, img: item.image || item.img, isBiS: idx === 0 };
                             }).filter(Boolean);
 
                             const amuletItems = (Array.isArray(selectedBuild?.amulets) ? selectedBuild.amulets : []).map((item, idx) => {
                               if (!item) return null;
                               const nameStr = (typeof item === 'string' ? item : item.name) || item.id || 'Amulet';
-                              return { key: idx, name: nameStr, img: item.image || item.img, isBiS: idx === 0 };
+                              return { ...item, key: idx, name: nameStr, img: item.image || item.img, isBiS: idx === 0 };
                             }).filter(Boolean);
 
                             const beltItems = (Array.isArray(selectedBuild?.belts) ? selectedBuild.belts : []).map((item, idx) => {
                               if (!item) return null;
                               const nameStr = (typeof item === 'string' ? item : item.name) || item.id || 'Belt';
-                              return { key: idx, name: nameStr, img: item.image || item.img, isBiS: idx === 0 };
+                              return { ...item, key: idx, name: nameStr, img: item.image || item.img, isBiS: idx === 0 };
                             }).filter(Boolean);
 
                             const ringItems = (Array.isArray(selectedBuild?.rings) ? selectedBuild.rings : []).map((item, idx) => {
@@ -3866,7 +3873,7 @@ const NewDesign = ({ onBack, initialView = 'home' }) => {
                               let bisLabel = null;
                               if (idx === 0) bisLabel = 'BIS Esq';
                               if (idx === 1) bisLabel = 'BIS Dir';
-                              return { key: idx, name: nameStr, img: item.image || item.img, isBiS: idx === 0 || idx === 1, bisLabel };
+                              return { ...item, key: idx, name: nameStr, img: item.image || item.img, isBiS: idx === 0 || idx === 1, bisLabel };
                             }).filter(Boolean);
                             return (
                               <>
@@ -3939,6 +3946,12 @@ const NewDesign = ({ onBack, initialView = 'home' }) => {
                                           {weaponItems.map((item) => (
                                             <div
                                               key={item.key}
+                                              onMouseEnter={(e) => {
+                                                const rect = e.currentTarget.getBoundingClientRect();
+                                                setHoverPos({ x: rect.right + 10, y: rect.top });
+                                                setHoveredItem(item);
+                                              }}
+                                              onMouseLeave={() => setHoveredItem(null)}
                                               className={`relative flex items-center gap-2 border px-2 py-1 ${
                                                 item.isBiS ? 'border-yellow-500/60 bg-yellow-900/20' : 'border-white/10 bg-black/40'
                                               }`}
@@ -3968,6 +3981,12 @@ const NewDesign = ({ onBack, initialView = 'home' }) => {
                                           {shieldItems.map((item) => (
                                             <div
                                               key={item.key}
+                                              onMouseEnter={(e) => {
+                                                const rect = e.currentTarget.getBoundingClientRect();
+                                                setHoverPos({ x: rect.right + 10, y: rect.top });
+                                                setHoveredItem(item);
+                                              }}
+                                              onMouseLeave={() => setHoveredItem(null)}
                                               className={`relative flex items-center gap-2 border px-2 py-1 ${
                                                 item.isBiS ? 'border-yellow-500/60 bg-yellow-900/20' : 'border-white/10 bg-black/40'
                                               }`}
@@ -3997,6 +4016,12 @@ const NewDesign = ({ onBack, initialView = 'home' }) => {
                                           {helmetItems.map((item) => (
                                             <div
                                               key={item.key}
+                                              onMouseEnter={(e) => {
+                                                const rect = e.currentTarget.getBoundingClientRect();
+                                                setHoverPos({ x: rect.right + 10, y: rect.top });
+                                                setHoveredItem(item);
+                                              }}
+                                              onMouseLeave={() => setHoveredItem(null)}
                                               className={`relative flex items-center gap-2 border px-2 py-1 ${
                                                 item.isBiS ? 'border-yellow-500/60 bg-yellow-900/20' : 'border-white/10 bg-black/40'
                                               }`}
@@ -4026,6 +4051,12 @@ const NewDesign = ({ onBack, initialView = 'home' }) => {
                                           {armorItems.map((item) => (
                                             <div
                                               key={item.key}
+                                              onMouseEnter={(e) => {
+                                                const rect = e.currentTarget.getBoundingClientRect();
+                                                setHoverPos({ x: rect.right + 10, y: rect.top });
+                                                setHoveredItem(item);
+                                              }}
+                                              onMouseLeave={() => setHoveredItem(null)}
                                               className={`relative flex items-center gap-2 border px-2 py-1 ${
                                                 item.isBiS ? 'border-yellow-500/60 bg-yellow-900/20' : 'border-white/10 bg-black/40'
                                               }`}
@@ -4055,6 +4086,12 @@ const NewDesign = ({ onBack, initialView = 'home' }) => {
                                           {gloveItems.map((item) => (
                                             <div
                                               key={item.key}
+                                              onMouseEnter={(e) => {
+                                                const rect = e.currentTarget.getBoundingClientRect();
+                                                setHoverPos({ x: rect.right + 10, y: rect.top });
+                                                setHoveredItem(item);
+                                              }}
+                                              onMouseLeave={() => setHoveredItem(null)}
                                               className={`relative flex items-center gap-2 border px-2 py-1 ${
                                                 item.isBiS ? 'border-yellow-500/60 bg-yellow-900/20' : 'border-white/10 bg-black/40'
                                               }`}
@@ -4084,6 +4121,12 @@ const NewDesign = ({ onBack, initialView = 'home' }) => {
                                           {bootItems.map((item) => (
                                             <div
                                               key={item.key}
+                                              onMouseEnter={(e) => {
+                                                const rect = e.currentTarget.getBoundingClientRect();
+                                                setHoverPos({ x: rect.right + 10, y: rect.top });
+                                                setHoveredItem(item);
+                                              }}
+                                              onMouseLeave={() => setHoveredItem(null)}
                                               className={`relative flex items-center gap-2 border px-2 py-1 ${
                                                 item.isBiS ? 'border-yellow-500/60 bg-yellow-900/20' : 'border-white/10 bg-black/40'
                                               }`}
@@ -4113,6 +4156,12 @@ const NewDesign = ({ onBack, initialView = 'home' }) => {
                                           {beltItems.map((item) => (
                                             <div
                                               key={item.key}
+                                              onMouseEnter={(e) => {
+                                                const rect = e.currentTarget.getBoundingClientRect();
+                                                setHoverPos({ x: rect.right + 10, y: rect.top });
+                                                setHoveredItem(item);
+                                              }}
+                                              onMouseLeave={() => setHoveredItem(null)}
                                               className={`relative flex items-center gap-2 border px-2 py-1 ${
                                                 item.isBiS ? 'border-yellow-500/60 bg-yellow-900/20' : 'border-white/10 bg-black/40'
                                               }`}
@@ -4142,6 +4191,12 @@ const NewDesign = ({ onBack, initialView = 'home' }) => {
                                           {amuletItems.map((item) => (
                                             <div
                                               key={item.key}
+                                              onMouseEnter={(e) => {
+                                                const rect = e.currentTarget.getBoundingClientRect();
+                                                setHoverPos({ x: rect.right + 10, y: rect.top });
+                                                setHoveredItem(item);
+                                              }}
+                                              onMouseLeave={() => setHoveredItem(null)}
                                               className={`relative flex items-center gap-2 border px-2 py-1 ${
                                                 item.isBiS ? 'border-yellow-500/60 bg-yellow-900/20' : 'border-white/10 bg-black/40'
                                               }`}
@@ -4171,6 +4226,12 @@ const NewDesign = ({ onBack, initialView = 'home' }) => {
                                           {ringItems.map((item) => (
                                             <div
                                               key={item.key}
+                                              onMouseEnter={(e) => {
+                                                const rect = e.currentTarget.getBoundingClientRect();
+                                                setHoverPos({ x: rect.right + 10, y: rect.top });
+                                                setHoveredItem(item);
+                                              }}
+                                              onMouseLeave={() => setHoveredItem(null)}
                                               className={`relative flex items-center gap-2 border px-2 py-1 ${
                                                 item.isBiS ? 'border-yellow-500/60 bg-yellow-900/20' : 'border-white/10 bg-black/40'
                                               }`}
@@ -4200,6 +4261,12 @@ const NewDesign = ({ onBack, initialView = 'home' }) => {
                                           {charmItems.map((item) => (
                                             <div
                                               key={item.key}
+                                              onMouseEnter={(e) => {
+                                                const rect = e.currentTarget.getBoundingClientRect();
+                                                setHoverPos({ x: rect.right + 10, y: rect.top });
+                                                setHoveredItem(item);
+                                              }}
+                                              onMouseLeave={() => setHoveredItem(null)}
                                               className="flex items-center gap-2 border px-2 py-1 border-white/10 bg-black/40"
                                             >
                                               {item.img ? (
@@ -4222,6 +4289,12 @@ const NewDesign = ({ onBack, initialView = 'home' }) => {
                                           {relicItems.map((rel) => (
                                             <div
                                               key={rel.key}
+                                              onMouseEnter={(e) => {
+                                                const rect = e.currentTarget.getBoundingClientRect();
+                                                setHoverPos({ x: rect.right + 10, y: rect.top });
+                                                setHoveredItem(rel);
+                                              }}
+                                              onMouseLeave={() => setHoveredItem(null)}
                                               className={`relative flex items-center gap-2 border px-2 py-1 ${
                                                 rel.quest ? 'border-red-500/60 bg-red-900/20' : 'border-white/10 bg-black/40'
                                               }`}
@@ -4254,6 +4327,12 @@ const NewDesign = ({ onBack, initialView = 'home' }) => {
                                           {potionItems.map((pot) => (
                                             <div
                                               key={pot.key}
+                                              onMouseEnter={(e) => {
+                                                const rect = e.currentTarget.getBoundingClientRect();
+                                                setHoverPos({ x: rect.right + 10, y: rect.top });
+                                                setHoveredItem(pot);
+                                              }}
+                                              onMouseLeave={() => setHoveredItem(null)}
                                               className="flex items-center gap-2 border px-2 py-1 border-white/10 bg-black/40"
                                             >
                                               {pot.img ? (
@@ -4281,7 +4360,15 @@ const NewDesign = ({ onBack, initialView = 'home' }) => {
                                           Mercenário
                                         </div>
                                         <div className="flex flex-wrap gap-2">
-                                          <div className="flex items-center gap-2 border px-2 py-1 border-white/10 bg-black/40">
+                                          <div
+                                            onMouseEnter={(e) => {
+                                              const rect = e.currentTarget.getBoundingClientRect();
+                                              setHoverPos({ x: rect.right + 10, y: rect.top });
+                                              setHoveredItem(mercenaryInfo);
+                                            }}
+                                            onMouseLeave={() => setHoveredItem(null)}
+                                            className="flex items-center gap-2 border px-2 py-1 border-white/10 bg-black/40"
+                                          >
                                             <img
                                               src={mercenaryInfo.image}
                                               alt={mercenaryInfo.name}
@@ -6599,6 +6686,78 @@ const NewDesign = ({ onBack, initialView = 'home' }) => {
                         )}
                     </div>
                 </div>
+            </div>
+        </div>
+      )}
+      
+      {/* Hover Modal for Build Items */}
+      {hoveredItem && (
+        <div 
+            className="fixed z-[9999] pointer-events-none bg-[#0f111a]/95 backdrop-blur-md border border-white/20 p-4 rounded-sm shadow-2xl max-w-[300px] w-max animate-fade-in"
+            style={{ 
+                top: Math.min(window.innerHeight - 200, Math.max(10, hoverPos.y)), 
+                left: Math.min(window.innerWidth - 320, hoverPos.x),
+            }}
+        >
+            {/* Header */}
+            <div className="flex items-start gap-3 mb-3 border-b border-white/10 pb-2">
+                {hoveredItem.img && (
+                    <img 
+                        src={hoveredItem.img} 
+                        alt={hoveredItem.name} 
+                        className="w-10 h-10 object-contain bg-black/50 rounded border border-white/10" 
+                        onError={(e) => e.target.style.display = 'none'}
+                    />
+                )}
+                <div>
+                    <div 
+                        className={`text-sm font-bold leading-tight ${rarityStyle(hoveredItem.rarity || '').text}`}
+                        style={{ textShadow: rarityStyle(hoveredItem.rarity || '').glow }}
+                    >
+                        {hoveredItem.name}
+                    </div>
+                    {(hoveredItem.rarity || hoveredItem.type) && (
+                        <div className="text-[10px] text-gray-400 uppercase tracking-wider mt-0.5">
+                            {hoveredItem.rarity} {hoveredItem.type}
+                        </div>
+                    )}
+                </div>
+            </div>
+
+            {/* Stats Section */}
+            <div className="space-y-2 text-xs">
+                {/* Relic Specific Stats */}
+                {hoveredItem.stats && Array.isArray(hoveredItem.stats) && hoveredItem.l1 && (
+                    <div className="space-y-1">
+                        {hoveredItem.stats.map((stat, i) => (
+                            <div key={i} className="flex justify-between text-gray-300 gap-4">
+                                <span>{stat}:</span>
+                                <span className="text-yellow-400 font-mono">
+                                    {hoveredItem.l10?.[i] || hoveredItem.l1?.[i] || '?'}
+                                </span>
+                            </div>
+                        ))}
+                    </div>
+                )}
+
+                {/* Generic Description/Stats */}
+                 {!hoveredItem.l1 && hoveredItem.stats && !Array.isArray(hoveredItem.stats) && (
+                     <div className="text-gray-300">{String(hoveredItem.stats)}</div>
+                 )}
+
+                 {/* Runewords */}
+                 {hoveredItem.runeword && (
+                     <div className="text-orange-400 italic">
+                         Runeword: {hoveredItem.runeword}
+                     </div>
+                 )}
+
+                 {/* Description */}
+                 {hoveredItem.description && (
+                     <div className="text-gray-400 italic text-[11px] mt-2 border-t border-white/5 pt-2">
+                         {hoveredItem.description}
+                     </div>
+                 )}
             </div>
         </div>
       )}
