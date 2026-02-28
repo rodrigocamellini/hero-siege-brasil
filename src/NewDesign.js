@@ -771,7 +771,7 @@ const NewDesign = ({ onBack, initialView = 'home' }) => {
     if (!post) return;
     setSelectedBlogPost(post);
     setCurrentView('blog');
-    if (post.id) navigate(`/blog/${post.id}`);
+    if (post.id) navigate(`/blog/${post.slug || post.id}`);
     else navigate('/blog');
   };
 
@@ -1094,7 +1094,7 @@ const NewDesign = ({ onBack, initialView = 'home' }) => {
       if (blogPosts.length === 0) {
         await loadBlogPosts();
       }
-      const post = blogPosts.find((p) => p.id === postId);
+      const post = blogPosts.find((p) => p.id === postId || p.slug === postId);
       if (post) {
         setSelectedBlogPost(post);
         setCurrentView('blog');
@@ -1107,14 +1107,37 @@ const NewDesign = ({ onBack, initialView = 'home' }) => {
     const openFromBuildRoute = async () => {
       if (!buildId) return;
       try {
-        const docRef = doc(db, 'builds', buildId);
-        const snap = await getDoc(docRef);
-        if (snap.exists()) {
-           const data = snap.data();
+        let docSnap = null;
+        let data = null;
+        let finalId = buildId;
+
+        // Tenta buscar por ID direto primeiro (se for um ID válido do Firestore, geralmente 20 chars)
+        // Mas como IDs podem variar, tentamos getDoc. Se falhar, tentamos query por slug.
+        try {
+            const docRef = doc(db, 'builds', buildId);
+            docSnap = await getDoc(docRef);
+        } catch (e) {
+            // Ignora erro de ID inválido, tenta slug
+        }
+
+        if (docSnap && docSnap.exists()) {
+            data = docSnap.data();
+            finalId = docSnap.id;
+        } else {
+            // Tenta buscar por slug
+            const q = query(collection(db, 'builds'), where('slug', '==', buildId));
+            const querySnap = await getDocs(q);
+            if (!querySnap.empty) {
+                const first = querySnap.docs[0];
+                data = first.data();
+                finalId = first.id;
+            }
+        }
+
+        if (data) {
            // Aceitamos published e pending (para moderadores verem como fica)
-           // Se o usuário comum tentar acessar pending, talvez devêssemos bloquear, mas por enquanto ok.
            if (data.status === 'published' || data.status === 'pending') {
-             setSelectedBuild({ id: snap.id, ...data });
+             setSelectedBuild({ id: finalId, ...data });
              setBuildModalOpen(true);
            } else {
              console.log('Build não publicada ou rascunho');
@@ -3447,8 +3470,8 @@ const NewDesign = ({ onBack, initialView = 'home' }) => {
                                           key={b.id}
                                           type="button"
                                           onClick={() => {
-                                            setSelectedBuild(b);
-                                            setBuildModalOpen(true);
+                                            const slug = b.slug || b.id;
+                                            navigate(`/build/${slug}`);
                                           }}
                                           className="w-full text-left border border-white/10 bg-gradient-to-b from-[#181b25] to-[#0c0e17] hover:from-[#1f2431] hover:to-[#10131d] px-3 py-2 text-[11px] flex flex-col gap-1 shadow-[0_0_0_1px_rgba(255,255,255,0.03),inset_0_0_0_1px_rgba(15,23,42,0.9)]"
                                         >
@@ -6375,7 +6398,7 @@ const NewDesign = ({ onBack, initialView = 'home' }) => {
                             <div className="mt-6">
                               <button
                                 onClick={() => {
-                                  const url = `${window.location.origin}${window.location.pathname}#blog/${selectedBlogPost.id}`;
+                                  const url = `${window.location.origin}/blog/${selectedBlogPost.slug || selectedBlogPost.id}`;
                                   if (navigator.share) {
                                     navigator.share({ title: selectedBlogPost.title, url }).catch(() => {});
                                   } else {

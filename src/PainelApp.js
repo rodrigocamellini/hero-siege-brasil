@@ -636,6 +636,15 @@ function slugifyClass(name) {
     .replace(/(^-|-$)/g, '');
 }
 
+function slugify(text) {
+  return String(text || '')
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/(^-|-$)/g, '');
+}
+
 const handleRelicError = (e, name) => {
   const target = e.target;
   const originalName = String(name || '');
@@ -851,8 +860,10 @@ function PainelForum() {
     if (buildType === 'final') nextTags.push('final');
     const baseClass = className || (editDoc && (editDoc.className || editDoc.heroClass)) || '';
     const forum = baseClass ? slugifyClass(baseClass) : '';
+    const buildSlug = slugify(title);
     const data = {
       title: title || '',
+      slug: buildSlug,
       author: author || '',
       className: baseClass || '',
       heroClass: baseClass || '',
@@ -2250,9 +2261,11 @@ function PainelBlog() {
       .map((t) => t.trim())
       .filter(Boolean);
     const uniqTags = Array.from(new Set(rawTags));
+    const postSlug = slugify(title);
     const data = {
       author: author || '',
       title: title || '',
+      slug: postSlug,
       date: date || '',
       image: image || '',
       excerpt: excerpt || '',
@@ -3330,11 +3343,19 @@ function PainelBackup() {
   const [backups, setBackups] = useState([]);
   const [loading, setLoading] = useState(false);
   const [generating, setGenerating] = useState(false);
+  
+  // Modals state
   const [restoreModalOpen, setRestoreModalOpen] = useState(false);
+  const [confirmModal, setConfirmModal] = useState({ open: false, type: '', data: null });
+  const [messageModal, setMessageModal] = useState({ open: false, type: '', title: '', message: '' });
+
   const [password, setPassword] = useState('');
   const [selectedBackup, setSelectedBackup] = useState(null);
-  const [error, setError] = useState('');
-  const [success, setSuccess] = useState('');
+  
+  // Helper to show messages in modal
+  const showMessage = (type, title, msg) => {
+    setMessageModal({ open: true, type, title, message: msg });
+  };
 
   useEffect(() => {
     const q = collection(db, 'backups');
@@ -3347,11 +3368,17 @@ function PainelBackup() {
     return () => unsub();
   }, []);
 
-  const handleGenerateBackup = async () => {
-    if (!window.confirm('Tem certeza que deseja gerar um backup completo agora?')) return;
+  const initiateGenerateBackup = () => {
+    setConfirmModal({ 
+      open: true, 
+      type: 'generate', 
+      data: null 
+    });
+  };
+
+  const executeGenerateBackup = async () => {
+    setConfirmModal({ ...confirmModal, open: false });
     setGenerating(true);
-    setError('');
-    setSuccess('');
     try {
       const postsSnap = await getDocs(collection(db, 'posts'));
       const posts = postsSnap.docs.map(d => ({ id: d.id, ...d.data() }));
@@ -3417,16 +3444,25 @@ function PainelBackup() {
         type: 'full'
       });
 
-      setSuccess('Backup gerado e salvo com sucesso!');
+      showMessage('success', 'Sucesso', 'Backup gerado e salvo com sucesso!');
     } catch (e) {
       console.error(e);
-      setError('Erro ao gerar backup: ' + e.message);
+      showMessage('error', 'Erro', 'Erro ao gerar backup: ' + e.message);
     } finally {
       setGenerating(false);
     }
   };
 
-  const handleDownload = (backup) => {
+  const initiateDownload = (backup) => {
+    setConfirmModal({
+      open: true,
+      type: 'download',
+      data: backup
+    });
+  };
+
+  const executeDownload = (backup) => {
+    setConfirmModal({ ...confirmModal, open: false });
     try {
       const blob = new Blob([backup.data], { type: 'application/json' });
       const url = URL.createObjectURL(blob);
@@ -3437,8 +3473,9 @@ function PainelBackup() {
       a.click();
       document.body.removeChild(a);
       URL.revokeObjectURL(url);
+      showMessage('success', 'Download', 'Download iniciado com sucesso.');
     } catch (e) {
-      setError('Erro ao baixar: ' + e.message);
+      showMessage('error', 'Erro', 'Erro ao baixar: ' + e.message);
     }
   };
 
@@ -3446,15 +3483,12 @@ function PainelBackup() {
     setSelectedBackup(b);
     setPassword('');
     setRestoreModalOpen(true);
-    setError('');
   };
 
   const handleRestore = async (e) => {
     e.preventDefault();
     if (!password) return;
     setLoading(true);
-    setError('');
-    setSuccess('');
 
     try {
       const auth = getAuth(app);
@@ -3554,27 +3588,35 @@ function PainelBackup() {
         await batch.commit();
       }
 
-      setSuccess('Restauração concluída com sucesso!');
       setRestoreModalOpen(false);
+      showMessage('success', 'Restauração Concluída', 'O banco de dados foi restaurado com sucesso!');
     } catch (e) {
       console.error(e);
       if (e.code === 'auth/wrong-password') {
-        setError('Senha incorreta.');
+        showMessage('error', 'Erro de Autenticação', 'Senha incorreta.');
       } else {
-        setError('Falha na restauração: ' + e.message);
+        showMessage('error', 'Falha na Restauração', e.message);
       }
     } finally {
       setLoading(false);
     }
   };
 
-  const handleDeleteBackup = async (id) => {
-    if (!window.confirm('Excluir este backup permanentemente?')) return;
+  const initiateDeleteBackup = (id) => {
+    setConfirmModal({
+      open: true,
+      type: 'delete',
+      data: id
+    });
+  };
+
+  const executeDeleteBackup = async (id) => {
+    setConfirmModal({ ...confirmModal, open: false });
     try {
       await deleteDoc(doc(db, 'backups', id));
-      setSuccess('Backup excluído.');
+      showMessage('success', 'Sucesso', 'Backup excluído permanentemente.');
     } catch (e) {
-      setError('Erro ao excluir: ' + e.message);
+      showMessage('error', 'Erro', 'Erro ao excluir: ' + e.message);
     }
   };
 
@@ -3589,87 +3631,78 @@ function PainelBackup() {
         </div>
         <button 
           className="painel-button" 
-          onClick={handleGenerateBackup}
+          onClick={initiateGenerateBackup}
           disabled={generating}
         >
           {generating ? 'Gerando...' : 'Gerar Novo Backup'}
         </button>
       </div>
 
-      {error && (
-        <div className="painel-card" style={{ borderColor: '#ef4444', background: '#fef2f2', minHeight: 'auto' }}>
-           <p style={{ color: '#b91c1c' }}>{error}</p>
-        </div>
-      )}
-      
-      {success && (
-        <div className="painel-card" style={{ borderColor: '#22c55e', background: '#f0fdf4', minHeight: 'auto' }}>
-           <p style={{ color: '#15803d' }}>{success}</p>
-        </div>
-      )}
-
       <div className="painel-card">
-        <div className="painel-table-wrapper">
-          <table className="painel-table">
-            <thead>
-              <tr>
-                <th>Data</th>
-                <th>Tamanho</th>
-                <th>Tipo</th>
-                <th style={{ textAlign: 'right' }}>Ações</th>
-              </tr>
-            </thead>
-            <tbody>
-              {backups.map(b => (
-                <tr key={b.id}>
-                  <td>
-                    {b.createdAt?.seconds 
-                      ? new Date(b.createdAt.seconds * 1000).toLocaleString() 
-                      : 'Processando...'}
-                  </td>
-                  <td>
-                    {b.size ? (b.size / 1024).toFixed(2) + ' KB' : '–'}
-                  </td>
-                  <td>
-                    <span className="painel-tag">{b.type || 'Full'}</span>
-                  </td>
-                  <td className="painel-actions-cell">
-                    <button 
-                       className="painel-action-btn painel-action-view" 
-                       title="Download JSON"
-                       onClick={() => handleDownload(b)}
-                    >
-                      ⬇️
-                    </button>
-                    <button 
-                       className="painel-action-btn painel-action-edit" 
-                       title="Restaurar"
-                       onClick={() => openRestore(b)}
-                    >
-                      ♻️
-                    </button>
-                    <button 
-                       className="painel-action-btn painel-action-delete" 
-                       title="Excluir"
-                       onClick={() => handleDeleteBackup(b.id)}
-                    >
-                      🗑️
-                    </button>
-                  </td>
-                </tr>
-              ))}
-              {backups.length === 0 && (
+        <div className="painel-card-inner">
+          <div className="painel-table-wrapper">
+            <table className="painel-table">
+              <thead>
                 <tr>
-                  <td colSpan="4" style={{ textAlign: 'center', padding: 20, color: '#9ca3af' }}>
-                    Nenhum backup encontrado.
-                  </td>
+                  <th>Data</th>
+                  <th>Tamanho</th>
+                  <th>Tipo</th>
+                  <th style={{ textAlign: 'right' }}>Ações</th>
                 </tr>
-              )}
-            </tbody>
-          </table>
+              </thead>
+              <tbody>
+                {backups.map(b => (
+                  <tr key={b.id}>
+                    <td>
+                      {b.createdAt?.seconds 
+                        ? new Date(b.createdAt.seconds * 1000).toLocaleString() 
+                        : 'Processando...'}
+                    </td>
+                    <td>
+                      {b.size ? (b.size / 1024).toFixed(2) + ' KB' : '–'}
+                    </td>
+                    <td>
+                      <span className="painel-tag">{b.type || 'Full'}</span>
+                    </td>
+                    <td className="painel-actions-cell">
+                      <button 
+                         className="painel-action-btn painel-action-view" 
+                         title="Download JSON"
+                         onClick={() => initiateDownload(b)}
+                      >
+                        ⬇️
+                      </button>
+                      <button 
+                         className="painel-action-btn painel-action-edit" 
+                         title="Restaurar"
+                         onClick={() => openRestore(b)}
+                      >
+                        ♻️
+                      </button>
+                      <button 
+                         className="painel-action-btn painel-action-delete" 
+                         title="Excluir"
+                         onClick={() => initiateDeleteBackup(b.id)}
+                      >
+                        🗑️
+                      </button>
+                    </td>
+                  </tr>
+                ))}
+                {backups.length === 0 && (
+                  <tr>
+                    <td colSpan="4" style={{ textAlign: 'center', padding: 20, color: '#9ca3af' }}>
+                      Nenhum backup encontrado.
+                    </td>
+                  </tr>
+                )}
+              </tbody>
+            </table>
+          </div>
         </div>
       </div>
 
+      {/* MODAL DE RESTAURAÇÃO (SENHA) */}
       {restoreModalOpen && (
         <div className="painel-modal">
           <div className="painel-modal-backdrop" onClick={() => setRestoreModalOpen(false)} />
@@ -3678,28 +3711,96 @@ function PainelBackup() {
               <div className="painel-modal-title">Confirmar Restauração</div>
               <div className="painel-modal-close" onClick={() => setRestoreModalOpen(false)}>✕</div>
             </div>
-            <div className="painel-modal-body">
-              <p className="painel-muted" style={{ marginBottom: 16 }}>
-                Atenção: Isso irá sobrescrever os dados atuais do site com os dados deste backup ({selectedBackup?.createdAt?.seconds ? new Date(selectedBackup.createdAt.seconds * 1000).toLocaleDateString() : ''}).
-                <br/><br/>
-                Confirme sua senha para continuar:
-              </p>
-              <form onSubmit={handleRestore}>
+            <form onSubmit={handleRestore}>
+              <div style={{ marginBottom: 16, fontSize: 13, color: '#4b5563' }}>
+                Você está prestes a restaurar um backup de <b>{new Date(selectedBackup?.createdAt?.seconds * 1000).toLocaleString()}</b>.<br/>
+                Isso substituirá TODOS os dados atuais do site.<br/>
+                Digite sua senha para confirmar.
+              </div>
+              
+              <div style={{ marginBottom: 16 }}>
+                <label className="painel-login-label">Sua Senha</label>
                 <input 
                   type="password" 
                   className="painel-input" 
-                  placeholder="Sua senha atual"
-                  value={password}
-                  onChange={e => setPassword(e.target.value)}
+                  value={password} 
+                  onChange={(e) => setPassword(e.target.value)}
+                  placeholder="Senha do admin"
                   autoFocus
                 />
-                <div style={{ marginTop: 16, display: 'flex', justifyContent: 'flex-end', gap: 10 }}>
-                  <button type="button" className="painel-button" style={{ background: 'transparent', color: '#6b7280', border: 'none' }} onClick={() => setRestoreModalOpen(false)}>Cancelar</button>
-                  <button type="submit" className="painel-button" style={{ background: '#b91c1c', borderColor: '#b91c1c' }} disabled={loading}>
-                    {loading ? 'Restaurando...' : 'Confirmar e Restaurar'}
-                  </button>
-                </div>
-              </form>
+              </div>
+
+              <div className="painel-modal-footer">
+                <button type="button" className="painel-button secondary" onClick={() => setRestoreModalOpen(false)}>Cancelar</button>
+                <button type="submit" className="painel-button" disabled={loading}>
+                  {loading ? 'Restaurando...' : 'Confirmar Restauração'}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* MODAL DE CONFIRMAÇÃO GERAL */}
+      {confirmModal.open && (
+        <div className="painel-modal">
+          <div className="painel-modal-backdrop" onClick={() => setConfirmModal({ ...confirmModal, open: false })} />
+          <div className="painel-modal-content small">
+            <div className="painel-modal-header">
+              <div className="painel-modal-title">
+                {confirmModal.type === 'delete' && 'Excluir Backup'}
+                {confirmModal.type === 'generate' && 'Gerar Novo Backup'}
+                {confirmModal.type === 'download' && 'Baixar Backup'}
+              </div>
+              <div className="painel-modal-close" onClick={() => setConfirmModal({ ...confirmModal, open: false })}>✕</div>
+            </div>
+            <div style={{ padding: '16px 0', fontSize: '14px', color: '#374151' }}>
+              {confirmModal.type === 'delete' && 'Tem certeza que deseja excluir este backup permanentemente? Esta ação não pode ser desfeita.'}
+              {confirmModal.type === 'generate' && 'Deseja gerar um novo backup completo agora? Isso pode levar alguns segundos.'}
+              {confirmModal.type === 'download' && 'Deseja iniciar o download deste arquivo de backup?'}
+            </div>
+            <div className="painel-modal-footer">
+              <button className="painel-button secondary" onClick={() => setConfirmModal({ ...confirmModal, open: false })}>
+                Cancelar
+              </button>
+              <button 
+                className={`painel-button ${confirmModal.type === 'delete' ? 'danger' : ''}`}
+                onClick={() => {
+                  if (confirmModal.type === 'delete') executeDeleteBackup(confirmModal.data);
+                  if (confirmModal.type === 'generate') executeGenerateBackup();
+                  if (confirmModal.type === 'download') executeDownload(confirmModal.data);
+                }}
+              >
+                {confirmModal.type === 'delete' && 'Sim, Excluir'}
+                {confirmModal.type === 'generate' && 'Sim, Gerar'}
+                {confirmModal.type === 'download' && 'Sim, Baixar'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* MODAL DE MENSAGEM (SUCESSO/ERRO) */}
+      {messageModal.open && (
+        <div className="painel-modal">
+          <div className="painel-modal-backdrop" onClick={() => setMessageModal({ ...messageModal, open: false })} />
+          <div className="painel-modal-content small">
+            <div className="painel-modal-header" style={{ borderBottom: 'none', paddingBottom: 0 }}>
+              <div className="painel-modal-title" style={{ 
+                color: messageModal.type === 'error' ? '#dc2626' : '#16a34a',
+                display: 'flex', alignItems: 'center', gap: 8
+              }}>
+                {messageModal.type === 'error' ? '⚠️' : '✅'} {messageModal.title}
+              </div>
+              <div className="painel-modal-close" onClick={() => setMessageModal({ ...messageModal, open: false })}>✕</div>
+            </div>
+            <div style={{ padding: '16px 0', fontSize: '14px', color: '#374151', lineHeight: '1.5' }}>
+              {messageModal.message}
+            </div>
+            <div className="painel-modal-footer" style={{ borderTop: 'none', paddingTop: 0 }}>
+              <button className="painel-button" onClick={() => setMessageModal({ ...messageModal, open: false })}>
+                OK
+              </button>
             </div>
           </div>
         </div>
@@ -3840,6 +3941,50 @@ function PainelSettings() {
     }
   };
 
+  const handleMigrateSlugs = async () => {
+    // Usando confirm simples aqui pois é uma ferramenta administrativa avançada
+    if (!window.confirm('Isso irá gerar slugs para todos os posts e builds que não possuem um. Continuar?')) return;
+    setLoading(true);
+    try {
+      let count = 0;
+      const batch = writeBatch(db);
+      
+      // Posts
+      const postsSnap = await getDocs(collection(db, 'posts'));
+      postsSnap.forEach(docSnap => {
+        const data = docSnap.data();
+        if (!data.slug && data.title) {
+          const newSlug = slugify(data.title);
+          batch.update(doc(db, 'posts', docSnap.id), { slug: newSlug });
+          count++;
+        }
+      });
+
+      // Builds
+      const buildsSnap = await getDocs(collection(db, 'builds'));
+      buildsSnap.forEach(docSnap => {
+        const data = docSnap.data();
+        if (!data.slug && data.title) {
+          const newSlug = slugify(data.title);
+          batch.update(doc(db, 'builds', docSnap.id), { slug: newSlug });
+          count++;
+        }
+      });
+
+      if (count > 0) {
+        await batch.commit();
+        alert(`Sucesso! ${count} itens atualizados com novos slugs.`);
+      } else {
+        alert('Nenhum item precisou de atualização.');
+      }
+    } catch (e) {
+      console.error(e);
+      alert('Erro ao migrar slugs: ' + e.message);
+    } finally {
+      setLoading(false);
+    }
+  };
+
   return (
     <div className="painel-main">
       <div className="painel-page-header">
@@ -3882,6 +4027,29 @@ function PainelSettings() {
                 </div>
               </div>
             ))}
+          </div>
+        </div>
+      </div>
+
+      <div className="painel-card">
+        <div className="painel-card-inner">
+          <h2>Ferramentas do Sistema</h2>
+          <div style={{ marginTop: 16 }}>
+            <p className="painel-muted" style={{ marginBottom: 12 }}>
+              Ferramentas de manutenção para o administrador.
+            </p>
+            <button 
+              type="button" 
+              className="painel-button" 
+              onClick={handleMigrateSlugs}
+              disabled={loading}
+              style={{ width: '100%', maxWidth: 300, justifyContent: 'center' }}
+            >
+              {loading ? 'Processando...' : 'Gerar Slugs Faltantes (Posts e Builds)'}
+            </button>
+            <p className="painel-muted" style={{ marginTop: 8, fontSize: 12 }}>
+              Use esta ferramenta para atualizar posts e builds antigos que ainda não possuem URL amigável.
+            </p>
           </div>
         </div>
       </div>

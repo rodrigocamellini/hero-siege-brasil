@@ -57,6 +57,11 @@ service cloud.firestore {
       allow read, update, delete: if isAdmin();
     }
 
+    // Backups (Apenas admin pode ler/escrever)
+    match /backups/{backupId} {
+      allow read, write: if isAdmin();
+    }
+
     // Padrão (Cuidado: isso torna tudo público para leitura se não houver regra mais restrita que negue. 
     // No Firestore, se UMA regra permitir, o acesso é concedido. 
     // Para restringir posts não publicados, idealmente remova o allow read: if true global e liste as coleções permitidas.)
