@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
+import { Helmet } from 'react-helmet-async';
 import { db } from './firebase';
 import { doc, getDoc, collection, getDocs, addDoc, serverTimestamp, query, where, orderBy, onSnapshot } from 'firebase/firestore';
 import BlogComments from './BlogComments';
@@ -3657,6 +3658,24 @@ const NewDesign = ({ onBack, initialView = 'home' }) => {
                 )}
                 {buildModalOpen && selectedBuild && (
                   <div className="fixed inset-0 z-50">
+                    <Helmet>
+                      <title>{selectedBuild.title ? `${selectedBuild.title} | ` : ''}Builds | Hero Siege Brasil</title>
+                      <meta name="description" content={`Confira a build ${selectedBuild.title} criada por ${selectedBuild.author}.`} />
+                      <script type="application/ld+json">
+                        {JSON.stringify({
+                          "@context": "https://schema.org",
+                          "@type": "TechArticle",
+                          "headline": selectedBuild.title,
+                          "author": {
+                            "@type": "Person",
+                            "name": selectedBuild.author
+                          },
+                          "datePublished": selectedBuild.createdAt?.seconds 
+                            ? new Date(selectedBuild.createdAt.seconds * 1000).toISOString() 
+                            : new Date().toISOString()
+                        })}
+                      </script>
+                    </Helmet>
                     <div className="absolute inset-0 bg-black/80" onClick={() => { setBuildModalOpen(false); setSelectedBuild(null); }} />
                     <div className="absolute inset-0 flex items-center justify-center p-4">
                       <div className="bg-[#151923] border border-white/10 rounded-sm shadow-xl max-w-3xl w-full max-h-[80vh] flex flex-col">
@@ -6372,6 +6391,30 @@ const NewDesign = ({ onBack, initialView = 'home' }) => {
                     )}
                     {selectedBlogPost && (
                       <div>
+                        <Helmet>
+                          <title>{selectedBlogPost.title} | Blog | Hero Siege Brasil</title>
+                          <meta name="description" content={selectedBlogPost.excerpt || `Leia sobre ${selectedBlogPost.title} em Hero Siege Brasil.`} />
+                          <meta property="og:title" content={`${selectedBlogPost.title} | Hero Siege Brasil`} />
+                          <meta property="og:description" content={selectedBlogPost.excerpt || `Leia sobre ${selectedBlogPost.title} em Hero Siege Brasil.`} />
+                          {selectedBlogPost.image && <meta property="og:image" content={selectedBlogPost.image} />}
+                          <meta property="og:type" content="article" />
+                          <script type="application/ld+json">
+                            {JSON.stringify({
+                              "@context": "https://schema.org",
+                              "@type": "BlogPosting",
+                              "headline": selectedBlogPost.title,
+                              "image": selectedBlogPost.image ? [selectedBlogPost.image] : [],
+                              "datePublished": selectedBlogPost.date?.seconds 
+                                ? new Date(selectedBlogPost.date.seconds * 1000).toISOString() 
+                                : new Date().toISOString(),
+                              "author": [{
+                                  "@type": "Person",
+                                  "name": selectedBlogPost.author || "Hero Siege Brasil"
+                              }],
+                              "description": selectedBlogPost.excerpt || `Leia sobre ${selectedBlogPost.title}`
+                            })}
+                          </script>
+                        </Helmet>
                         <button onClick={() => { setSelectedBlogPost(null); navigate('/blog'); }} className="text-xs uppercase tracking-widest font-bold text-gray-400 hover:text-white mb-4">← Voltar</button>
                         <div className="bg-[#151923] border border-white/5">
                           <div className="h-60 w-full overflow-hidden relative flex items-center justify-center bg-black/50">
