@@ -157,12 +157,17 @@ const NewDesign = ({ onBack, initialView = 'home' }) => {
   const [activeFilter, setActiveFilter] = useState('ALL');
   const [isDbOpen, setIsDbOpen] = useState(false);
   const dbMenuRef = useRef(null);
+  const [isBuilderOpen, setIsBuilderOpen] = useState(false);
+  const builderMenuRef = useRef(null);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   useEffect(() => {
     const handleClickOutside = (e) => {
-      if (dbMenuRef && dbMenuRef.current && !dbMenuRef.current.contains(e.target)) {
+      if (dbMenuRef.current && !dbMenuRef.current.contains(e.target)) {
         setIsDbOpen(false);
+      }
+      if (builderMenuRef.current && !builderMenuRef.current.contains(e.target)) {
+        setIsBuilderOpen(false);
       }
     };
     document.addEventListener('mousedown', handleClickOutside);
@@ -437,8 +442,8 @@ const NewDesign = ({ onBack, initialView = 'home' }) => {
       path = '/charms';
     } else if (currentView === 'builder') {
       const cls = builderClass || 'Viking';
-      title = `Builder ${cls} | Hero Siege Brasil`;
-      path = '/builder';
+      title = `Forum ${cls} | Hero Siege Brasil`;
+      path = '/forum';
     } else if (currentView === 'contact') {
       title = 'Contato | Hero Siege Brasil';
       path = '/contato';
@@ -763,7 +768,7 @@ const NewDesign = ({ onBack, initialView = 'home' }) => {
     else if (view === 'mining') navigate('/mineracao');
     else if (view === 'quests') navigate('/quests');
     else if (view === 'charms') navigate('/charms');
-    else if (view === 'builder') navigate('/builder');
+    else if (view === 'builder') navigate('/forum');
     else if (view === 'contact') navigate('/contato');
     else if (view === 'blog') navigate('/blog');
   };
@@ -2855,12 +2860,50 @@ const NewDesign = ({ onBack, initialView = 'home' }) => {
               >
                 Blog
               </button>
-              <button
-                onClick={() => navigateToView('builder')}
-                className={`transition-colors ${currentView === 'builder' ? 'text-orange-500' : 'hover:text-white'}`}
+              <div
+                className="relative"
+                ref={builderMenuRef}
+                onMouseEnter={() => setIsBuilderOpen(true)}
+                onMouseLeave={() => setIsBuilderOpen(false)}
               >
-                Builder
-              </button>
+                <button
+                  type="button"
+                  onClick={() => setIsBuilderOpen((v) => !v)}
+                  className={`transition-colors ${
+                    currentView === 'builder' || isBuilderOpen
+                      ? 'text-orange-500'
+                      : 'hover:text-white'
+                  }`}
+                >
+                  Builder
+                </button>
+                <div
+                  className={`absolute left-0 top-full w-44 bg-[#0b0d14] border border-white/10 rounded shadow-xl py-2 ${
+                    isBuilderOpen ? 'opacity-100 pointer-events-auto' : 'opacity-0 pointer-events-none'
+                  } transition`}
+                >
+                  <button
+                    onClick={() => {
+                      navigateToView('builder');
+                      setIsBuilderOpen(false);
+                    }}
+                    className={`block w-full text-left px-4 py-2 text-xs font-bold uppercase tracking-widest hover:bg-white/5 ${
+                      currentView === 'builder' ? 'text-orange-500' : 'text-gray-400 hover:text-white'
+                    }`}
+                  >
+                    Forum
+                  </button>
+                  <button
+                    onClick={() => {
+                      navigate('/hero-level-tree');
+                      setIsBuilderOpen(false);
+                    }}
+                    className="block w-full text-left px-4 py-2 text-xs font-bold uppercase tracking-widest text-gray-400 hover:text-white hover:bg-white/5"
+                  >
+                    Hero Level Tree
+                  </button>
+                </div>
+              </div>
               <button
                 onClick={() => navigateToView('equipe')}
                 className={`transition-colors ${currentView === 'equipe' ? 'text-orange-500' : 'hover:text-white'}`}
@@ -3019,7 +3062,16 @@ const NewDesign = ({ onBack, initialView = 'home' }) => {
                   setMobileMenuOpen(false);
                 }}
               >
-                Builder
+                Forum
+              </button>
+              <button
+                className="block w-full text-left py-1"
+                onClick={() => {
+                  navigate('/hero-level-tree');
+                  setMobileMenuOpen(false);
+                }}
+              >
+                Hero Level Tree
               </button>
               <button
                 className={`block w-full text-left py-1 ${currentView === 'equipe' ? 'text-orange-500' : ''}`}

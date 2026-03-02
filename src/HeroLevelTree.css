@@ -1,0 +1,104 @@
+:root {
+    --bg: #0a0a0b;
+    --panel-bg: rgba(10, 10, 12, 0.98);
+    --st-color: #ff4444; --de-color: #44ff44;
+    --in-color: #4444ff; --en-color: #ffff44;
+    --vi-color: #ff00ff; --ar-color: #888888;
+    --mythic: #a020f0; --gold: #ffd700;
+}
+
+.hlt-wrapper { display: flex; width: 100vw; height: 100vh; background: var(--bg); color: white; overflow: hidden; font-family: 'Segoe UI', sans-serif; position: fixed; top: 0; left: 0; z-index: 9999; }
+
+/* SIDEBAR */
+.hlt-status-panel {
+    width: 320px; background: var(--panel-bg); border-right: 2px solid #222;
+    display: flex; flex-direction: column; padding: 25px; z-index: 1000;
+    position: relative; box-shadow: 10px 0 40px rgba(0,0,0,0.9);
+}
+
+.hlt-viewport { flex-grow: 1; position: relative; overflow: hidden; cursor: grab; background: #050505; }
+.hlt-tree-container { position: absolute; transform-origin: 0 0; will-change: transform; }
+
+.hlt-points-spent {
+    text-align: center; background: rgba(255, 215, 0, 0.1);
+    border: 1px solid var(--gold); padding: 10px; border-radius: 4px;
+    margin-bottom: 20px; font-weight: bold; color: var(--gold);
+}
+
+.hlt-status-panel h2 { font-size: 1.1rem; border-bottom: 2px solid #333; padding-bottom: 10px; margin: 0 0 15px 0; text-align: center; color: #fff; }
+
+.hlt-stat-item { 
+    display: flex; justify-content: space-between; align-items: center;
+    margin: 6px 0; font-weight: bold; font-size: 0.85rem; 
+    background: rgba(255,255,255,0.02); padding: 8px 12px; border-radius: 4px;
+    border-left: 3px solid transparent;
+}
+.hlt-stat-value { font-family: monospace; font-size: 1rem; text-shadow: 0 0 8px currentColor; }
+.hlt-val-st { border-color: var(--st-color); color: var(--st-color); }
+.hlt-val-in { border-color: var(--in-color); color: var(--in-color); }
+.hlt-val-en { border-color: var(--en-color); color: var(--en-color); }
+.hlt-val-vi { border-color: var(--vi-color); color: var(--vi-color); }
+.hlt-val-de { border-color: var(--de-color); color: var(--de-color); }
+.hlt-val-ar { border-color: var(--ar-color); color: var(--ar-color); }
+
+/* MYTHIC BOXES */
+.hlt-mythic-container { flex-grow: 1; overflow-y: auto; margin-bottom: 80px; scrollbar-width: thin; }
+.hlt-mythic-box {
+    background: rgba(160, 32, 240, 0.1); border: 1px solid var(--mythic);
+    padding: 10px; border-radius: 4px; margin-top: 8px;
+    animation: fadeIn 0.3s ease;
+}
+@keyframes fadeIn { from { opacity: 0; transform: translateY(-5px); } to { opacity: 1; transform: translateY(0); } }
+.hlt-mythic-name { color: var(--gold); font-size: 0.8rem; font-weight: bold; display: block; margin-bottom: 3px; }
+.hlt-mythic-desc { color: #eee; font-size: 0.7rem; line-height: 1.2; }
+
+/* BOTAO NO RODAPE */
+.hlt-reset-btn { 
+    background: #2a1010; color: #ff6666; border: 1px solid #552222; 
+    padding: 12px; cursor: pointer; font-weight: bold; border-radius: 4px;
+    position: absolute; bottom: 25px; left: 25px; width: calc(100% - 50px);
+    transition: 0.2s;
+}
+.hlt-reset-btn:hover { background: #421; }
+
+/* CLOSE BUTTON */
+.hlt-close-btn {
+    position: absolute; top: 10px; right: 10px; z-index: 1001;
+    background: rgba(0,0,0,0.5); color: white; border: 1px solid #444;
+    padding: 5px 10px; cursor: pointer; border-radius: 4px;
+}
+.hlt-close-btn:hover { background: rgba(255,255,255,0.1); }
+
+
+/* NODES */
+.hlt-node {
+    position: absolute; width: 38px; height: 38px; border-radius: 4px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 8px; font-weight: bold; transform: translate(-50%, -50%);
+    border: 1px solid #222; background: rgba(20,20,20,0.95);
+    color: rgba(255,255,255,0.1); filter: grayscale(1); pointer-events: none;
+    transition: all 0.2s ease; z-index: 100;
+}
+.hlt-node.unlocked { pointer-events: auto; cursor: pointer; color: rgba(255,255,255,0.4); border-color: #444; }
+.hlt-node.active { filter: grayscale(0); color: white; border-color: #fff; z-index: 110; transform: translate(-50%, -50%) scale(1.1); }
+
+/* MOLDURA H (5x5) */
+.hlt-node.h0::after, .hlt-node.h1::after, .hlt-node.h2::after, .hlt-node.h3::after {
+    content: ''; position: absolute; width: 245px; height: 245px;
+    border: 2px dashed transparent; background: transparent;
+    pointer-events: none; transition: 0.3s; z-index: -1;
+}
+.hlt-node.active.h0::after, .hlt-node.active.h1::after, .hlt-node.active.h2::after, .hlt-node.active.h3::after {
+    border-color: rgba(0, 255, 204, 0.4); background: rgba(0, 255, 204, 0.08);
+}
+
+/* CORES ATIVAS */
+.hlt-node.st.active { background: var(--st-color); box-shadow: 0 0 15px var(--st-color); }
+.hlt-node.de.active { background: var(--de-color); box-shadow: 0 0 15px var(--de-color); }
+.hlt-node.in.active { background: var(--in-color); box-shadow: 0 0 15px var(--in-color); }
+.hlt-node.en.active { background: var(--en-color); box-shadow: 0 0 15px var(--en-color); }
+.hlt-node.vi.active { background: var(--vi-color); box-shadow: 0 0 15px var(--vi-color); }
+.hlt-node.ar.active { background: var(--ar-color); box-shadow: 0 0 15px var(--ar-color); }
+
+.hlt-node.mythic { clip-path: polygon(50% 0%, 100% 50%, 50% 100%, 0% 50%); border: 2px solid var(--gold) !important; }
+.hlt-node.mythic.active { background: var(--mythic); box-shadow: 0 0 20px var(--mythic); }

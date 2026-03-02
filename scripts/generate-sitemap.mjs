@@ -169,7 +169,7 @@ async function main() {
     { loc: `${BASE_URL}/mineracao`, lastmod: today, changefreq: 'weekly', priority: 0.7 },
     { loc: `${BASE_URL}/chaves`, lastmod: today, changefreq: 'weekly', priority: 0.7 },
     { loc: `${BASE_URL}/quests`, lastmod: today, changefreq: 'weekly', priority: 0.5 },
-    { loc: `${BASE_URL}/builder`, lastmod: today, changefreq: 'weekly', priority: 0.7 },
+    { loc: `${BASE_URL}/forum`, lastmod: today, changefreq: 'weekly', priority: 0.7 },
     { loc: `${BASE_URL}/contato`, lastmod: today, changefreq: 'weekly', priority: 0.6 },
     { loc: `${BASE_URL}/blog`, lastmod: today, changefreq: 'daily', priority: 0.8 }
   ];
