@@ -4,6 +4,7 @@ import PainelApp from './PainelApp';
 import Equipe from './Equipe';
 import NewDesign from './NewDesign';
 import HeroLevelTree from './HeroLevelTree';
+import HeroSkills from './HeroSkills';
 
 function App() {
   return (
@@ -31,6 +32,7 @@ function App() {
       <Route path="/blog/:postId" element={<NewDesign initialView="blog" />} />
       <Route path="/build/:buildId" element={<NewDesign initialView="build" />} />
       <Route path="/hero-level-tree" element={<HeroLevelTree />} />
+      <Route path="/hero-skills" element={<HeroSkills />} />
 
       <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>

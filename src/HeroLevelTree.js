@@ -1,5 +1,7 @@
 import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { jsPDF } from "jspdf";
+import html2canvas from "html2canvas";
 import './HeroLevelTree.css';
 
 const labelMap = { 
@@ -92,12 +94,35 @@ const rawMap = `
 const HeroLevelTree = () => {
     const navigate = useNavigate();
     const [nodes, setNodes] = useState([]);
+    // Adjust initial view state to center better with the new layout
     const [viewState, setViewState] = useState({ scale: 0.55, x: 20, y: 100 });
     const isDragging = useRef(false);
     const dragStart = useRef({ x: 0, y: 0 });
     const viewportRef = useRef(null);
 
-    // Initial parsing
+    // Navbar state
+    const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+    const [isDbOpen, setIsDbOpen] = useState(false);
+    const [isBuilderOpen, setIsBuilderOpen] = useState(false);
+    const dbMenuRef = useRef(null);
+    const builderMenuRef = useRef(null);
+    const currentView = 'hero-level-tree'; // Pseudo-state for navbar highlighting
+
+    // Close menus on click outside
+    useEffect(() => {
+        function handleClickOutside(event) {
+            if (dbMenuRef.current && !dbMenuRef.current.contains(event.target)) {
+                setIsDbOpen(false);
+            }
+            if (builderMenuRef.current && !builderMenuRef.current.contains(event.target)) {
+                setIsBuilderOpen(false);
+            }
+        }
+        document.addEventListener('mousedown', handleClickOutside);
+        return () => document.removeEventListener('mousedown', handleClickOutside);
+    }, []);
+
+    // Initial parsing of rawMap to create nodes
     useEffect(() => {
         const rows = rawMap.trim().split('\n');
         const maxRow = rows.length - 1;
@@ -124,7 +149,7 @@ const HeroLevelTree = () => {
         setNodes(initialNodes);
     }, []);
 
-    // Toggle logic with neighbor check (runs when nodes change)
+    // Toggle node logic with unlocked status update
     const toggleNode = (nodeId) => {
         setNodes(prevNodes => {
             const targetIndex = prevNodes.findIndex(n => n.id === nodeId);
@@ -185,7 +210,112 @@ const HeroLevelTree = () => {
         return { s, activeMythics, points };
     }, [nodes]);
 
-    const resetTree = () => {
+    const [isSaving, setIsSaving] = useState(false);
+
+  const handleSaveTree = async () => {
+    setIsSaving(true);
+    try {
+        const input = document.querySelector('.hlt-status-panel');
+        const treeContainer = document.querySelector('.hlt-tree-container');
+        
+        if (!input || !treeContainer) return;
+
+        // Capture Sidebar
+        const sidebarCanvas = await html2canvas(input, {
+            backgroundColor: '#0a0a0c',
+            scale: 2,
+            useCORS: true
+        });
+        const sidebarImgData = sidebarCanvas.toDataURL('image/png');
+
+        // Capture Tree
+        const maxX = Math.max(...nodes.map(n => n.x));
+        const maxY = Math.max(...nodes.map(n => n.y));
+        const treeWidth = (maxX + 2) * 50; 
+        const treeHeight = (maxY + 2) * 50;
+
+        const treeCanvas = await html2canvas(treeContainer, {
+            backgroundColor: '#0f111a',
+            scale: 1,
+            width: treeWidth,
+            height: treeHeight,
+            windowWidth: treeWidth,
+            windowHeight: treeHeight,
+            useCORS: true,
+            onclone: (clonedDoc) => {
+                 const clonedContainer = clonedDoc.querySelector('.hlt-tree-container');
+                 if (clonedContainer) {
+                     clonedContainer.style.transform = 'none';
+                     clonedContainer.style.width = `${treeWidth}px`;
+                     clonedContainer.style.height = `${treeHeight}px`;
+                     clonedContainer.style.position = 'relative';
+                     clonedContainer.style.left = '0px';
+                     clonedContainer.style.top = '0px';
+                 }
+            }
+        });
+        const treeImgData = treeCanvas.toDataURL('image/png');
+
+        // Create PDF
+        const pdf = new jsPDF('l', 'mm', 'a4'); // Landscape
+        const pageWidth = pdf.internal.pageSize.getWidth();
+        const pageHeight = pdf.internal.pageSize.getHeight();
+
+        // Background
+        pdf.setFillColor(15, 17, 26);
+        pdf.rect(0, 0, pageWidth, pageHeight, 'F');
+
+        // Logo & Title
+        const logoUrl = '/images/herosiege.png';
+        const logoImg = new Image();
+        logoImg.src = logoUrl;
+        await new Promise(resolve => {
+            logoImg.onload = resolve;
+            logoImg.onerror = resolve;
+        });
+        
+        try {
+             pdf.addImage(logoImg, 'PNG', 10, 10, 30, 30);
+        } catch (e) {}
+
+        pdf.setFontSize(24);
+        pdf.setTextColor(255, 255, 255);
+        pdf.text("Hero Level Tree", 50, 25);
+        pdf.setFontSize(14);
+        pdf.setTextColor(200, 200, 200);
+        pdf.text("Hero Siege Brasil - Build Snapshot", 50, 35);
+
+        // Sidebar
+        const sidebarW = 70;
+        const sidebarH = (sidebarCanvas.height * sidebarW) / sidebarCanvas.width;
+        pdf.addImage(sidebarImgData, 'PNG', 10, 50, sidebarW, sidebarH);
+
+        // Tree
+        const treeX = 90;
+        const treeMaxWidth = pageWidth - 100;
+        const treeMaxHeight = pageHeight - 60;
+        
+        let treeW = treeMaxWidth;
+        let treeH = (treeCanvas.height * treeW) / treeCanvas.width;
+        
+        if (treeH > treeMaxHeight) {
+            treeH = treeMaxHeight;
+            treeW = (treeCanvas.width * treeH) / treeCanvas.height;
+        }
+
+        pdf.addImage(treeImgData, 'PNG', treeX, 50, treeW, treeH);
+
+        pdf.save('hero-level-tree.pdf');
+
+    } catch (err) {
+        console.error("Error saving PDF:", err);
+        alert("Erro ao salvar PDF. Tente novamente.");
+    } finally {
+        setIsSaving(false);
+    }
+  };
+
+  const resetTree = () => {
         const rows = rawMap.trim().split('\n');
         const maxRow = rows.length - 1;
         setNodes(prev => prev.map(n => {
@@ -234,60 +364,262 @@ const HeroLevelTree = () => {
     };
 
     return (
-        <div className="hlt-wrapper">
-            <button className="hlt-close-btn" onClick={() => navigate('/')}>
-                ✕ Close
-            </button>
+    <div className="bg-[#0f111a] h-screen text-gray-200 font-sans selection:bg-red-500 selection:text-white flex flex-col overflow-hidden">
+      {/* Navigation Bar */}
+      <nav className="sticky top-0 z-50 bg-[#0b0d14]/95 backdrop-blur-md border-b border-white/5 flex-none">
+                <div className="max-w-7xl mx-auto px-6 h-20 flex items-center justify-between">
+                    <div
+                        className="flex items-center gap-2 cursor-pointer"
+                        onClick={() => {
+                            navigate('/');
+                            setMobileMenuOpen(false);
+                        }}
+                    >
+                        <img
+                            src="/images/herosiege.png"
+                            alt="Hero Siege Brasil"
+                            className="block h-8 sm:h-9 w-auto"
+                            style={{ imageRendering: 'auto' }}
+                        />
+                    </div>
+                    <div className="flex items-center gap-4">
+                        <button
+                            type="button"
+                            className="md:hidden inline-flex items-center justify-center w-9 h-9 rounded border border-white/20 text-gray-200 hover:bg-white/10"
+                            onClick={() => setMobileMenuOpen((v) => !v)}
+                        >
+                            <span className="sr-only">Abrir menu</span>
+                            <span className="flex flex-col gap-[3px]">
+                                <span className="block w-5 h-[2px] bg-current" />
+                                <span className="block w-5 h-[2px] bg-current" />
+                                <span className="block w-5 h-[2px] bg-current" />
+                            </span>
+                        </button>
+                        <div className="hidden md:flex items-center gap-8 text-sm font-bold uppercase tracking-widest text-gray-400">
+                            <button
+                                onClick={() => navigate('/')}
+                                className={`transition-colors ${currentView === 'home' ? 'text-orange-500' : 'hover:text-white'}`}
+                            >
+                                Home
+                            </button>
+                            <div
+                                className="relative"
+                                ref={dbMenuRef}
+                                onMouseEnter={() => setIsDbOpen(true)}
+                                onMouseLeave={() => setIsDbOpen(false)}
+                            >
+                                <button
+                                    type="button"
+                                    onClick={() => setIsDbOpen((v) => !v)}
+                                    className={`transition-colors ${
+                                        ['classes', 'items', 'relics', 'quests', 'augments'].includes(currentView) || isDbOpen
+                                            ? 'text-orange-500'
+                                            : 'hover:text-white'
+                                    }`}
+                                >
+                                    DataBase
+                                </button>
+                                <div
+                                    className={`absolute left-0 top-full w-44 bg-[#0b0d14] border border-white/10 rounded shadow-xl py-2 ${
+                                        isDbOpen ? 'opacity-100 pointer-events-auto' : 'opacity-0 pointer-events-none'
+                                    } transition`}
+                                >
+                                    {['Classes', 'Items', 'Runas', 'Relíquias', 'Chaos Tower', 'Mercenários', 'Chaves', 'Augments', 'Quests', 'Mineração', 'Gemas', 'Charms'].map((item) => {
+                                        const route = item === 'Classes' ? '/classes' :
+                                                      item === 'Items' ? '/items' :
+                                                      item === 'Runas' ? '/runes' :
+                                                      item === 'Relíquias' ? '/relics' :
+                                                      item === 'Chaos Tower' ? '/chaos-tower' :
+                                                      item === 'Mercenários' ? '/mercenarios' :
+                                                      item === 'Chaves' ? '/chaves' :
+                                                      item === 'Augments' ? '/augments' :
+                                                      item === 'Quests' ? '/quests' :
+                                                      item === 'Mineração' ? '/mineracao' :
+                                                      item === 'Gemas' ? '/gems' :
+                                                      item === 'Charms' ? '/charms' : '/';
+                                        return (
+                                            <button
+                                                key={item}
+                                                onClick={() => {
+                                                    navigate(route);
+                                                    setIsDbOpen(false);
+                                                }}
+                                                className="block w-full text-left px-4 py-2 text-xs font-bold uppercase tracking-widest text-gray-400 hover:text-white hover:bg-white/5"
+                                            >
+                                                {item}
+                                            </button>
+                                        );
+                                    })}
+                                </div>
+                            </div>
+                            <button
+                                onClick={() => navigate('/blog')}
+                                className={`transition-colors ${currentView === 'blog' ? 'text-orange-500' : 'hover:text-white'}`}
+                            >
+                                Blog
+                            </button>
+                            <div
+                                className="relative"
+                                ref={builderMenuRef}
+                                onMouseEnter={() => setIsBuilderOpen(true)}
+                                onMouseLeave={() => setIsBuilderOpen(false)}
+                            >
+                                <button
+                                    type="button"
+                                    onClick={() => setIsBuilderOpen((v) => !v)}
+                                    className={`transition-colors ${
+                                        currentView === 'builder' || currentView === 'hero-level-tree' || isBuilderOpen
+                                            ? 'text-orange-500'
+                                            : 'hover:text-white'
+                                    }`}
+                                >
+                                    Builder
+                                </button>
+                                <div
+                                    className={`absolute left-0 top-full w-44 bg-[#0b0d14] border border-white/10 rounded shadow-xl py-2 ${
+                                        isBuilderOpen ? 'opacity-100 pointer-events-auto' : 'opacity-0 pointer-events-none'
+                                    } transition`}
+                                >
+                                    <button
+                                        onClick={() => {
+                                            navigate('/forum');
+                                            setIsBuilderOpen(false);
+                                        }}
+                                        className="block w-full text-left px-4 py-2 text-xs font-bold uppercase tracking-widest text-gray-400 hover:text-white hover:bg-white/5"
+                                    >
+                                        Forum
+                                    </button>
+                                    <button
+                                        onClick={() => {
+                                            navigate('/hero-skills');
+                                            setIsBuilderOpen(false);
+                                        }}
+                                        className="block w-full text-left px-4 py-2 text-xs font-bold uppercase tracking-widest text-gray-400 hover:text-white hover:bg-white/5"
+                                    >
+                                        Hero Skills
+                                    </button>
+                                    <button
+                                        onClick={() => {
+                                            navigate('/hero-level-tree');
+                                            setIsBuilderOpen(false);
+                                        }}
+                                        className={`block w-full text-left px-4 py-2 text-xs font-bold uppercase tracking-widest hover:bg-white/5 ${
+                                            currentView === 'hero-level-tree' ? 'text-orange-500' : 'text-gray-400 hover:text-white'
+                                        }`}
+                                    >
+                                        Hero Level Tree
+                                    </button>
+                                </div>
+                            </div>
+                            <button
+                                onClick={() => navigate('/equipe')}
+                                className={`transition-colors ${currentView === 'equipe' ? 'text-orange-500' : 'hover:text-white'}`}
+                            >
+                                Equipe
+                            </button>
+                            <button
+                                onClick={() => navigate('/contato')}
+                                className={`transition-colors ${currentView === 'contact' ? 'text-orange-500' : 'hover:text-white'}`}
+                            >
+                                Contatos
+                            </button>
+                        </div>
+                    </div>
+                </div>
+                {mobileMenuOpen && (
+                    <div className="md:hidden border-t border-white/10 bg-[#0b0d14] max-h-[80vh] overflow-y-auto">
+                        <div className="max-w-7xl mx-auto px-6 py-3 text-xs font-bold uppercase tracking-widest text-gray-300 space-y-1">
+                            <button className="block w-full text-left py-1" onClick={() => navigate('/')}>Home</button>
+                            <button className="block w-full text-left py-1" onClick={() => navigate('/classes')}>Classes</button>
+                            <button className="block w-full text-left py-1" onClick={() => navigate('/items')}>Items</button>
+                            <button className="block w-full text-left py-1" onClick={() => navigate('/runes')}>Runas</button>
+                            <button className="block w-full text-left py-1" onClick={() => navigate('/relics')}>Relíquias</button>
+                            <button className="block w-full text-left py-1" onClick={() => navigate('/chaos-tower')}>Chaos Tower</button>
+                            <button className="block w-full text-left py-1" onClick={() => navigate('/mercenarios')}>Mercenários</button>
+                            <button className="block w-full text-left py-1" onClick={() => navigate('/chaves')}>Chaves</button>
+                            <button className="block w-full text-left py-1" onClick={() => navigate('/augments')}>Augments</button>
+                            <button className="block w-full text-left py-1" onClick={() => navigate('/quests')}>Quests</button>
+                            <button className="block w-full text-left py-1" onClick={() => navigate('/mineracao')}>Mineração</button>
+                            <button className="block w-full text-left py-1" onClick={() => navigate('/gems')}>Gemas e Jóias</button>
+                            <button className="block w-full text-left py-1" onClick={() => navigate('/charms')}>Charms</button>
+                            <button className="block w-full text-left py-1" onClick={() => navigate('/blog')}>Blog</button>
+                            <button className="block w-full text-left py-1" onClick={() => navigate('/forum')}>Forum</button>
+                            <button className="block w-full text-left py-1" onClick={() => navigate('/hero-skills')}>Hero Skills</button>
+                            <button className="block w-full text-left py-1 text-orange-500" onClick={() => setMobileMenuOpen(false)}>Hero Level Tree</button>
+                            <button className="block w-full text-left py-1" onClick={() => navigate('/equipe')}>Equipe</button>
+                            <button className="block w-full text-left py-1" onClick={() => navigate('/contato')}>Contatos</button>
+                        </div>
+                    </div>
+                )}
+            </nav>
 
-            <div className="hlt-status-panel">
-                <div className="hlt-points-spent">POINTS SPENT: <span>{stats.points}</span></div>
+            <div className="hlt-wrapper">
+                <div className="hlt-status-panel">
+                    <div className="hlt-points-spent">POINTS SPENT: <span>{stats.points}</span></div>
+                    
+                    <h2>MASTER STATUS</h2>
+                    <div className="hlt-stat-item hlt-val-st"><span>STRENGTH</span><span className="hlt-stat-value">Bonus +{stats.s.st}</span></div>
+                    <div className="hlt-stat-item hlt-val-in"><span>INTELLIGENCE</span><span className="hlt-stat-value">Bonus +{stats.s.in}</span></div>
+                    <div className="hlt-stat-item hlt-val-en"><span>ENERGY</span><span className="hlt-stat-value">Bonus +{stats.s.en}</span></div>
+                    <div className="hlt-stat-item hlt-val-vi"><span>VITALITY</span><span className="hlt-stat-value">Bonus +{stats.s.vi}</span></div>
+                    <div className="hlt-stat-item hlt-val-de"><span>DEXTERITY</span><span className="hlt-stat-value">Bonus +{stats.s.de}</span></div>
+                    <div className="hlt-stat-item hlt-val-ar"><span>ARMOR</span><span className="hlt-stat-value">Bonus +{stats.s.ar}</span></div>
+                    
+                    <div className="hlt-mythic-container">
+                        <h3 style={{fontSize: '0.8rem', color: 'var(--mythic)', margin: '15px 0 5px 0', textTransform: 'uppercase'}}>Active Mythic Talents</h3>
+                        <div className="hlt-mythic-list">
+                            {stats.activeMythics.map(m => (
+                                <div key={m} className="hlt-mythic-box">
+                                    <span className="hlt-mythic-name">{mythicData[m].name}</span>
+                                    <span className="hlt-mythic-desc">{mythicData[m].desc}</span>
+                                </div>
+                            ))}
+                        </div>
+                    </div>
+
+                    <button className="hlt-save-btn" onClick={handleSaveTree} disabled={isSaving}>
+                        {isSaving ? 'SAVING...' : 'SALVAR ÁRVORE'}
+                    </button>
+                    <button className="hlt-reset-btn" onClick={resetTree}>RESET TREE</button>
+                </div>
                 
-                <h2>MASTER STATUS</h2>
-                <div className="hlt-stat-item hlt-val-st"><span>STRENGTH</span><span className="hlt-stat-value">Bonus +{stats.s.st}</span></div>
-                <div className="hlt-stat-item hlt-val-in"><span>INTELLIGENCE</span><span className="hlt-stat-value">Bonus +{stats.s.in}</span></div>
-                <div className="hlt-stat-item hlt-val-en"><span>ENERGY</span><span className="hlt-stat-value">Bonus +{stats.s.en}</span></div>
-                <div className="hlt-stat-item hlt-val-vi"><span>VITALITY</span><span className="hlt-stat-value">Bonus +{stats.s.vi}</span></div>
-                <div className="hlt-stat-item hlt-val-de"><span>DEXTERITY</span><span className="hlt-stat-value">Bonus +{stats.s.de}</span></div>
-                <div className="hlt-stat-item hlt-val-ar"><span>ARMOR</span><span className="hlt-stat-value">Bonus +{stats.s.ar}</span></div>
-                
-                <div className="hlt-mythic-container">
-                    <h3 style={{fontSize: '0.8rem', color: 'var(--mythic)', margin: '15px 0 5px 0', textTransform: 'uppercase'}}>Active Mythic Talents</h3>
-                    <div className="hlt-mythic-list">
-                        {stats.activeMythics.map(m => (
-                            <div key={m} className="hlt-mythic-box">
-                                <span className="hlt-mythic-name">{mythicData[m].name}</span>
-                                <span className="hlt-mythic-desc">{mythicData[m].desc}</span>
+                <div 
+                    className="hlt-viewport" 
+                    id="viewport" 
+                    ref={viewportRef}
+                    onMouseDown={handleMouseDown}
+                    onWheel={handleWheel}
+                >
+                    <div 
+                        className="hlt-tree-container" 
+                        style={{ transform: `translate(${viewState.x}px, ${viewState.y}px) scale(${viewState.scale})` }}
+                    >
+                        {nodes.map(node => (
+                            <div
+                                key={node.id}
+                                className={`hlt-node ${node.type} ${node.isM ? 'mythic' : ''} ${node.active ? 'active' : ''} ${node.unlocked ? 'unlocked' : ''} ${['h0','h1','h2','h3'].includes(node.type) ? node.type : ''}`}
+                                style={{ left: `${node.x * 50}px`, top: `${node.y * 50}px` }}
+                                onClick={(e) => { e.stopPropagation(); toggleNode(node.id); }}
+                            >
+                                {labelMap[node.type] || node.type.toUpperCase()}
                             </div>
                         ))}
                     </div>
                 </div>
+            </div>
 
-                <button className="hlt-reset-btn" onClick={resetTree}>RESET TREE</button>
-            </div>
-            
-            <div 
-                className="hlt-viewport" 
-                id="viewport" 
-                ref={viewportRef}
-                onMouseDown={handleMouseDown}
-                onWheel={handleWheel}
-            >
-                <div 
-                    className="hlt-tree-container" 
-                    style={{ transform: `translate(${viewState.x}px, ${viewState.y}px) scale(${viewState.scale})` }}
-                >
-                    {nodes.map(node => (
-                        <div
-                            key={node.id}
-                            className={`hlt-node ${node.type} ${node.isM ? 'mythic' : ''} ${node.active ? 'active' : ''} ${node.unlocked ? 'unlocked' : ''} ${['h0','h1','h2','h3'].includes(node.type) ? node.type : ''}`}
-                            style={{ left: `${node.x * 50}px`, top: `${node.y * 50}px` }}
-                            onClick={(e) => { e.stopPropagation(); toggleNode(node.id); }}
-                        >
-                            {labelMap[node.type] || node.type.toUpperCase()}
-                        </div>
-                    ))}
+            <footer className="bg-[#0b0d14] border-t border-white/5 py-8 flex-none z-50 relative">
+                <div className="max-w-7xl mx-auto px-6 flex flex-col md:flex-row justify-between items-center opacity-50 hover:opacity-100 transition-opacity">
+                    <div className="text-sm text-gray-500">
+                        Hero Siege Brasil 2026© Este site não é afiliado à Panic Art Studios. Todos os assets e dados pertencem aos seus respectivos donos.
+                    </div>
+                    <div className="flex gap-6 mt-4 md:mt-0">
+                        <a href="https://discord.gg/herosiegeofficial" target="_blank" rel="noopener noreferrer" className="text-gray-500 hover:text-white cursor-pointer transition-colors">Discord</a>
+                        <a href="https://store.steampowered.com/app/269210/Hero_Siege/" target="_blank" rel="noopener noreferrer" className="text-gray-500 hover:text-white cursor-pointer transition-colors">Steam</a>
+                        <a href="https://www.panicartstudios.com/" target="_blank" rel="noopener noreferrer" className="text-gray-500 hover:text-white cursor-pointer transition-colors">PAS</a>
+                    </div>
                 </div>
-            </div>
+            </footer>
         </div>
     );
 };
