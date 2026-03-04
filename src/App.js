@@ -5,6 +5,8 @@ import Equipe from './Equipe';
 import NewDesign from './NewDesign';
 import HeroLevelTree from './HeroLevelTree';
 import HeroSkills from './HeroSkills';
+import Ether from './Ether';
+import Incarnation from './Incarnation';
 
 function App() {
   return (
@@ -33,6 +35,8 @@ function App() {
       <Route path="/build/:buildId" element={<NewDesign initialView="build" />} />
       <Route path="/hero-level-tree" element={<HeroLevelTree />} />
       <Route path="/hero-skills" element={<HeroSkills />} />
+      <Route path="/ether" element={<Ether />} />
+      <Route path="/incarnation" element={<Incarnation />} />
 
       <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>

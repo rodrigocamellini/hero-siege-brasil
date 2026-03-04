@@ -1984,6 +1984,26 @@ const NewDesign = ({ onBack, initialView = 'home' }) => {
                   >
                     Hero Level Tree
                   </button>
+                  <button
+                    onClick={() => {
+                      navigate('/ether');
+                      setIsBuilderOpen(false);
+                    }}
+                    className="block w-full text-left px-4 py-2 text-xs font-bold uppercase tracking-widest text-gray-400 hover:text-white hover:bg-white/5 flex items-center justify-between"
+                  >
+                    <span>Ether</span>
+                    <span className="text-[9px] bg-gradient-to-r from-green-400 to-emerald-600 text-black px-1.5 py-0.5 rounded-sm font-black ml-2 leading-none shadow-[0_0_8px_rgba(52,211,153,0.5)] animate-pulse">S9</span>
+                  </button>
+                  <button
+                    onClick={() => {
+                      navigate('/incarnation');
+                      setIsBuilderOpen(false);
+                    }}
+                    className="block w-full text-left px-4 py-2 text-xs font-bold uppercase tracking-widest text-gray-400 hover:text-white hover:bg-white/5 flex items-center justify-between"
+                  >
+                    <span>Incarnation</span>
+                    <span className="text-[9px] bg-gradient-to-r from-green-400 to-emerald-600 text-black px-1.5 py-0.5 rounded-sm font-black ml-2 leading-none shadow-[0_0_8px_rgba(52,211,153,0.5)] animate-pulse">S9</span>
+                  </button>
                 </div>
               </div>
               <button
@@ -2163,6 +2183,26 @@ const NewDesign = ({ onBack, initialView = 'home' }) => {
                 }}
               >
                 Hero Level Tree
+              </button>
+              <button
+                className="block w-full text-left py-1 flex items-center justify-between"
+                onClick={() => {
+                  navigate('/ether');
+                  setMobileMenuOpen(false);
+                }}
+              >
+                <span>Ether</span>
+                <span className="text-[9px] bg-gradient-to-r from-green-400 to-emerald-600 text-black px-1.5 py-0.5 rounded-sm font-black leading-none shadow-[0_0_8px_rgba(52,211,153,0.5)]">S9</span>
+              </button>
+              <button
+                className="block w-full text-left py-1 flex items-center justify-between"
+                onClick={() => {
+                  navigate('/incarnation');
+                  setMobileMenuOpen(false);
+                }}
+              >
+                <span>Incarnation</span>
+                <span className="text-[9px] bg-gradient-to-r from-green-400 to-emerald-600 text-black px-1.5 py-0.5 rounded-sm font-black leading-none shadow-[0_0_8px_rgba(52,211,153,0.5)]">S9</span>
               </button>
               <button
                 className={`block w-full text-left py-1 ${currentView === 'equipe' ? 'text-orange-500' : ''}`}

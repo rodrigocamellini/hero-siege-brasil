@@ -509,6 +509,30 @@ const HeroLevelTree = () => {
                                     >
                                         Hero Level Tree
                                     </button>
+                                    <button
+                                        onClick={() => {
+                                            navigate('/ether');
+                                            setIsBuilderOpen(false);
+                                        }}
+                                        className={`block w-full text-left px-4 py-2 text-xs font-bold uppercase tracking-widest hover:bg-white/5 flex items-center justify-between ${
+                                            currentView === 'ether' ? 'text-orange-500' : 'text-gray-400 hover:text-white'
+                                        }`}
+                                    >
+                                        <span>Ether</span>
+                                        <span className="text-[9px] bg-gradient-to-r from-green-400 to-emerald-600 text-black px-1.5 py-0.5 rounded-sm font-black ml-2 leading-none shadow-[0_0_8px_rgba(52,211,153,0.5)] animate-pulse">S9</span>
+                                    </button>
+                                    <button
+                                        onClick={() => {
+                                            navigate('/incarnation');
+                                            setIsBuilderOpen(false);
+                                        }}
+                                        className={`block w-full text-left px-4 py-2 text-xs font-bold uppercase tracking-widest hover:bg-white/5 flex items-center justify-between ${
+                                            currentView === 'incarnation' ? 'text-orange-500' : 'text-gray-400 hover:text-white'
+                                        }`}
+                                    >
+                                        <span>Incarnation</span>
+                                        <span className="text-[9px] bg-gradient-to-r from-green-400 to-emerald-600 text-black px-1.5 py-0.5 rounded-sm font-black ml-2 leading-none shadow-[0_0_8px_rgba(52,211,153,0.5)] animate-pulse">S9</span>
+                                    </button>
                                 </div>
                             </div>
                             <button
@@ -546,6 +570,14 @@ const HeroLevelTree = () => {
                             <button className="block w-full text-left py-1" onClick={() => navigate('/forum')}>Forum</button>
                             <button className="block w-full text-left py-1" onClick={() => navigate('/hero-skills')}>Hero Skills</button>
                             <button className="block w-full text-left py-1 text-orange-500" onClick={() => setMobileMenuOpen(false)}>Hero Level Tree</button>
+                            <button className="block w-full text-left py-1 flex items-center justify-between" onClick={() => { navigate('/ether'); setMobileMenuOpen(false); }}>
+                                <span>Ether</span>
+                                <span className="text-[9px] bg-gradient-to-r from-green-400 to-emerald-600 text-black px-1.5 py-0.5 rounded-sm font-black leading-none shadow-[0_0_8px_rgba(52,211,153,0.5)]">S9</span>
+                            </button>
+                            <button className="block w-full text-left py-1 flex items-center justify-between" onClick={() => { navigate('/incarnation'); setMobileMenuOpen(false); }}>
+                                <span>Incarnation</span>
+                                <span className="text-[9px] bg-gradient-to-r from-green-400 to-emerald-600 text-black px-1.5 py-0.5 rounded-sm font-black leading-none shadow-[0_0_8px_rgba(52,211,153,0.5)]">S9</span>
+                            </button>
                             <button className="block w-full text-left py-1" onClick={() => navigate('/equipe')}>Equipe</button>
                             <button className="block w-full text-left py-1" onClick={() => navigate('/contato')}>Contatos</button>
                         </div>
