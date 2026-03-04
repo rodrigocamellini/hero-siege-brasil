@@ -48,6 +48,8 @@ const Incarnation = () => {
                 )}
               </div>
 
+              <button onClick={() => navigate('/blog')} className="hover:text-white transition">Blog</button>
+
               <div className="relative" onMouseEnter={() => setIsBuilderOpen(true)} onMouseLeave={() => setIsBuilderOpen(false)}>
                 <button className="text-orange-500">Builder</button>
                 {isBuilderOpen && (
@@ -64,7 +66,6 @@ const Incarnation = () => {
                 )}
               </div>
               
-              <button onClick={() => navigate('/blog')} className="hover:text-white transition">Blog</button>
               <button onClick={() => navigate('/equipe')} className="hover:text-white transition">Equipe</button>
               <button onClick={() => navigate('/contato')} className="hover:text-white transition">Contato</button>
             </div>

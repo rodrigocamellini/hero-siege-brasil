@@ -634,8 +634,8 @@ const builderDb = {
     ]
   },
   prophet: {
-    t1: 'Prophecy',
-    t2: 'Fate',
+    t1: 'Forest Mystic',
+    t2: 'SkinWalker',
     s1: [
       { id: 'pr1', n: 'Prophet Skill 1', r: 1, c: 1, req: null, hasPlus: true },
       { id: 'pr2', n: 'Prophet Skill 2', r: 1, c: 3, req: null, hasPlus: false },
