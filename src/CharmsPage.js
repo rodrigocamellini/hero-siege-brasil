@@ -1008,7 +1008,16 @@ const CharmsPage = () => {
                           >
                             <td>
                               <div className="charms-item-cell">
-                                <img src={img} alt={charm.name} onError={(e) => e.target.style.display = 'none'} className="charms-item-icon" />
+                                <img
+                                  src={`${process.env.PUBLIC_URL}/images/${charm.file}`}
+                                  alt={charm.name}
+                                  className="charms-item-icon"
+                                  loading="lazy"
+                                  onError={(e) => {
+                                    e.target.style.display = 'none';
+                                    e.target.parentElement.style.background = 'rgba(255,255,255,0.05)';
+                                  }}
+                                />
                                 <div>
                                   <div className="charms-item-name">{charm.name}</div>
                                   {rarityName && (

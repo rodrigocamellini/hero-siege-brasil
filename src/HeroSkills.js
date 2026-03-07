@@ -699,7 +699,6 @@ const HeroSkills = () => {
   const [isBuilderOpen, setIsBuilderOpen] = useState(false);
   const dbMenuRef = useRef(null);
   const builderMenuRef = useRef(null);
-  const currentView = 'hero-skills';
 
   // Close menus on click outside
   useEffect(() => {
@@ -715,7 +714,8 @@ const HeroSkills = () => {
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
-  const ensureIconCacheFor = async (className) => {
+  useEffect(() => {
+    const ensureIconCacheFor = async (className) => {
     const clsKey = classKeyFromName(className);
     if (iconCacheRef.current[clsKey]) return;
 
@@ -776,43 +776,52 @@ const HeroSkills = () => {
     }
   };
 
-  const update = () => {
-    const key = classKeyFromName(builderClass);
-    const data = builderDb[key] || builderDb.viking;
+  const openSub = (e, id, name) => {
+    e.stopPropagation();
+    const base = spent[id] || 0;
+    if (base === 0) {
+      alert('Ative a skill com pelo menos 1 ponto antes!');
+      return;
+    }
+    const ov = document.getElementById('overlay');
+    const sw = document.getElementById('sub-window');
+    const st = document.getElementById('sub-title');
+    const sc = document.getElementById('sub-content');
+    
+    if (!ov || !sw || !st || !sc) return;
+    
+    ov.style.display = 'block';
+    sw.style.display = 'block';
+    st.innerText = 'Sub-skills: ' + name;
+    sc.innerHTML = '';
 
-    ensureIconCacheFor(builderClass).then(() => {
-      const again = classKeyFromName(builderClass);
-      if (again !== key) return;
+    [1, 2, 3].forEach((i) => {
+      const sid = id + '_s' + i;
+      const slvl = sSpent[sid] || 0;
 
-      if (!data.s2 || data.s2.length <= 1) {
-        const clsKey = classKeyFromName(builderClass);
-        const per = (sectionsCacheRef.current && sectionsCacheRef.current[clsKey]) || null;
-        if (per) {
-          const secKey = normalizeKey(data.t2 || '');
-          const names = per[secKey];
-          if (names && names.length) {
-            const gen = names.slice(0, 9).map((titleRaw, idx) => {
-              const r = Math.floor(idx / 3) + 1;
-              const c = (idx % 3) + 1;
-              return {
-                id: `pd${10 + idx}`,
-                n: String(titleRaw).trim(),
-                r, c,
-                req: null,
-                hasPlus: false
-              };
-            });
-            data.s2 = gen;
-          }
+      const item = document.createElement('div');
+      item.className = 'hs-sub-skill-card';
+      
+      const span = document.createElement('span');
+      span.textContent = 'Talento ' + i;
+      
+      const bold = document.createElement('b');
+      bold.textContent = `${slvl}/5`;
+      
+      item.appendChild(span);
+      item.appendChild(bold);
+
+      item.onmousedown = (ev) => {
+        if (ev.button === 0 && subPts > 0 && slvl < 5) {
+          setSSpent(prev => ({ ...prev, [sid]: (prev[sid] || 0) + 1 }));
+          setSubPts(prev => prev - 1);
+        } else if (ev.button === 2 && slvl > 0) {
+          setSSpent(prev => ({ ...prev, [sid]: (prev[sid] || 0) - 1 }));
+          setSubPts(prev => prev + 1);
         }
-      }
-
-      const t1 = document.getElementById('tree-title-1');
-      const t2 = document.getElementById('tree-title-2');
-      if (t1 && data.t1) t1.textContent = data.t1;
-      if (t2 && data.t2) t2.textContent = data.t2;
-      renderTree(data.s1, 'grid-berserker');
-      renderTree(data.s2, 'grid-shield');
+      };
+      
+      sc.appendChild(item);
     });
   };
 
@@ -839,10 +848,19 @@ const HeroSkills = () => {
         .split('_')
         .map(p => p.charAt(0).toUpperCase() + p.slice(1))
         .join('_');
-      if (clsKey === 'jotunn') filePrefix = 'Jötunn';
+      
+      if (clsKey === 'jotunn') {
+        filePrefix = 'Jötunn';
+      }
       
       const baseForLocal = raw.replace(/['’!]/g, '').replace(/\s+/g, '_');
-      iconCandidates.push(`/images/${clsKey}/${filePrefix}_${baseForLocal}.png`);
+      
+      // Ajuste para usar PUBLIC_URL e garantir caminho correto para Jotunn
+      if (clsKey === 'jotunn') {
+         iconCandidates.push(`${process.env.PUBLIC_URL || ''}/images/jotunn/${filePrefix}_${baseForLocal}.png`);
+      } else {
+         iconCandidates.push(`${process.env.PUBLIC_URL || ''}/images/${clsKey}/${filePrefix}_${baseForLocal}.png`);
+      }
 
       const base = raw.replace(/\s+/g, '_').replace(/'/g, '%27');
       const nameKey = raw
@@ -936,56 +954,46 @@ const HeroSkills = () => {
     });
   };
 
-  const openSub = (e, id, name) => {
-    e.stopPropagation();
-    const base = spent[id] || 0;
-    if (base === 0) {
-      alert('Ative a skill com pelo menos 1 ponto antes!');
-      return;
-    }
-    const ov = document.getElementById('overlay');
-    const sw = document.getElementById('sub-window');
-    const st = document.getElementById('sub-title');
-    const sc = document.getElementById('sub-content');
-    
-    if (!ov || !sw || !st || !sc) return;
-    
-    ov.style.display = 'block';
-    sw.style.display = 'block';
-    st.innerText = 'Sub-skills: ' + name;
-    sc.innerHTML = '';
+  const update = () => {
+    const key = classKeyFromName(builderClass);
+    const data = builderDb[key] || builderDb.viking;
 
-    [1, 2, 3].forEach((i) => {
-      const sid = id + '_s' + i;
-      const slvl = sSpent[sid] || 0;
+    ensureIconCacheFor(builderClass).then(() => {
+      const again = classKeyFromName(builderClass);
+      if (again !== key) return;
 
-      const item = document.createElement('div');
-      item.className = 'hs-sub-skill-card';
-      
-      const span = document.createElement('span');
-      span.textContent = 'Talento ' + i;
-      
-      const bold = document.createElement('b');
-      bold.textContent = `${slvl}/5`;
-      
-      item.appendChild(span);
-      item.appendChild(bold);
-
-      item.onmousedown = (ev) => {
-        if (ev.button === 0 && subPts > 0 && slvl < 5) {
-          setSSpent(prev => ({ ...prev, [sid]: (prev[sid] || 0) + 1 }));
-          setSubPts(prev => prev - 1);
-        } else if (ev.button === 2 && slvl > 0) {
-          setSSpent(prev => ({ ...prev, [sid]: (prev[sid] || 0) - 1 }));
-          setSubPts(prev => prev + 1);
+      if (!data.s2 || data.s2.length <= 1) {
+        const clsKey = classKeyFromName(builderClass);
+        const per = (sectionsCacheRef.current && sectionsCacheRef.current[clsKey]) || null;
+        if (per) {
+          const secKey = normalizeKey(data.t2 || '');
+          const names = per[secKey];
+          if (names && names.length) {
+            const gen = names.slice(0, 9).map((titleRaw, idx) => {
+              const r = Math.floor(idx / 3) + 1;
+              const c = (idx % 3) + 1;
+              return {
+                id: `pd${10 + idx}`,
+                n: String(titleRaw).trim(),
+                r, c,
+                req: null,
+                hasPlus: false
+              };
+            });
+            data.s2 = gen;
+          }
         }
-      };
-      
-      sc.appendChild(item);
+      }
+
+      const t1 = document.getElementById('tree-title-1');
+      const t2 = document.getElementById('tree-title-2');
+      if (t1 && data.t1) t1.textContent = data.t1;
+      if (t2 && data.t2) t2.textContent = data.t2;
+      renderTree(data.s1, 'grid-berserker');
+      renderTree(data.s2, 'grid-shield');
     });
   };
 
-  useEffect(() => {
     update();
   }, [builderClass, spent, sSpent, mainPts, subPts]);
 

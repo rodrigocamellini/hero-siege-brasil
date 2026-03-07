@@ -1,7 +1,8 @@
 import React, { useEffect, useMemo, useState } from 'react';
+import QuillEditor from './QuillEditor';
 import { Link } from 'react-router-dom';
 import app, { db } from './firebase';
-import { PASSIVE_RELICS, EXTRA_RELICS, normalizeRelicImageUrl } from './RelicsView';
+import { PASSIVE_RELICS, EXTRA_RELICS, normalizeRelicImageUrl, getRelicImageSrc } from './RelicsView';
 import { AUGMENTS_DATA } from './AugmentsPage';
 import { CHARM_DB } from './CharmsPage';
 import {
@@ -29,6 +30,20 @@ import {
 const ALLOWED_EMAIL = 'rodrigo@dev.com';
 const ALLOWED_UID = 'hfsHCehqYgen7OAfXUYl58fEPo02';
 
+const relicOptions = [...PASSIVE_RELICS, ...EXTRA_RELICS].map((r) => ({
+  name: r.name,
+  img: getRelicImageSrc(r.name),
+}));
+
+const potionOptions = [
+  { id: 'health', name: 'Health Potion', img: 'https://herosiege.wiki.gg/images/c/c4/Health_Potion.png' },
+  { id: 'mana', name: 'Mana Potion', img: 'https://herosiege.wiki.gg/images/6/6b/Mana_Potion.png' },
+  { id: 'rejuv', name: 'Rejuvenation Potion', img: 'https://herosiege.wiki.gg/images/3/36/Rejuvenation_Potion.png' },
+  { id: 'strength', name: 'Strength Potion', img: 'https://herosiege.wiki.gg/images/e/e5/Strength_Potion.png' },
+  { id: 'speed', name: 'Speed Potion', img: 'https://herosiege.wiki.gg/images/a/a6/Speed_Potion.png' },
+  { id: 'armor', name: 'Armor Potion', img: 'https://herosiege.wiki.gg/images/1/14/Armor_Potion.png' },
+];
+
 const KNOWN_CLASSES = [
   'Prophet',
   'Viking',
@@ -55,6 +70,20 @@ const KNOWN_CLASSES = [
   'Stormweaver',
   'Bard',
 ];
+
+const imageFor = (name) => {
+  const base = String(name || '').toLowerCase().trim();
+  const classMap = {
+    'marksman': 'arqueiro',
+    'shield lancer': 'cavaleiro',
+    'demon slayer': 'demonslayer',
+    'amazon': 'amazon',
+    'bard': 'bard',
+    'butcher': 'butcher',
+  };
+  const finalName = classMap[base] || base;
+  return `${process.env.PUBLIC_URL || ''}/images/${finalName}.webp`;
+};
 
 function parseViewFromHash() {
   const hash = window.location.hash || '';
@@ -647,6 +676,14 @@ function slugify(text) {
 
 const handleRelicError = (e, name) => {
   const target = e.target;
+  // Prevent infinite loops
+  const retries = parseInt(target.getAttribute('data-retries') || '0', 10);
+  if (retries >= 3) {
+    target.style.display = 'none';
+    return;
+  }
+  target.setAttribute('data-retries', String(retries + 1));
+
   const originalName = String(name || '');
   const safeName = originalName.replace(/ /g, '_').replace(/'/g, '%27');
   const noApostrophe = originalName.replace(/'/g, '').replace(/ /g, '_');
@@ -664,6 +701,12 @@ const handleRelicError = (e, name) => {
 };
 
 function PainelForum() {
+  const safeRender = (val) => {
+    if (typeof val === 'string') return val;
+    if (typeof val === 'number') return String(val);
+    return '';
+  };
+
   const [items, setItems] = useState([]);
   const [filter, setFilter] = useState('all');
   const [loading, setLoading] = useState(false);
@@ -684,7 +727,6 @@ function PainelForum() {
   const [relicPickerIndex, setRelicPickerIndex] = useState(null);
   const [potions, setPotions] = useState([null, null, null, null]);
   const [potionPickerIndex, setPotionPickerIndex] = useState(null);
-  const [potionOptions, setPotionOptions] = useState([]);
   const [charms, setCharms] = useState([]);
   const [charmPickerIndex, setCharmPickerIndex] = useState(null);
   const [mercenary, setMercenary] = useState('');
@@ -692,48 +734,15 @@ function PainelForum() {
   const [augmentPickerIndex, setAugmentPickerIndex] = useState(null);
 
   const augmentOptions = useMemo(() => {
-    return AUGMENTS_DATA.sort((a, b) => (a.pt || a.en || '').localeCompare(b.pt || b.en || ''));
+    // Blindagem contra undefined/null e cópia do array para evitar mutação in-place de props
+    const data = Array.isArray(AUGMENTS_DATA) ? AUGMENTS_DATA : [];
+    return [...data].sort((a, b) => (a.pt || a.en || '').localeCompare(b.pt || b.en || ''));
   }, []);
 
-  const relicOptions = useMemo(() => {
-    const base = [...PASSIVE_RELICS, ...EXTRA_RELICS];
-    const seen = new Set();
-    const merged = [];
-    base.forEach((r) => {
-      const name = r && r.name;
-      if (!name || seen.has(name)) return;
-      seen.add(name);
-      const imgUrl = r.img
-        ? normalizeRelicImageUrl(r.img)
-        : normalizeRelicImageUrl(
-            `https://herosiege.wiki.gg/images/Relics_${String(name || '')
-              .replace(/ /g, '_')
-              .replace(/'/g, '%27')}.png`
-          );
-      merged.push({ name, img: imgUrl });
-    });
-    merged.sort((a, b) => (a.name || '').localeCompare(b.name || ''));
-    return merged;
-  }, []);
 
-  useEffect(() => {
-    const loadPotions = async () => {
-      try {
-        const colRef = collection(db, 'item_categories', 'potions', 'items');
-        const snap = await getDocs(colRef);
-        const list = [];
-        snap.forEach((s) => list.push({ id: s.id, ...s.data() }));
-        list.sort((a, b) => (a.name || '').localeCompare(b.name || ''));
-        setPotionOptions(list);
-      } catch (e) {
-        setPotionOptions([]);
-      }
-    };
-    loadPotions();
-  }, []);
 
   const statusLabel = (rawStatus) => {
-    const s = rawStatus || 'draft';
+    const s = safeRender(rawStatus) || 'draft';
     if (s === 'published') return 'Publicado';
     if (s === 'pending') return 'Pendente';
     if (s === 'draft') return 'Rascunho';
@@ -752,6 +761,9 @@ function PainelForum() {
         return bt - at;
       });
       setItems(arr);
+    } catch (err) {
+      console.error("Erro ao carregar builds:", err);
+      // Opcional: setar um estado de erro para exibir na UI
     } finally {
       setLoading(false);
     }
@@ -828,7 +840,11 @@ function PainelForum() {
     const docAugs = Array.isArray(docObj.augments) ? docObj.augments : [];
     const nextAugs = [null, null, null];
     for (let i = 0; i < nextAugs.length; i += 1) {
-      nextAugs[i] = docAugs[i] || null;
+      let val = docAugs[i];
+      if (val && typeof val === 'object') {
+        val = val.en || val.name || null;
+      }
+      nextAugs[i] = val || null;
     }
     setAugments(nextAugs);
     setStatus(docObj.status || 'draft');
@@ -986,17 +1002,17 @@ function PainelForum() {
                       </tr>
                     ) : (
                       filtered.map((b) => {
-                        const rowClassName = b.className || b.heroClass || '';
-                        const rowForum = b.forum || b.classSlug || (rowClassName ? slugifyClass(rowClassName) : '');
+                        const rowClassName = safeRender(b.className || b.heroClass);
+                        const rowForum = safeRender(b.forum || b.classSlug) || (rowClassName ? slugifyClass(rowClassName) : '');
                         return (
                           <tr key={b.id}>
                             <td>
                               <Link to={`/build/${b.id}`} target="_blank" style={{ color: 'inherit', textDecoration: 'none' }}>
-                                <strong>{b.title || '(sem título)'}</strong>
+                                <strong>{safeRender(b.title) || '(sem título)'}</strong>
                               </Link>
                             </td>
                             <td>{rowClassName}</td>
-                            <td>{b.author || ''}</td>
+                            <td>{safeRender(b.author)}</td>
                             <td>{rowForum}</td>
                             <td><span className="painel-tag">{statusLabel(b.status)}</span></td>
                             <td className="painel-actions-cell">
@@ -1059,7 +1075,22 @@ function PainelForum() {
                   <option value="final">Final</option>
                 </select>
                 <label className="painel-login-label" style={{ marginTop: 8 }}>Conteúdo (HTML)</label>
-                <textarea className="painel-textarea" value={contentHtml} onChange={(e) => setContentHtml(e.target.value)} placeholder="<p>...</p>" />
+                <div style={{ background: '#fff', color: '#000' }}>
+                  <QuillEditor
+                    value={contentHtml}
+                    onChange={setContentHtml}
+                    placeholder="Escreva o conteúdo da build..."
+                    modules={{
+                      toolbar: [
+                        [{ 'header': [1, 2, false] }],
+                        ['bold', 'italic', 'underline', 'strike', 'blockquote'],
+                        [{'list': 'ordered'}, {'list': 'bullet'}, {'indent': '-1'}, {'indent': '+1'}],
+                        ['link', 'image'],
+                        ['clean']
+                      ],
+                    }}
+                  />
+                </div>
                 <label className="painel-login-label" style={{ marginTop: 8 }}>Tags (separadas por vírgula)</label>
                 <input className="painel-input" value={tags} onChange={(e) => setTags(e.target.value)} placeholder="ex.: season 9, viking, endgame" />
                 <label className="painel-login-label" style={{ marginTop: 8 }}>Status</label>
@@ -1256,11 +1287,11 @@ function PainelForum() {
                             {charm ? (
                               <>
                                 <img 
-                                  src={`https://herosiege.wiki.gg/images/${charm.file}`} 
-                                  alt={charm.name} 
-                                  style={{ width: 28, height: 28, objectFit: 'contain', marginBottom: 6 }} 
-                                  onError={(e) => { e.currentTarget.style.display = 'none'; }}
-                                />
+                                src={`${process.env.PUBLIC_URL || ''}/images/${charm.file}`} 
+                                alt={charm.name} 
+                                style={{ width: 28, height: 28, objectFit: 'contain', marginBottom: 6 }} 
+                                onError={(e) => { e.currentTarget.style.display = 'none'; }}
+                              />
                                 <span style={{ fontSize: 10, textAlign: 'center', color: '#374151', lineHeight: 1.1 }}>{charm.name}</span>
                               </>
                             ) : (
@@ -1311,7 +1342,7 @@ function PainelForum() {
                               setCharmPickerIndex(null);
                             }}
                           >
-                            <img src={`https://herosiege.wiki.gg/images/${c.file}`} alt={c.name} style={{ width: 24, height: 24, objectFit: 'contain' }} onError={(e) => { e.currentTarget.style.display = 'none'; }} />
+                            <img src={`${process.env.PUBLIC_URL || ''}/images/${c.file}`} alt={c.name} style={{ width: 24, height: 24, objectFit: 'contain' }} onError={(e) => { e.currentTarget.style.display = 'none'; }} />
                             <span>{c.name}</span>
                           </button>
                         ))}
@@ -1446,9 +1477,19 @@ function PainelForum() {
                 <div className="painel-muted" style={{ marginTop: 6 }}>{msg}</div>
               </div>
               <div className="painel-build-preview">
-                <div className="painel-build-preview-header">
-                  <div className="painel-build-preview-title">{title || '(sem título)'}</div>
-                  {buildType ? <span className="painel-build-type-tag">{buildType}</span> : null}
+                <div className="painel-build-preview-header" style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+                  {className && (
+                    <img
+                      src={imageFor(className)}
+                      alt={className}
+                      style={{ width: 40, height: 40, objectFit: 'contain', borderRadius: 6, background: 'rgba(255,255,255,0.05)', padding: 4 }}
+                      onError={(e) => { e.currentTarget.style.display = 'none'; }}
+                    />
+                  )}
+                  <div style={{ flex: 1 }}>
+                    <div className="painel-build-preview-title">{title || '(sem título)'}</div>
+                    {buildType ? <span className="painel-build-type-tag">{buildType}</span> : null}
+                  </div>
                 </div>
                 <div className="painel-build-preview-meta">
                   {(className || '(classe)')} • {(author || '(autor)')}
@@ -1458,14 +1499,21 @@ function PainelForum() {
                   <div style={{ marginTop: 8 }}>
                     <div className="painel-login-label" style={{ marginBottom: 6 }}>Relíquias</div>
                     <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
-                      {relics.map((name, idx) => {
-                        if (!name) return null;
-                        const opt = relicOptions.find((r) => r.name === name);
+                      {relics.map((val, idx) => {
+                        if (!val) return null;
+                        const rName = typeof val === 'string' ? val : (val.name || '');
+                        if (!rName) return null;
+                        
+                        const opt = relicOptions.find((r) => r.name === rName);
                         const isQuest = idx === 4;
+                        const imgSrc = opt?.img || opt?.image;
+
                         return (
-                          <div key={`${name}-${idx}`} style={{ display: 'flex', alignItems: 'center', gap: 6, border: isQuest ? '1px solid rgba(239,68,68,.6)' : '1px solid #e5e7eb', padding: '4px 6px', background: isQuest ? 'rgba(239,68,68,.06)' : '#f9fafb' }}>
-                            <img src={opt?.img} alt={name} style={{ width: 18, height: 18, objectFit: 'contain' }} onError={(e) => handleRelicError(e, name)} />
-                            <span style={{ fontSize: 11 }}>{name}</span>
+                          <div key={`${rName}-${idx}`} style={{ display: 'flex', alignItems: 'center', gap: 6, border: isQuest ? '1px solid rgba(239,68,68,.6)' : '1px solid #e5e7eb', padding: '4px 6px', background: isQuest ? 'rgba(239,68,68,.06)' : '#f9fafb' }}>
+                            {imgSrc && (
+                              <img src={imgSrc} alt={rName} style={{ width: 18, height: 18, objectFit: 'contain' }} onError={(e) => handleRelicError(e, rName)} />
+                            )}
+                            <span style={{ fontSize: 11 }}>{rName}</span>
                           </div>
                         );
                       })}
@@ -1476,15 +1524,20 @@ function PainelForum() {
                   <div style={{ marginTop: 8 }}>
                     <div className="painel-login-label" style={{ marginBottom: 6 }}>Poções</div>
                     <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
-                      {potions.map((name, idx) => {
-                        if (!name) return null;
-                        const opt = potionOptions.find((p) => p.name === name);
+                      {potions.map((val, idx) => {
+                        if (!val) return null;
+                        const pName = typeof val === 'string' ? val : (val.name || '');
+                        if (!pName) return null;
+
+                        const opt = potionOptions.find((p) => p.name === pName);
+                        const imgSrc = opt?.image || opt?.img;
+                        
                         return (
-                          <div key={`${name}-${idx}`} style={{ display: 'flex', alignItems: 'center', gap: 6, border: '1px solid #e5e7eb', padding: '4px 6px', background: '#f9fafb' }}>
-                            {(opt?.image || opt?.img) && (
-                              <img src={opt.image || opt.img} alt={name} style={{ width: 18, height: 18, objectFit: 'contain' }} onError={(e) => { e.currentTarget.style.display = 'none'; }} />
+                          <div key={`${pName}-${idx}`} style={{ display: 'flex', alignItems: 'center', gap: 6, border: '1px solid #e5e7eb', padding: '4px 6px', background: '#f9fafb' }}>
+                            {imgSrc && (
+                              <img src={imgSrc} alt={pName} style={{ width: 18, height: 18, objectFit: 'contain' }} onError={(e) => { e.currentTarget.style.display = 'none'; }} />
                             )}
-                            <span style={{ fontSize: 11 }}>{name}</span>
+                            <span style={{ fontSize: 11 }}>{pName}</span>
                           </div>
                         );
                       })}
@@ -1495,13 +1548,16 @@ function PainelForum() {
                   <div style={{ marginTop: 8 }}>
                     <div className="painel-login-label" style={{ marginBottom: 6 }}>Charms</div>
                     <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
-                      {charms.map((name, idx) => {
-                        const charm = CHARM_DB.find((c) => c.name === name);
-                        if (!charm) return null;
+                      {charms.map((val, idx) => {
+                        const cName = typeof val === 'string' ? val : (val.name || '');
+                        if (!cName) return null;
+
+                        const db = Array.isArray(CHARM_DB) ? CHARM_DB : [];
+                        const charm = db.find((c) => c.name === cName);
                         
                         let borderColor = '#e5e7eb';
                         let bgColor = '#f9fafb';
-                        const r = (charm.rarity || '').toUpperCase();
+                        const r = (charm?.rarity || '').toUpperCase();
                         if (r === 'SATANIC') { borderColor = '#dc2626'; bgColor = '#fef2f2'; }
                         else if (r.includes('SET')) { borderColor = '#16a34a'; bgColor = '#f0fdf4'; }
                         else if (r === 'ANGELIC') { borderColor = '#0ea5e9'; bgColor = '#f0f9ff'; }
@@ -1509,11 +1565,13 @@ function PainelForum() {
                         else if (r === 'LEGENDARY') { borderColor = '#d97706'; bgColor = '#fffbeb'; }
                         else if (r === 'RARE') { borderColor = '#ca8a04'; bgColor = '#fefce8'; }
                         else if (r === 'MAGIC') { borderColor = '#2563eb'; bgColor = '#eff6ff'; }
-
+                        
                         return (
-                          <div key={`${name}-${idx}`} style={{ display: 'flex', alignItems: 'center', gap: 6, border: `1px solid ${borderColor}`, padding: '4px 6px', background: bgColor }}>
-                            <img src={`https://herosiege.wiki.gg/images/${charm.file}`} alt={name} style={{ width: 18, height: 18, objectFit: 'contain' }} onError={(e) => { e.currentTarget.style.display = 'none'; }} />
-                            <span style={{ fontSize: 11 }}>{name}</span>
+                          <div key={`${cName}-${idx}`} style={{ display: 'flex', alignItems: 'center', gap: 6, border: `1px solid ${borderColor}`, padding: '4px 6px', background: bgColor }}>
+                             {charm?.file && (
+                               <img src={`${process.env.PUBLIC_URL || ''}/images/${charm.file}`} alt={cName} style={{ width: 18, height: 18, objectFit: 'contain' }} onError={(e) => { e.currentTarget.style.display = 'none'; }} />
+                             )}
+                            <span style={{ fontSize: 11 }}>{cName}</span>
                           </div>
                         );
                       })}
@@ -1543,11 +1601,15 @@ function PainelForum() {
                           }
                         ];
                         const info = all.find((m) => m.id === mercenary);
-                        if (!info) return null;
+                        const displayName = info ? info.name : mercenary;
+                        const displayImg = info ? info.image : null;
+
                         return (
                           <div style={{ display: 'flex', alignItems: 'center', gap: 6, border: '1px solid #e5e7eb', padding: '4px 6px', background: '#f9fafb' }}>
-                            <img src={info.image} alt={info.name} style={{ width: 18, height: 18, objectFit: 'contain' }} onError={(e) => { e.currentTarget.style.display = 'none'; }} />
-                            <span style={{ fontSize: 11 }}>{info.name}</span>
+                            {displayImg && (
+                              <img src={displayImg} alt={displayName} style={{ width: 18, height: 18, objectFit: 'contain' }} onError={(e) => { e.currentTarget.style.display = 'none'; }} />
+                            )}
+                            <span style={{ fontSize: 11 }}>{displayName}</span>
                           </div>
                         );
                       })()}
@@ -1558,13 +1620,21 @@ function PainelForum() {
                   <div style={{ marginTop: 8 }}>
                     <div className="painel-login-label" style={{ marginBottom: 6 }}>Augments</div>
                     <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
-                      {augments.map((augName, idx) => {
-                        if (!augName) return null;
-                        const opt = augmentOptions.find((a) => a.en === augName || a.name === augName);
+                      {augments.map((val, idx) => {
+                        if (!val) return null;
+                        
+                        const nameStr = typeof val === 'string' ? val : (val.en || val.name || '');
+                        
+                        const opt = augmentOptions.find((a) => a.en === nameStr || a.name === nameStr);
+                        const finalObj = opt || (typeof val === 'object' ? val : null);
+                        
+                        const iconClass = finalObj?.icon || '';
+                        const label = finalObj ? (finalObj.pt || finalObj.en) : nameStr;
+
                         return (
                           <div key={idx} style={{ display: 'flex', alignItems: 'center', gap: 6, border: '1px solid #e5e7eb', padding: '4px 6px', background: '#f9fafb' }}>
-                            {opt ? <i className={`fa-solid ${opt.icon}`} style={{ fontSize: 14, color: '#374151' }}></i> : null}
-                            <span style={{ fontSize: 11 }}>{opt ? (opt.pt || opt.en) : augName}</span>
+                            {iconClass ? <i className={`fa-solid ${iconClass}`} style={{ fontSize: 14, color: '#374151' }}></i> : null}
+                            <span style={{ fontSize: 11 }}>{label}</span>
                           </div>
                         );
                       })}
@@ -1710,16 +1780,6 @@ function PainelHomepage() {
     setMode('random');
     setSelected(null);
     save(null, 'random', prevSel, prevMode);
-  };
-
-  const imageFor = (name) => {
-    const base = String(name || '')
-      .normalize('NFD')
-      .replace(/[\u0300-\u036f]/g, '')
-      .toLowerCase()
-      .replace(/\s+/g, '');
-    const pub = process.env.PUBLIC_URL || '';
-    return `${pub}/images/${base}.webp`;
   };
 
   const allPlaced = useMemo(() => {
@@ -3263,6 +3323,48 @@ function PainelMessages() {
   );
 }
 
+class ErrorBoundary extends React.Component {
+  constructor(props) {
+    super(props);
+    this.state = { hasError: false, error: null };
+  }
+
+  static getDerivedStateFromError(error) {
+    return { hasError: true, error };
+  }
+
+  componentDidCatch(error, errorInfo) {
+    // eslint-disable-next-line no-console
+    console.error("PainelForum Error:", error, errorInfo);
+  }
+
+  render() {
+    if (this.state.hasError) {
+      return (
+        <div style={{ padding: 24, color: '#dc2626', background: '#ffffff', minHeight: '100vh', border: '4px solid #ef4444' }}>
+          <h2 style={{ fontSize: 24, marginBottom: 16, fontWeight: 'bold' }}>Algo deu errado no Painel Forum</h2>
+          <div style={{ marginBottom: 16, fontSize: 16 }}>
+            Por favor, tire um print desta tela e envie para o suporte.
+          </div>
+          <div style={{ background: '#f3f4f6', padding: 16, borderRadius: 8, overflow: 'auto', fontFamily: 'monospace', color: '#1f2937', border: '1px solid #d1d5db' }}>
+            {this.state.error && this.state.error.toString()}
+            {this.state.error && this.state.error.stack && (
+              <pre style={{ marginTop: 12, fontSize: 12 }}>{this.state.error.stack}</pre>
+            )}
+          </div>
+          <button 
+            onClick={() => window.location.reload()}
+            style={{ marginTop: 16, padding: '10px 20px', background: '#2563eb', color: 'white', border: 'none', borderRadius: 4, cursor: 'pointer', fontWeight: 'bold' }}
+          >
+            Recarregar Página
+          </button>
+        </div>
+      );
+    }
+    return this.props.children; 
+  }
+}
+
 function PainelApp() {
   const [authReady, setAuthReady] = useState(false);
   const [user, setUser] = useState(null);
@@ -3330,7 +3432,11 @@ function PainelApp() {
         {effectiveView === 'blog' && <PainelBlog />}
         {effectiveView === 'comments' && <PainelComments />}
         {effectiveView === 'messages' && <PainelMessages />}
-        {effectiveView === 'forum' && <PainelForum />}
+        {effectiveView === 'forum' && (
+          <ErrorBoundary>
+            <PainelForum />
+          </ErrorBoundary>
+        )}
         {effectiveView === 'homepage' && <PainelHomepage />}
         {effectiveView === 'backup' && <PainelBackup />}
         {effectiveView === 'settings' && <PainelSettings />}

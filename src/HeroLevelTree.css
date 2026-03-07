@@ -57,7 +57,7 @@
 .hlt-val-ar { border-color: var(--ar-color); color: var(--ar-color); }
 
 /* MYTHIC BOXES */
-.hlt-mythic-container { flex-grow: 1; overflow-y: auto; margin-bottom: 140px; scrollbar-width: thin; }
+.hlt-mythic-container { flex-grow: 1; overflow-y: auto; margin-bottom: 200px; scrollbar-width: thin; }
 .hlt-mythic-box {
     background: rgba(160, 32, 240, 0.1); border: 1px solid var(--mythic);
     padding: 10px; border-radius: 4px; margin-top: 8px;
@@ -71,10 +71,18 @@
 .hlt-save-btn { 
     background: #102a15; color: #66ff88; border: 1px solid #22552b; 
     padding: 12px; cursor: pointer; font-weight: bold; border-radius: 4px;
-    position: absolute; bottom: 80px; left: 25px; width: calc(100% - 50px);
+    position: absolute; bottom: 135px; left: 25px; width: calc(100% - 50px);
     transition: 0.2s;
 }
 .hlt-save-btn:hover { background: #1a4220; }
+
+.hlt-share-btn { 
+    background: #1e3a8a; color: #93c5fd; border: 1px solid #1e40af; 
+    padding: 12px; cursor: pointer; font-weight: bold; border-radius: 4px;
+    position: absolute; bottom: 80px; left: 25px; width: calc(100% - 50px);
+    transition: 0.2s;
+}
+.hlt-share-btn:hover { background: #1e40af; }
 
 .hlt-reset-btn { 
     background: #2a1010; color: #ff6666; border: 1px solid #552222; 

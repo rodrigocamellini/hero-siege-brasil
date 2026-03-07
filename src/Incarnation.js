@@ -1,4 +1,4 @@
-import React, { useState, useRef } from 'react';
+import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import Footer from './Footer';
 
@@ -7,8 +7,6 @@ const Incarnation = () => {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [isDbOpen, setIsDbOpen] = useState(false);
   const [isBuilderOpen, setIsBuilderOpen] = useState(false);
-  const dbMenuRef = useRef(null);
-  const builderMenuRef = useRef(null);
 
   const TagS9 = () => (
     <span className="text-[9px] bg-gradient-to-r from-green-400 to-emerald-600 text-black px-1.5 py-0.5 rounded-sm font-black ml-2 leading-none shadow-[0_0_8px_rgba(52,211,153,0.5)] animate-pulse">

@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef, useMemo } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { jsPDF } from "jspdf";
 import html2canvas from "html2canvas";
 import './HeroLevelTree.css';
@@ -93,6 +93,7 @@ const rawMap = `
 
 const HeroLevelTree = () => {
     const navigate = useNavigate();
+    const [searchParams] = useSearchParams();
     const [nodes, setNodes] = useState([]);
     // Adjust initial view state to center better with the new layout
     const [viewState, setViewState] = useState({ scale: 0.55, x: 20, y: 100 });
@@ -122,32 +123,71 @@ const HeroLevelTree = () => {
         return () => document.removeEventListener('mousedown', handleClickOutside);
     }, []);
 
-    // Initial parsing of rawMap to create nodes
+    // Initial parsing of rawMap to create nodes and load from URL
     useEffect(() => {
         const rows = rawMap.trim().split('\n');
         const maxRow = rows.length - 1;
         const initialNodes = [];
+
+        // Check for ?tree= param
+        const treeParam = searchParams.get('tree');
+        let activeIds = new Set();
+        
+        if (treeParam) {
+            try {
+                const decoded = atob(treeParam);
+                activeIds = new Set(decoded.split(','));
+            } catch (e) {
+                console.error("Failed to parse tree param", e);
+            }
+        }
 
         rows.forEach((row, y) => {
             row.trim().split(/\s+/).forEach((cell, x) => {
                 if (cell !== '--') {
                     const type = cell.toLowerCase();
                     const isM = type.startsWith('m');
-                    const unlocked = y === maxRow;
+                    const id = `${x}-${y}`;
+                    // If loading from URL, we start with unlocked = false (except base)
+                    // and then run a pass to fix it.
+                    // Or simpler: Just set active based on URL, and let the next logic fix unlocked.
+                    
+                    const isActive = activeIds.has(id);
+                    const isBase = y === maxRow;
                     
                     initialNodes.push({
-                        id: `${x}-${y}`,
+                        id,
                         x, y,
                         type,
                         isM,
-                        active: false,
-                        unlocked
+                        active: isActive,
+                        unlocked: isBase // Initial state, will be updated if loading from URL
                     });
                 }
             });
         });
-        setNodes(initialNodes);
-    }, []);
+
+        // If we loaded from URL, we need to recalculate unlocked status for ALL nodes
+        // because "unlocked" depends on neighbors being active.
+        if (treeParam) {
+            // Iterative approach to propagate unlock status?
+            // Actually, the rule is: unlocked if neighbor is active.
+            // So one pass is enough if we just check neighbor's active status.
+            
+            const updatedNodes = initialNodes.map(node => {
+                if (node.unlocked) return node; // Already base
+
+                const hasActiveNeighbor = initialNodes.some(other => 
+                    other.active && (Math.abs(other.x - node.x) + Math.abs(other.y - node.y) === 1)
+                );
+                
+                return { ...node, unlocked: hasActiveNeighbor };
+            });
+            setNodes(updatedNodes);
+        } else {
+            setNodes(initialNodes);
+        }
+    }, [searchParams]);
 
     // Toggle node logic with unlocked status update
     const toggleNode = (nodeId) => {
@@ -211,6 +251,28 @@ const HeroLevelTree = () => {
     }, [nodes]);
 
     const [isSaving, setIsSaving] = useState(false);
+    const [showShareModal, setShowShareModal] = useState(false);
+    const [generatedLink, setGeneratedLink] = useState('');
+    const [copySuccess, setCopySuccess] = useState(false);
+
+    const handleGenerateLink = () => {
+        const activeIds = nodes.filter(n => n.active).map(n => n.id).join(',');
+        const encoded = btoa(activeIds);
+        const url = `${window.location.origin}${window.location.pathname}?tree=${encoded}`;
+        
+        setGeneratedLink(url);
+        setShowShareModal(true);
+        setCopySuccess(false);
+    };
+
+    const copyToClipboard = () => {
+        navigator.clipboard.writeText(generatedLink).then(() => {
+            setCopySuccess(true);
+            setTimeout(() => setCopySuccess(false), 2000);
+        }, (err) => {
+            console.error('Could not copy text: ', err);
+        });
+    };
 
   const handleSaveTree = async () => {
     setIsSaving(true);
@@ -612,6 +674,9 @@ const HeroLevelTree = () => {
                     <button className="hlt-save-btn" onClick={handleSaveTree} disabled={isSaving}>
                         {isSaving ? 'SAVING...' : 'SALVAR ÁRVORE'}
                     </button>
+                    <button className="hlt-share-btn" onClick={handleGenerateLink}>
+                        GERAR LINK
+                    </button>
                     <button className="hlt-reset-btn" onClick={resetTree}>RESET TREE</button>
                 </div>
                 
@@ -639,6 +704,46 @@ const HeroLevelTree = () => {
                     </div>
                 </div>
             </div>
+
+            {/* Share Modal */}
+            {showShareModal && (
+                <div className="fixed inset-0 z-[2000] flex items-center justify-center bg-black/80 backdrop-blur-sm animate-fadeIn">
+                    <div className="bg-[#13151f] border border-blue-500/30 rounded-lg p-6 w-[90%] max-w-lg shadow-[0_0_50px_rgba(59,130,246,0.2)] relative transform transition-all scale-100">
+                        <button 
+                            onClick={() => setShowShareModal(false)}
+                            className="absolute top-4 right-4 text-gray-400 hover:text-white transition-colors"
+                        >
+                            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+                        </button>
+                        
+                        <div className="flex flex-col items-center gap-4">
+                            <div className="w-16 h-16 rounded-full bg-blue-500/10 flex items-center justify-center mb-2">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#3b82f6" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8"></path><polyline points="16 6 12 2 8 6"></polyline><line x1="12" y1="2" x2="12" y2="15"></line></svg>
+                            </div>
+                            
+                            <h3 className="text-xl font-bold text-white uppercase tracking-wider">Link Gerado!</h3>
+                            <p className="text-gray-400 text-sm text-center">
+                                Sua build foi salva e está pronta para ser compartilhada. Copie o link abaixo:
+                            </p>
+                            
+                            <div className="w-full flex gap-2 mt-2">
+                                <input 
+                                    type="text" 
+                                    readOnly 
+                                    value={generatedLink} 
+                                    className="flex-1 bg-black/40 border border-white/10 rounded px-3 py-2 text-sm text-gray-300 focus:outline-none focus:border-blue-500/50"
+                                />
+                                <button 
+                                    onClick={copyToClipboard}
+                                    className={`px-4 py-2 rounded font-bold text-sm transition-all ${copySuccess ? 'bg-green-600 text-white' : 'bg-blue-600 hover:bg-blue-700 text-white'}`}
+                                >
+                                    {copySuccess ? 'COPIADO!' : 'COPIAR'}
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            )}
 
             <footer className="bg-[#0b0d14] border-t border-white/5 py-8 flex-none z-50 relative">
                 <div className="max-w-7xl mx-auto px-6 flex flex-col md:flex-row justify-between items-center opacity-50 hover:opacity-100 transition-opacity">

@@ -4,7 +4,7 @@ import { Helmet } from 'react-helmet-async';
 import { db } from './firebase';
 import { doc, getDoc, collection, getDocs, addDoc, serverTimestamp, query, where, orderBy, onSnapshot } from 'firebase/firestore';
 import BlogComments from './BlogComments';
-import RelicsView, { PASSIVE_RELICS, EXTRA_RELICS, normalizeRelicImageUrl, getRelicImageSrc } from './RelicsView';
+import RelicsView, { PASSIVE_RELICS, EXTRA_RELICS, getRelicImageSrc } from './RelicsView';
 import ClassesView from './ClassesView';
 import ItemsView, { rarityStyle } from './ItemsView';
 import RunesView from './RunesView';
@@ -381,7 +381,9 @@ const NewDesign = ({ onBack, initialView = 'home' }) => {
         const colRef = collection(db, 'item_categories', 'potions', 'items');
         const snap = await getDocs(colRef);
         const list = [];
-        snap.forEach((s) => list.push({ id: s.id, ...s.data() }));
+        for (const s of snap.docs) {
+          list.push({ id: s.id, ...s.data() });
+        }
         list.sort((a, b) => (a.name || '').localeCompare(b.name || ''));
         setPotionOptions(list);
       } catch (e) {
@@ -819,42 +821,12 @@ const NewDesign = ({ onBack, initialView = 'home' }) => {
   };
 
   const [steamPlayers, setSteamPlayers] = useState(null);
-  const getTreeTitle = (n, idx) => {
-    const map = {
-      nomad: ['Sand Walker', 'Desert Blade'],
-      redneck: ['Hillbilly', 'Moonshiner'],
-      necromancer: ['Summoner', 'Lich'],
-      samurai: ['Bushido', 'Ronin'],
-      paladin: ['Holy Knight', 'Crusader'],
-      amazon: ['Spear Maiden', 'Huntress'],
-      demon_slayer: ['Executioner', 'Inquisitor'],
-      demonspawn: ['Hellfire', 'Demonic'],
-      shaman: ['Elemental', 'Totemic'],
-      white_mage: ['Holy Beam', 'Benediction'],
-      marauder: ['Bombardier', 'Wrecker'],
-      plague_doctor: ['Infection', 'Medicine'],
-      illusionist: ['Phantasm', 'Mirror'],
-      exo: ['Gravity', 'Force'],
-      butcher: ['Meat', 'Blood'],
-      stormweaver: ['Thunder', 'Storm'],
-      bard: ['Minstrel', 'Troubadour']
-    };
-    const arr = map[n];
-    if (arr && idx < arr.length) return arr[idx];
-    return `Especialização ${idx + 1}`;
-  };
 
   const normalizeImageUrl = (url) => {
     if (!url || typeof url !== 'string') return '';
     return url.replace(/^http:/i, 'https:');
   };
   const imageOrFallback = (url) => normalizeImageUrl(url) || '/images/herosiege.png';
-  const classSlug = (name) =>
-    String(name || '')
-      .normalize('NFD')
-      .replace(/[\u0300-\u036f]/g, '')
-      .toLowerCase()
-      .replace(/\s+/g, '');
   const classImagePath = (name, ext = 'webp') => {
     // Slug antigo para legacy images (sem underscore)
     const legacyBase = String(name || '')
@@ -1215,7 +1187,9 @@ const NewDesign = ({ onBack, initialView = 'home' }) => {
              snap = await getDocs(colRef);
           }
           
-          snap.forEach(s => allWeapons.push({ id: s.id, category: cat, ...s.data() }));
+          for (const s of snap.docs) {
+            allWeapons.push({ id: s.id, category: cat, ...s.data() });
+          }
         }
         // Remove duplicates if any
         allWeapons = Array.from(new Map(allWeapons.map(item => [item.id, item])).values());
@@ -1231,7 +1205,9 @@ const NewDesign = ({ onBack, initialView = 'home' }) => {
             const armorColRef = collection(db, 'item_categories', ac, 'items');
             const armorSnap = await getDocs(armorColRef);
             if (!armorSnap.empty) {
-                armorSnap.forEach(s => allArmors.push({ id: s.id, category: 'body_armors', ...s.data() }));
+                for (const s of armorSnap.docs) {
+                    allArmors.push({ id: s.id, category: 'body_armors', ...s.data() });
+                }
                 break; // Achou, para
             }
         }
@@ -1254,7 +1230,9 @@ const NewDesign = ({ onBack, initialView = 'home' }) => {
                       const ref = collection(db, 'item_categories', c, 'items');
                       const snap = await getDocs(ref);
                       if (!snap.empty) {
-                          snap.forEach(s => items.push({ id: s.id, category: catName, ...s.data() }));
+                          for (const s of snap.docs) {
+                              items.push({ id: s.id, category: catName, ...s.data() });
+                          }
                           break;
                       }
                   }
@@ -1305,7 +1283,7 @@ const NewDesign = ({ onBack, initialView = 'home' }) => {
     };
     
     loadBuildItems();
-  }, [newBuildOpen]);
+  }, [newBuildOpen, weaponOptions.length, bodyArmorOptions.length]);
 
   const loadItemCategories = async () => {
     setItemsLoading(true);
@@ -1313,7 +1291,9 @@ const NewDesign = ({ onBack, initialView = 'home' }) => {
       const colRef = collection(db, 'item_categories');
       const snap = await getDocs(colRef);
       const cats = [];
-      snap.forEach(s => cats.push({ id: s.id, ...s.data() }));
+      for (const s of snap.docs) {
+        cats.push({ id: s.id, ...s.data() });
+      }
       cats.sort((a, b) => {
         const ao = a.order ?? 999;
         const bo = b.order ?? 999;
@@ -1346,7 +1326,9 @@ const NewDesign = ({ onBack, initialView = 'home' }) => {
         const colRef = collection(db, 'item_categories', cid, 'items');
         const snap = await getDocs(colRef);
         const items = [];
-        snap.forEach(s => items.push({ id: s.id, ...s.data() }));
+        for (const s of snap.docs) {
+          items.push({ id: s.id, ...s.data() });
+        }
         if (items.length > 0) {
           pickedItems = items;
           break;
@@ -5690,7 +5672,7 @@ const NewDesign = ({ onBack, initialView = 'home' }) => {
                 Hero Siege Brasil 2026© Este site não é afiliado à Panic Art Studios. Todos os assets e dados pertencem aos seus respectivos donos.
             </div>
             <div className="flex gap-6 mt-4 md:mt-0">
-                <a href="https://discord.gg/herosiegeofficial" target="_blank" rel="noopener noreferrer" className="text-gray-500 hover:text-white cursor-pointer transition-colors">Discord</a>
+                <a href="https://discord.gg/herosiegeofficial" target="_blank" rel="noopener noreferrer" className="text-gray-500 hover:text-white cursor-pointer transition-colors">Discord HS</a>
                 <a href="https://store.steampowered.com/app/269210/Hero_Siege/" target="_blank" rel="noopener noreferrer" className="text-gray-500 hover:text-white cursor-pointer transition-colors">Steam</a>
                 <a href="https://www.panicartstudios.com/" target="_blank" rel="noopener noreferrer" className="text-gray-500 hover:text-white cursor-pointer transition-colors">PAS</a>
             </div>

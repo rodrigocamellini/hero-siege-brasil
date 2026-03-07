@@ -1,7 +1,6 @@
 import React from 'react';
 import { Routes, Route, Navigate } from 'react-router-dom';
 import PainelApp from './PainelApp';
-import Equipe from './Equipe';
 import NewDesign from './NewDesign';
 import HeroLevelTree from './HeroLevelTree';
 import HeroSkills from './HeroSkills';
