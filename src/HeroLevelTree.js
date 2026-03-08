@@ -91,6 +91,81 @@ const rawMap = `
 -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- vi -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- --
 `;
 
+// Helper to get all possible nodes in deterministic order
+const getAllPossibleNodes = () => {
+    const rows = rawMap.trim().split('\n');
+    const maxRow = rows.length - 1;
+    const nodes = [];
+    rows.forEach((row, y) => {
+        row.trim().split(/\s+/).forEach((cell, x) => {
+            if (cell !== '--') {
+                const type = cell.toLowerCase();
+                const isM = type.startsWith('m');
+                const id = `${x}-${y}`;
+                const isBase = y === maxRow;
+                nodes.push({ id, x, y, type, isM, isBase, active: false, unlocked: isBase });
+            }
+        });
+    });
+    return nodes;
+};
+
+// Compression Helpers
+const compressNodes = (nodes) => {
+    const activeIndices = [];
+    nodes.forEach((n, i) => {
+        if (n.active) activeIndices.push(i);
+    });
+    
+    if (activeIndices.length === 0) return '';
+
+    const numBytes = Math.ceil(nodes.length / 8);
+    const bytes = new Uint8Array(numBytes);
+    
+    activeIndices.forEach(idx => {
+        const byteIndex = Math.floor(idx / 8);
+        const bitIndex = idx % 8;
+        bytes[byteIndex] |= (1 << bitIndex);
+    });
+
+    let binary = '';
+    for (let i = 0; i < bytes.length; i++) {
+        binary += String.fromCharCode(bytes[i]);
+    }
+    
+    // Prefix '~' for new format
+    return '~' + btoa(binary).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
+};
+
+const decompressNodes = (encoded, allNodes) => {
+    try {
+        if (!encoded.startsWith('~')) return null; 
+        
+        const base64 = encoded.slice(1).replace(/-/g, '+').replace(/_/g, '/');
+        const pad = base64.length % 4;
+        const paddedBase64 = pad ? base64 + '='.repeat(4 - pad) : base64;
+        
+        const binary = atob(paddedBase64);
+        const bytes = new Uint8Array(binary.length);
+        for (let i = 0; i < binary.length; i++) {
+            bytes[i] = binary.charCodeAt(i);
+        }
+        
+        const activeIds = new Set();
+        allNodes.forEach((node, idx) => {
+            const byteIndex = Math.floor(idx / 8);
+            const bitIndex = idx % 8;
+            if (byteIndex < bytes.length && (bytes[byteIndex] & (1 << bitIndex))) {
+                activeIds.add(node.id);
+            }
+        });
+        return activeIds;
+    } catch (e) {
+        console.error("Error decompressing tree:", e);
+        return null;
+    }
+};
+
 const HeroLevelTree = () => {
     const navigate = useNavigate();
     const [searchParams] = useSearchParams();
@@ -123,70 +198,50 @@ const HeroLevelTree = () => {
         return () => document.removeEventListener('mousedown', handleClickOutside);
     }, []);
 
-    // Initial parsing of rawMap to create nodes and load from URL
+    // Initial parsing and loading
     useEffect(() => {
-        const rows = rawMap.trim().split('\n');
-        const maxRow = rows.length - 1;
-        const initialNodes = [];
-
-        // Check for ?tree= param
+        const allNodes = getAllPossibleNodes();
         const treeParam = searchParams.get('tree');
         let activeIds = new Set();
         
         if (treeParam) {
-            try {
-                const decoded = atob(treeParam);
-                activeIds = new Set(decoded.split(','));
-            } catch (e) {
-                console.error("Failed to parse tree param", e);
+            // Try new format (starts with ~)
+            const newActiveIds = decompressNodes(treeParam, allNodes);
+            if (newActiveIds) {
+                activeIds = newActiveIds;
+            } else {
+                // Try legacy format
+                try {
+                    const decoded = atob(treeParam);
+                    // Check if it looks like comma separated list
+                    if (decoded.includes(',') || decoded.includes('-')) {
+                        activeIds = new Set(decoded.split(','));
+                    }
+                } catch (e) {
+                    console.error("Failed to parse tree param", e);
+                }
             }
         }
 
-        rows.forEach((row, y) => {
-            row.trim().split(/\s+/).forEach((cell, x) => {
-                if (cell !== '--') {
-                    const type = cell.toLowerCase();
-                    const isM = type.startsWith('m');
-                    const id = `${x}-${y}`;
-                    // If loading from URL, we start with unlocked = false (except base)
-                    // and then run a pass to fix it.
-                    // Or simpler: Just set active based on URL, and let the next logic fix unlocked.
-                    
-                    const isActive = activeIds.has(id);
-                    const isBase = y === maxRow;
-                    
-                    initialNodes.push({
-                        id,
-                        x, y,
-                        type,
-                        isM,
-                        active: isActive,
-                        unlocked: isBase // Initial state, will be updated if loading from URL
-                    });
-                }
-            });
-        });
+        const initialNodes = allNodes.map(n => ({
+            ...n,
+            active: activeIds.has(n.id)
+        }));
 
-        // If we loaded from URL, we need to recalculate unlocked status for ALL nodes
-        // because "unlocked" depends on neighbors being active.
-        if (treeParam) {
-            // Iterative approach to propagate unlock status?
-            // Actually, the rule is: unlocked if neighbor is active.
-            // So one pass is enough if we just check neighbor's active status.
+        // Unlock propagation
+        // Since "unlocked" state depends on neighbors being active, and we just set active states,
+        // we need to run a check.
+        const updatedNodes = initialNodes.map(node => {
+            if (node.unlocked) return node; // Base nodes already unlocked
+
+            const hasActiveNeighbor = initialNodes.some(other => 
+                other.active && (Math.abs(other.x - node.x) + Math.abs(other.y - node.y) === 1)
+            );
             
-            const updatedNodes = initialNodes.map(node => {
-                if (node.unlocked) return node; // Already base
-
-                const hasActiveNeighbor = initialNodes.some(other => 
-                    other.active && (Math.abs(other.x - node.x) + Math.abs(other.y - node.y) === 1)
-                );
-                
-                return { ...node, unlocked: hasActiveNeighbor };
-            });
-            setNodes(updatedNodes);
-        } else {
-            setNodes(initialNodes);
-        }
+            return { ...node, unlocked: hasActiveNeighbor };
+        });
+        
+        setNodes(updatedNodes);
     }, [searchParams]);
 
     // Toggle node logic with unlocked status update
@@ -256,9 +311,8 @@ const HeroLevelTree = () => {
     const [copySuccess, setCopySuccess] = useState(false);
 
     const handleGenerateLink = () => {
-        const activeIds = nodes.filter(n => n.active).map(n => n.id).join(',');
-        const encoded = btoa(activeIds);
-        const url = `${window.location.origin}${window.location.pathname}?tree=${encoded}`;
+        const compressed = compressNodes(nodes);
+        const url = `${window.location.origin}${window.location.pathname}?tree=${compressed}`;
         
         setGeneratedLink(url);
         setShowShareModal(true);
@@ -274,23 +328,14 @@ const HeroLevelTree = () => {
         });
     };
 
-  const handleSaveTree = async () => {
+    const handleSaveTree = async () => {
     setIsSaving(true);
     try {
-        const input = document.querySelector('.hlt-status-panel');
         const treeContainer = document.querySelector('.hlt-tree-container');
         
-        if (!input || !treeContainer) return;
+        if (!treeContainer) return;
 
-        // Capture Sidebar
-        const sidebarCanvas = await html2canvas(input, {
-            backgroundColor: '#0a0a0c',
-            scale: 2,
-            useCORS: true
-        });
-        const sidebarImgData = sidebarCanvas.toDataURL('image/png');
-
-        // Capture Tree
+        // Capture Tree (Only Tree)
         const maxX = Math.max(...nodes.map(n => n.x));
         const maxY = Math.max(...nodes.map(n => n.y));
         const treeWidth = (maxX + 2) * 50; 
@@ -337,7 +382,22 @@ const HeroLevelTree = () => {
         });
         
         try {
-             pdf.addImage(logoImg, 'PNG', 10, 10, 30, 30);
+             // Calculate Logo Aspect Ratio
+             const logoRatio = logoImg.width / logoImg.height;
+             
+             // Define max dimensions
+             const maxW = 30; // Max width 30mm
+             const maxH = 30; // Max height 30mm
+             
+             let logoW = maxW;
+             let logoH = logoW / logoRatio;
+
+             if (logoH > maxH) {
+                 logoH = maxH;
+                 logoW = logoH * logoRatio;
+             }
+
+             pdf.addImage(logoImg, 'PNG', 10, 10, logoW, logoH);
         } catch (e) {}
 
         pdf.setFontSize(24);
@@ -347,15 +407,57 @@ const HeroLevelTree = () => {
         pdf.setTextColor(200, 200, 200);
         pdf.text("Hero Siege Brasil - Build Snapshot", 50, 35);
 
-        // Sidebar
-        const sidebarW = 70;
-        const sidebarH = (sidebarCanvas.height * sidebarW) / sidebarCanvas.width;
-        pdf.addImage(sidebarImgData, 'PNG', 10, 50, sidebarW, sidebarH);
+        // Sidebar Content (Text)
+        let yPos = 60;
+        pdf.setFontSize(16);
+        pdf.setTextColor(255, 215, 0); // Gold
+        pdf.text(`POINTS SPENT: ${stats.points}`, 10, yPos);
+        yPos += 10;
 
-        // Tree
-        const treeX = 90;
-        const treeMaxWidth = pageWidth - 100;
-        const treeMaxHeight = pageHeight - 60;
+        pdf.setFontSize(12);
+        pdf.setTextColor(255, 255, 255);
+        pdf.text("STATS BONUS:", 10, yPos);
+        yPos += 8;
+
+        const statList = [
+            { l: 'STR', v: stats.s.st, c: [255, 68, 68] },
+            { l: 'INT', v: stats.s.in, c: [68, 68, 255] },
+            { l: 'ENG', v: stats.s.en, c: [255, 255, 68] },
+            { l: 'VIT', v: stats.s.vi, c: [255, 0, 255] },
+            { l: 'DEX', v: stats.s.de, c: [68, 255, 68] },
+            { l: 'ARM', v: stats.s.ar, c: [136, 136, 136] }
+        ];
+
+        statList.forEach(s => {
+            if(s.v > 0) {
+                pdf.setTextColor(...s.c);
+                pdf.text(`${s.l}: +${s.v}`, 15, yPos);
+                yPos += 6;
+            }
+        });
+
+        yPos += 10;
+        if(stats.activeMythics.length > 0) {
+            pdf.setTextColor(160, 32, 240); // Mythic Color
+            pdf.setFontSize(14);
+            pdf.text("ACTIVE MYTHICS:", 10, yPos);
+            yPos += 8;
+            
+            pdf.setFontSize(10);
+            pdf.setTextColor(255, 255, 255);
+            stats.activeMythics.forEach(m => {
+                const mythic = mythicData[m];
+                pdf.text(`- ${mythic.name}`, 10, yPos);
+                yPos += 5;
+                // Simple wrapping for description if needed, or just skip it to keep it simple as requested
+                // User asked for "lista mais simplificada showing what was selected"
+            });
+        }
+
+        // Tree Image
+        const treeX = 80; // Moved slightly left since sidebar is text now
+        const treeMaxWidth = pageWidth - 90;
+        const treeMaxHeight = pageHeight - 50;
         
         let treeW = treeMaxWidth;
         let treeH = (treeCanvas.height * treeW) / treeCanvas.width;
@@ -365,7 +467,10 @@ const HeroLevelTree = () => {
             treeW = (treeCanvas.width * treeH) / treeCanvas.height;
         }
 
-        pdf.addImage(treeImgData, 'PNG', treeX, 50, treeW, treeH);
+        // Center tree vertically if possible
+        const treeY = 50 + (treeMaxHeight - treeH) / 2;
+
+        pdf.addImage(treeImgData, 'PNG', treeX, treeY > 50 ? treeY : 50, treeW, treeH);
 
         pdf.save('hero-level-tree.pdf');
 

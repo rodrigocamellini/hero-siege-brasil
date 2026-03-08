@@ -52,6 +52,7 @@ const Incarnation = () => {
                 <button className="text-orange-500">Builder</button>
                 {isBuilderOpen && (
                   <div className="absolute top-full left-0 w-48 bg-[#0b0d14] border border-white/10 py-2 rounded shadow-xl text-[11px]">
+                    <button onClick={() => navigate('/forum')} className="block w-full text-left px-4 py-2 hover:bg-white/5 hover:text-white uppercase tracking-widest font-bold text-gray-400">Forum</button>
                     <button onClick={() => navigate('/hero-skills')} className="block w-full text-left px-4 py-2 hover:bg-white/5 hover:text-white uppercase tracking-widest font-bold text-gray-400">Hero Skills</button>
                     <button onClick={() => navigate('/hero-level-tree')} className="block w-full text-left px-4 py-2 hover:bg-white/5 hover:text-white uppercase tracking-widest font-bold text-gray-400">Hero Level Tree</button>
                     <button onClick={() => navigate('/ether')} className="flex items-center justify-between w-full text-left px-4 py-2 hover:bg-white/5 hover:text-white uppercase tracking-widest font-bold text-gray-400">

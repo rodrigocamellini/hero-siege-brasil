@@ -3,14 +3,14 @@ rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
 
-    // Helper para verificar admin
+    // Helper para verificar se é o administrador
     function isAdmin() {
       return request.auth != null && request.auth.uid == "hfsHCehqYgen7OAfXUYl58fEPo02";
     }
 
     // Posts e comentários
     match /posts/{postId} {
-      // Público vê publicados, Admin vê tudo
+      // Público vê apenas publicados, Admin vê tudo (rascunhos, etc)
       allow read: if resource.data.status == "published" || isAdmin();
       allow write: if isAdmin();
 
@@ -33,13 +33,22 @@ service cloud.firestore {
       allow write: if isAdmin();
     }
     
-    // Equipe / Colaboradores (NOVO)
+    // NOVA REGRA: Equipe / Colaboradores
+    // Necessário para a aba "Configurações" do painel e a página "Equipe"
     match /team/{memberId} {
       allow read: if true;
       allow write: if isAdmin();
     }
 
-    // Builds do Forum (moderação)
+    // Configurações da Árvore Ether (Nodes e Detalhes)
+    // Permite que qualquer um leia os detalhes dos nós (nome, status, etc)
+    // Apenas admin pode editar via Painel
+    match /ether_tree_nodes/{nodeId} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+
+    // Builds do Forum (O site usa a rota /forum, mas o banco usa a coleção 'builds')
     match /builds/{buildId} {
       // Público só enxerga builds já publicadas, Admin vê tudo
       allow read: if resource.data.status == "published" || isAdmin();
@@ -56,15 +65,20 @@ service cloud.firestore {
       allow create: if true;
       allow read, update, delete: if isAdmin();
     }
-
-    // Backups (Apenas admin pode ler/escrever)
-    match /backups/{backupId} {
+    
+    // 1. Regra específica para a coleção de Backups
+    match /backups/{backup} {
       allow read, write: if isAdmin();
     }
 
-    // Padrão (Cuidado: isso torna tudo público para leitura se não houver regra mais restrita que negue. 
-    // No Firestore, se UMA regra permitir, o acesso é concedido. 
-    // Para restringir posts não publicados, idealmente remova o allow read: if true global e liste as coleções permitidas.)
+    // 2. Regra GLOBAL para o Admin (Essencial para o Backup/Restore funcionar)
+    // O Admin precisa poder ler/escrever em posts, builds, team, config, etc.
+    match /{document=**} {
+      allow read, write: if isAdmin();
+    }
+
+    // Regra Padrão (Fallback)
+    // Mantém compatibilidade com outras coleções (classes, items, etc)
     match /{document=**} {
       allow read: if true;
       allow write: if false;

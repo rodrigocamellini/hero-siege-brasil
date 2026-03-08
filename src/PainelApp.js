@@ -95,6 +95,7 @@ function parseViewFromHash() {
   if (hash.startsWith('#painel/homepage')) return 'homepage';
   if (hash.startsWith('#painel/backup')) return 'backup';
   if (hash.startsWith('#painel/configuracoes')) return 'settings';
+  if (hash.startsWith('#painel/ether-tree')) return 'ether-tree';
   return 'dashboard';
 }
 
@@ -387,6 +388,8 @@ function PainelSidebar({ view, onChange }) {
       window.location.hash = '#painel/backup';
     } else if (target === 'settings') {
       window.location.hash = '#painel/configuracoes';
+    } else if (target === 'ether-tree') {
+      window.location.hash = '#painel/ether-tree';
     }
     onChange(target);
   };
@@ -449,6 +452,13 @@ function PainelSidebar({ view, onChange }) {
         >
           <span>Configurações</span>
           {view === 'settings' && <span className="painel-nav-badge">Atual</span>}
+        </div>
+        <div
+          className={`painel-nav-item ${view === 'ether-tree' ? 'active' : ''}`}
+          onClick={() => go('ether-tree')}
+        >
+          <span>Ether Tree</span>
+          {view === 'ether-tree' && <span className="painel-nav-badge">Atual</span>}
         </div>
       </div>
     </aside>
@@ -3440,6 +3450,7 @@ function PainelApp() {
         {effectiveView === 'homepage' && <PainelHomepage />}
         {effectiveView === 'backup' && <PainelBackup />}
         {effectiveView === 'settings' && <PainelSettings />}
+        {effectiveView === 'ether-tree' && <PainelEtherTree />}
       </div>
     </>
   );
@@ -4244,6 +4255,303 @@ function PainelSettings() {
           </div>
           <div className="painel-modal-body">
             <p className="painel-muted">Tem certeza que deseja remover {delName} da equipe?</p>
+            <div className="painel-row" style={{ marginTop: 16, justifyContent: 'flex-end' }}>
+              <button type="button" className="painel-button" onClick={() => setConfirmDelOpen(false)}>Cancelar</button>
+              <button type="button" className="painel-button painel-danger-text" onClick={confirmDelete}>Excluir</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function PainelEtherTree() {
+  const [nodes, setNodes] = useState([]);
+  const [loading, setLoading] = useState(false);
+  const [searchTerm, setSearchTerm] = useState('');
+  
+  // Form states
+  const [modalOpen, setModalOpen] = useState(false);
+  const [editingId, setEditingId] = useState(null); // ID do documento/nó
+  const [nodeId, setNodeId] = useState(''); // ID do nó (chave)
+  const [name, setName] = useState('');
+  const [desc, setDesc] = useState('');
+
+  // Delete states
+  const [confirmDelOpen, setConfirmDelOpen] = useState(false);
+  const [delId, setDelId] = useState(null);
+
+  // Config states
+  const [maxPoints, setMaxPoints] = useState(60);
+  const [infinitePoints, setInfinitePoints] = useState(false);
+  const [configLoading, setConfigLoading] = useState(false);
+
+  useEffect(() => {
+    // Carregar configuração global
+    const loadConfig = async () => {
+      try {
+        const docRef = doc(db, 'config', 'ether_tree');
+        const snap = await getDoc(docRef);
+        if (snap.exists()) {
+          const data = snap.data();
+          setMaxPoints(data.maxPoints !== undefined ? data.maxPoints : 60);
+          setInfinitePoints(data.infinitePoints !== undefined ? data.infinitePoints : false);
+        }
+      } catch (e) {
+        console.error("Erro ao carregar config:", e);
+      }
+    };
+    loadConfig();
+
+    const q = collection(db, 'ether_tree_nodes');
+    const unsub = onSnapshot(q, (snap) => {
+      const list = [];
+      snap.forEach((d) => list.push({ id: d.id, ...d.data() }));
+      list.sort((a, b) => {
+        const idA = parseInt(a.id);
+        const idB = parseInt(b.id);
+        if (!isNaN(idA) && !isNaN(idB)) {
+          return idA - idB;
+        }
+        return a.id.localeCompare(b.id);
+      });
+      setNodes(list);
+    });
+    return () => unsub();
+  }, []);
+
+  const saveConfig = async () => {
+    setConfigLoading(true);
+    try {
+      await setDoc(doc(db, 'config', 'ether_tree'), {
+        maxPoints: parseInt(maxPoints),
+        infinitePoints: infinitePoints,
+        updatedAt: serverTimestamp()
+      });
+      alert('Configuração salva com sucesso!');
+    } catch (e) {
+      console.error(e);
+      alert('Erro ao salvar configuração: ' + e.message);
+    } finally {
+      setConfigLoading(false);
+    }
+  };
+
+  const openNew = () => {
+    setEditingId(null);
+    setNodeId('');
+    setName('');
+    setDesc('');
+    setModalOpen(true);
+  };
+
+  const openEdit = (node) => {
+    setEditingId(node.id);
+    setNodeId(node.id);
+    setName(node.name || '');
+    setDesc(node.description || '');
+    setModalOpen(true);
+  };
+
+  const handleSave = async () => {
+    if (!nodeId) return alert('ID do Node é obrigatório');
+    setLoading(true);
+    try {
+      const data = {
+        name,
+        description: desc,
+        updatedAt: serverTimestamp(),
+      };
+
+      await setDoc(doc(db, 'ether_tree_nodes', nodeId), data, { merge: true });
+      
+      setModalOpen(false);
+      setNodeId('');
+      setName('');
+      setDesc('');
+    } catch (e) {
+      console.error(e);
+      alert('Erro ao salvar: ' + e.message);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const askDelete = (id) => {
+    setDelId(id);
+    setConfirmDelOpen(true);
+  };
+
+  const confirmDelete = async () => {
+    if (!delId) return;
+    try {
+      await deleteDoc(doc(db, 'ether_tree_nodes', delId));
+      setConfirmDelOpen(false);
+      setDelId(null);
+    } catch (e) {
+      console.error(e);
+      alert('Erro ao excluir');
+    }
+  };
+
+  const filteredNodes = nodes.filter(n => 
+    n.id.toLowerCase().includes(searchTerm.toLowerCase()) || 
+    (n.name && n.name.toLowerCase().includes(searchTerm.toLowerCase()))
+  );
+
+  return (
+    <div className="painel-main">
+      <div className="painel-page-header">
+        <div>
+          <div className="painel-page-title">Ether Tree Skills</div>
+          <div className="painel-page-sub">Gerencie as informações das skills da árvore Ether</div>
+        </div>
+        <button type="button" className="painel-button" onClick={openNew}>
+          + Nova Skill Info
+        </button>
+      </div>
+
+      <div className="painel-card" style={{ marginBottom: 20 }}>
+        <div className="painel-card-inner">
+          <div className="painel-card-title">Configurações da Árvore</div>
+          <div className="painel-row" style={{ alignItems: 'flex-end', gap: 16, flexWrap: 'wrap' }}>
+            <div>
+              <label className="painel-login-label">Máximo de Pontos</label>
+              <input 
+                type="number"
+                className="painel-input" 
+                value={maxPoints}
+                onChange={(e) => setMaxPoints(e.target.value)}
+                style={{ maxWidth: 120 }}
+                disabled={infinitePoints}
+              />
+            </div>
+            <div style={{ display: 'flex', alignItems: 'center', height: 40, marginBottom: 4 }}>
+              <label style={{ display: 'flex', alignItems: 'center', gap: 8, cursor: 'pointer', color: '#ccc' }}>
+                <input 
+                  type="checkbox" 
+                  checked={infinitePoints} 
+                  onChange={(e) => setInfinitePoints(e.target.checked)}
+                />
+                Pontos Infinitos
+              </label>
+            </div>
+            <button 
+              type="button" 
+              className="painel-button" 
+              onClick={saveConfig}
+              disabled={configLoading}
+            >
+              {configLoading ? 'Salvando...' : 'Salvar Configuração'}
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <div className="painel-card">
+        <div className="painel-card-inner">
+          <div className="painel-row" style={{ marginBottom: 16 }}>
+            <input 
+              className="painel-input" 
+              placeholder="Buscar por ID ou Nome..." 
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              style={{ maxWidth: 300 }}
+            />
+          </div>
+
+          <div className="painel-table-wrapper">
+            <table className="painel-table">
+              <thead>
+                <tr>
+                  <th>ID (Node)</th>
+                  <th>Nome da Skill</th>
+                  <th>Descrição</th>
+                  <th style={{ width: 100 }}>Ações</th>
+                </tr>
+              </thead>
+              <tbody>
+                {filteredNodes.length === 0 ? (
+                  <tr>
+                    <td colSpan={4} className="painel-muted">Nenhuma skill cadastrada.</td>
+                  </tr>
+                ) : (
+                  filteredNodes.map((n) => (
+                    <tr key={n.id}>
+                      <td><strong>{n.id}</strong></td>
+                      <td>{n.name}</td>
+                      <td style={{ maxWidth: 300, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                        {n.description}
+                      </td>
+                      <td className="painel-actions-cell">
+                        <button type="button" className="painel-button" onClick={() => openEdit(n)}>✏️</button>
+                        <button type="button" className="painel-button painel-danger-text" onClick={() => askDelete(n.id)}>🗑️</button>
+                      </td>
+                    </tr>
+                  ))
+                )}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      {/* Modal Edição/Criação */}
+      <div className={`painel-modal ${modalOpen ? '' : 'hidden'}`}>
+        <div className="painel-modal-backdrop" onClick={() => setModalOpen(false)} />
+        <div className="painel-modal-content">
+          <div className="painel-modal-header">
+            <div className="painel-modal-title">{editingId ? 'Editar Skill' : 'Nova Skill Info'}</div>
+            <button type="button" className="painel-modal-close" onClick={() => setModalOpen(false)}>×</button>
+          </div>
+          <div className="painel-modal-body">
+            <div style={{ marginBottom: 12 }}>
+              <label className="painel-login-label">ID do Node (ex: n1, start)</label>
+              <input 
+                className="painel-input" 
+                value={nodeId} 
+                onChange={(e) => setNodeId(e.target.value)} 
+                disabled={!!editingId} // Não pode mudar ID na edição
+                placeholder="ID exato do HTML"
+              />
+              <p className="painel-muted" style={{ fontSize: 11, marginTop: 4 }}>Deve corresponder exatamente ao ID definido na estrutura da árvore.</p>
+            </div>
+            
+            <div style={{ marginBottom: 12 }}>
+              <label className="painel-login-label">Nome da Skill</label>
+              <input className="painel-input" value={name} onChange={(e) => setName(e.target.value)} />
+            </div>
+
+            <div style={{ marginBottom: 12 }}>
+              <label className="painel-login-label">Descrição</label>
+              <textarea 
+                className="painel-textarea" 
+                value={desc} 
+                onChange={(e) => setDesc(e.target.value)} 
+                rows={5} 
+              />
+            </div>
+
+            <div className="painel-row" style={{ marginTop: 20, justifyContent: 'flex-end' }}>
+              <button type="button" className="painel-button" onClick={() => setModalOpen(false)}>Cancelar</button>
+              <button type="button" className="painel-button" onClick={handleSave} disabled={loading}>
+                {loading ? 'Salvando...' : 'Salvar'}
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Modal Delete */}
+      <div className={`painel-modal ${confirmDelOpen ? '' : 'hidden'}`}>
+        <div className="painel-modal-backdrop" onClick={() => setConfirmDelOpen(false)} />
+        <div className="painel-modal-content small">
+          <div className="painel-modal-header">
+            <div className="painel-modal-title">Confirmar exclusão</div>
+          </div>
+          <div className="painel-modal-body">
+            <p className="painel-muted">Tem certeza que deseja remover as informações do nó <strong>{delId}</strong>?</p>
             <div className="painel-row" style={{ marginTop: 16, justifyContent: 'flex-end' }}>
               <button type="button" className="painel-button" onClick={() => setConfirmDelOpen(false)}>Cancelar</button>
               <button type="button" className="painel-button painel-danger-text" onClick={confirmDelete}>Excluir</button>
