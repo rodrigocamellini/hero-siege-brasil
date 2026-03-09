@@ -72,17 +72,13 @@ const KNOWN_CLASSES = [
 ];
 
 const imageFor = (name) => {
-  const base = String(name || '').toLowerCase().trim();
-  const classMap = {
-    'marksman': 'arqueiro',
-    'shield lancer': 'cavaleiro',
-    'demon slayer': 'demonslayer',
-    'amazon': 'amazon',
-    'bard': 'bard',
-    'butcher': 'butcher',
-  };
-  const finalName = classMap[base] || base;
-  return `${process.env.PUBLIC_URL || ''}/images/${finalName}.webp`;
+  const base = String(name || '')
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .toLowerCase()
+    .replace(/\s+/g, '');
+    
+  return `${process.env.PUBLIC_URL || ''}/images/${base}.webp`;
 };
 
 function parseViewFromHash() {
@@ -4277,6 +4273,8 @@ function PainelEtherTree() {
   const [nodeId, setNodeId] = useState(''); // ID do nó (chave)
   const [name, setName] = useState('');
   const [desc, setDesc] = useState('');
+  const [icon, setIcon] = useState(''); // FontAwesome class
+  const [iconColor, setIconColor] = useState('#ffffff'); // Hex Color
 
   // Delete states
   const [confirmDelOpen, setConfirmDelOpen] = useState(false);
@@ -4308,6 +4306,16 @@ function PainelEtherTree() {
     const unsub = onSnapshot(q, (snap) => {
       const list = [];
       snap.forEach((d) => list.push({ id: d.id, ...d.data() }));
+      
+      // Injetar Node 12 se não existir (Correção solicitada)
+      if (!list.find(n => n.id === '12')) {
+        list.push({ 
+          id: '12', 
+          name: 'Node 12 (Não Configurado)', 
+          description: 'Este nó ainda não existe no banco de dados. Clique em editar para criá-lo.' 
+        });
+      }
+
       list.sort((a, b) => {
         const idA = parseInt(a.id);
         const idB = parseInt(b.id);
@@ -4325,10 +4333,10 @@ function PainelEtherTree() {
     setConfigLoading(true);
     try {
       await setDoc(doc(db, 'config', 'ether_tree'), {
-        maxPoints: parseInt(maxPoints),
+        maxPoints: parseInt(maxPoints) || 0,
         infinitePoints: infinitePoints,
         updatedAt: serverTimestamp()
-      });
+      }, { merge: true });
       alert('Configuração salva com sucesso!');
     } catch (e) {
       console.error(e);
@@ -4343,6 +4351,8 @@ function PainelEtherTree() {
     setNodeId('');
     setName('');
     setDesc('');
+    setIcon('');
+    setIconColor('#ffffff');
     setModalOpen(true);
   };
 
@@ -4351,6 +4361,8 @@ function PainelEtherTree() {
     setNodeId(node.id);
     setName(node.name || '');
     setDesc(node.description || '');
+    setIcon(node.icon || '');
+    setIconColor(node.iconColor || '#ffffff');
     setModalOpen(true);
   };
 
@@ -4361,6 +4373,8 @@ function PainelEtherTree() {
       const data = {
         name,
         description: desc,
+        icon,
+        iconColor,
         updatedAt: serverTimestamp(),
       };
 
@@ -4370,6 +4384,8 @@ function PainelEtherTree() {
       setNodeId('');
       setName('');
       setDesc('');
+      setIcon('');
+      setIconColor('#ffffff');
     } catch (e) {
       console.error(e);
       alert('Erro ao salvar: ' + e.message);
@@ -4466,6 +4482,7 @@ function PainelEtherTree() {
               <thead>
                 <tr>
                   <th>ID (Node)</th>
+                  <th style={{ width: 60, textAlign: 'center' }}>Icon</th>
                   <th>Nome da Skill</th>
                   <th>Descrição</th>
                   <th style={{ width: 100 }}>Ações</th>
@@ -4474,12 +4491,21 @@ function PainelEtherTree() {
               <tbody>
                 {filteredNodes.length === 0 ? (
                   <tr>
-                    <td colSpan={4} className="painel-muted">Nenhuma skill cadastrada.</td>
+                    <td colSpan={5} className="painel-muted">Nenhuma skill cadastrada.</td>
                   </tr>
                 ) : (
                   filteredNodes.map((n) => (
                     <tr key={n.id}>
                       <td><strong>{n.id}</strong></td>
+                      <td style={{ textAlign: 'center' }}>
+                        {n.icon && (
+                          <i 
+                            className={n.icon} 
+                            style={{ color: n.iconColor || '#333', fontSize: 18 }} 
+                            title={n.icon}
+                          ></i>
+                        )}
+                      </td>
                       <td>{n.name}</td>
                       <td style={{ maxWidth: 300, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
                         {n.description}
@@ -4531,6 +4557,39 @@ function PainelEtherTree() {
                 onChange={(e) => setDesc(e.target.value)} 
                 rows={5} 
               />
+            </div>
+
+            <div style={{ marginBottom: 12 }}>
+              <label className="painel-login-label">Ícone (FontAwesome ou Remix Icon)</label>
+              <div style={{ display: 'flex', gap: 10, alignItems: 'center' }}>
+                <input 
+                  className="painel-input" 
+                  value={icon} 
+                  onChange={(e) => setIcon(e.target.value)} 
+                  placeholder="fa-solid fa-fire ou ri-fire-fill"
+                  style={{ flex: 1 }}
+                />
+                <div style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
+                  <input 
+                    type="text"
+                    className="painel-input"
+                    value={iconColor} 
+                    onChange={(e) => setIconColor(e.target.value)} 
+                    placeholder="#ffffff"
+                    style={{ width: 90, textAlign: 'center' }}
+                  />
+                  <input 
+                    type="color" 
+                    value={iconColor} 
+                    onChange={(e) => setIconColor(e.target.value)} 
+                    style={{ height: 40, width: 40, padding: 0, border: 'none', background: 'none', cursor: 'pointer' }}
+                  />
+                </div>
+              </div>
+              <p className="painel-muted" style={{ fontSize: 11, marginTop: 4 }}>
+                <strong>FontAwesome Grátis:</strong> <a href="https://fontawesome.com/search?o=r&m=free" target="_blank" rel="noopener noreferrer" style={{ color: '#00f2ff' }}>Clique aqui</a><br/>
+                <strong>Remix Icon (Todos Grátis):</strong> <a href="https://remixicon.com/" target="_blank" rel="noopener noreferrer" style={{ color: '#00f2ff' }}>Clique aqui</a> (Use classes como <code>ri-home-fill</code>)
+              </p>
             </div>
 
             <div className="painel-row" style={{ marginTop: 20, justifyContent: 'flex-end' }}>

@@ -261,6 +261,68 @@ const EtherTree = () => {
         });
     };
 
+    // Agregação de Stats Ativos
+    const aggregatedStats = useMemo(() => {
+        const stats = {};
+        const sortedKeys = [];
+
+        activeNodes.forEach(nodeId => {
+            const data = nodeData[nodeId];
+            // Se não tiver dados ou descrição, ignora
+            if (!data || !data.description) return;
+
+            const lines = data.description.split('\n');
+            lines.forEach(line => {
+                const trimmed = line.trim();
+                if (!trimmed) return;
+
+                // Tenta extrair número no início: "+10 Str", "10% Dmg", "-5 CDR", "+0,25% Atk", "0.5% Speed"
+                // Suporta ponto ou vírgula decimal
+                const matchNum = trimmed.match(/^([+-]?)\s*(\d+(?:[.,]\d+)?)(%?)\s+(.*)$/i);
+                
+                if (matchNum) {
+                    const signStr = matchNum[1];
+                    const numStr = matchNum[2].replace(',', '.'); // Converte vírgula para ponto
+                    const percentStr = matchNum[3]; // "%" ou ""
+                    const nameStr = matchNum[4].trim();
+                    
+                    const val = parseFloat(numStr) * (signStr === '-' ? -1 : 1);
+                    const key = nameStr.toLowerCase(); // Normalizar chave para agrupar
+                    
+                    if (!stats[key]) {
+                        stats[key] = { 
+                            name: nameStr, // Manter casing do primeiro encontrado
+                            value: 0, 
+                            isPercent: !!percentStr,
+                            type: 'numeric',
+                            icon: data.icon,
+                            iconColor: data.iconColor
+                        };
+                        sortedKeys.push(key);
+                    }
+                    stats[key].value += val;
+                } else {
+                    // Texto sem número no início
+                    const key = trimmed.toLowerCase();
+                    if (!stats[key]) {
+                         stats[key] = {
+                             name: trimmed,
+                             count: 0,
+                             type: 'text',
+                             icon: data.icon,
+                             iconColor: data.iconColor
+                         };
+                         sortedKeys.push(key);
+                    }
+                    stats[key].count += 1;
+                }
+            });
+        });
+        
+        // Retornar lista ordenada alfabeticamente
+        return Object.values(stats).sort((a, b) => a.name.localeCompare(b.name));
+    }, [activeNodes, nodeData]);
+
     // Handlers de Mouse para Pan/Zoom
     const handleWheel = (e) => {
         // Zoom focado no centro da tela por simplicidade ou na posição do mouse
@@ -300,6 +362,52 @@ const EtherTree = () => {
             onMouseLeave={handleMouseUp}
             ref={containerRef}
         >
+            {/* Painel de Stats Ativos */}
+            <div 
+                className="absolute top-20 left-4 z-40 pointer-events-none flex flex-col justify-start h-[calc(100%-120px)]"
+                onWheel={(e) => e.stopPropagation()}
+            >
+                 {aggregatedStats.length > 0 && (
+                    <div className="bg-[#000f1e]/90 border border-[#00f2ff] rounded-lg p-4 shadow-[0_0_20px_rgba(0,242,255,0.2)] backdrop-blur-sm w-64 pointer-events-auto overflow-y-auto custom-scrollbar">
+                        <h3 className="text-[#00f2ff] text-sm border-b border-[#00f2ff]/30 pb-2 mb-2 uppercase tracking-wider font-bold sticky top-0 bg-[#000f1e]/95 z-10">
+                            Bônus Ativos
+                        </h3>
+                        <ul className="flex flex-col">
+                            {aggregatedStats.map((stat, idx) => (
+                                <li 
+                                    key={idx} 
+                                    className={`
+                                        text-xs flex justify-between items-center px-3 py-2 border-b border-white/5 
+                                        ${idx % 2 === 0 ? 'bg-white/5' : 'bg-transparent'} 
+                                        hover:bg-white/10 transition-colors duration-200 first:rounded-t last:rounded-b last:border-0
+                                    `}
+                                >
+                                    {stat.type === 'numeric' ? (
+                                        <>
+                                            {stat.icon && (
+                                                <i className={`${stat.icon} mr-2`} style={{ color: stat.iconColor || '#FFD700', fontSize: '12px' }}></i>
+                                            )}
+                                            <span className="text-[#FFD700] font-bold mr-3 whitespace-nowrap min-w-[30px] text-right" style={{ textShadow: '0 0 5px rgba(255, 215, 0, 0.3)' }}>
+                                                {stat.value > 0 ? '+' : ''}{Number.isInteger(stat.value) ? stat.value : stat.value.toFixed(2)}{stat.isPercent ? '%' : ''}
+                                            </span>
+                                            <span className="text-left flex-1 text-gray-300 break-words font-medium tracking-wide">{stat.name}</span>
+                                        </>
+                                    ) : (
+                                        <>
+                                            {stat.icon && (
+                                                <i className={`${stat.icon} mr-2`} style={{ color: stat.iconColor || '#FFD700', fontSize: '12px' }}></i>
+                                            )}
+                                            <span className="text-left flex-1 text-[#FFD700] break-words font-medium tracking-wide">{stat.name}</span>
+                                            {stat.count > 1 && <span className="text-white/80 font-bold ml-2 whitespace-nowrap bg-white/10 px-1.5 rounded">x{stat.count}</span>}
+                                        </>
+                                    )}
+                                </li>
+                            ))}
+                        </ul>
+                    </div>
+                 )}
+            </div>
+
             {/* Toolbar UI */}
             <div className="absolute top-5 right-5 z-50 pointer-events-none">
                 <div className="bg-[#000f1e]/90 border border-[#00f2ff] rounded-lg p-4 shadow-[0_0_20px_rgba(0,242,255,0.2)] backdrop-blur-sm w-80 pointer-events-auto">
@@ -328,12 +436,17 @@ const EtherTree = () => {
                                     
                                     <div>
                                         <span className="text-[#00f2ff]/60 text-[10px] uppercase block mb-1">Nome</span>
-                                        <span 
-                                            className="text-[#FFD700] font-bold text-base leading-tight block"
-                                            style={{ textShadow: '0 0 10px rgba(255, 215, 0, 0.5)' }}
-                                        >
-                                            {name}
-                                        </span>
+                                        <div className="flex items-center gap-2">
+                                            {dbData.icon && (
+                                                <i className={dbData.icon} style={{ color: dbData.iconColor || '#FFD700', fontSize: '1.2rem' }}></i>
+                                            )}
+                                            <span 
+                                                className="text-[#FFD700] font-bold text-base leading-tight block"
+                                                style={{ textShadow: '0 0 10px rgba(255, 215, 0, 0.5)' }}
+                                            >
+                                                {name}
+                                            </span>
+                                        </div>
                                     </div>
 
                                     <div className="bg-[#001a33]/50 p-2 rounded border border-[#00f2ff]/20">
@@ -479,7 +592,7 @@ const EtherTree = () => {
                 {/* SVG Connections Layer */}
                 <svg className="absolute top-0 left-0 w-full h-full overflow-visible pointer-events-none">
                     <defs>
-                        <filter id="glow" x="-50%" y="-50%" width="200%" height="200%">
+                        <filter id="ether-glow" x="-50%" y="-50%" width="200%" height="200%">
                             <feGaussianBlur stdDeviation="3" result="coloredBlur"/>
                             <feMerge>
                                 <feMergeNode in="coloredBlur"/>
@@ -504,13 +617,13 @@ const EtherTree = () => {
                                 y1={n1.y - CENTER_ORIGIN.y} 
                                 x2={n2.x - CENTER_ORIGIN.x} 
                                 y2={n2.y - CENTER_ORIGIN.y} 
-                                stroke={isActive ? COLOR_ACTIVE : "rgba(0, 242, 255, 0.5)"}
+                                stroke={isActive ? COLOR_ACTIVE : "rgba(100, 100, 100, 0.3)"}
                                 strokeWidth={isActive ? 3 : 2}
                                 strokeLinecap="round"
                                 style={{
-                                    filter: isActive ? 'url(#glow)' : 'none',
+                                    filter: isActive ? 'drop-shadow(0 0 3px #00f2ff)' : 'none',
                                     transition: 'stroke 0.3s ease, stroke-width 0.3s ease',
-                                    opacity: isActive ? 1 : 0.8
+                                    opacity: isActive ? 1 : 0.6
                                 }}
                             />
                         );
@@ -521,6 +634,24 @@ const EtherTree = () => {
                 {rawData.map((node, idx) => {
                     const isActive = activeNodes.has(idx);
                     const isCore = idx === 0;
+                    const degree = (adjacencyList[idx] || []).length;
+                    const isLeaf = (degree === 1 && !isCore) || idx === 282;
+                    
+                    // Determine node appearance
+                    let nodeSize = NODE_RADIUS * 2;
+                    let nodeImage = null;
+                    
+                    if (isLeaf) {
+                        nodeSize = NODE_RADIUS * 5;
+                        nodeImage = "/images/bestnode.webp";
+                    } else if (isCore) {
+                        nodeSize = NODE_RADIUS * 4;
+                        nodeImage = "/images/nodeinicial.webp";
+                    } else {
+                        nodeSize = NODE_RADIUS * 3.5;
+                        nodeImage = "/images/node.webp";
+                    }
+
                     const x = node.x - CENTER_ORIGIN.x;
                     const y = node.y - CENTER_ORIGIN.y;
                     
@@ -531,13 +662,13 @@ const EtherTree = () => {
                             style={{
                                 left: x,
                                 top: y,
-                                width: NODE_RADIUS * 2,
-                                height: NODE_RADIUS * 2,
+                                width: nodeSize,
+                                height: nodeSize,
                                 transform: 'translate(-50%, -50%)',
-                                backgroundColor: isCore ? COLOR_CORE : (isActive ? COLOR_ACTIVE : COLOR_INACTIVE),
+                                backgroundColor: nodeImage ? 'transparent' : (isCore ? COLOR_CORE : (isActive ? COLOR_ACTIVE : COLOR_INACTIVE)),
                                 boxShadow: isActive ? `0 0 10px ${isCore ? COLOR_CORE : COLOR_ACTIVE}` : 'none',
-                                border: isActive ? '2px solid white' : `1px solid ${COLOR_ACTIVE}33`,
-                                zIndex: isActive ? 10 : 1,
+                                border: nodeImage ? 'none' : (isActive ? '2px solid white' : `1px solid ${COLOR_ACTIVE}33`),
+                                zIndex: isActive || isLeaf ? 10 : 1,
                                 cursor: 'pointer'
                             }}
                             onMouseEnter={() => setHoveredNode(idx)}
@@ -546,7 +677,32 @@ const EtherTree = () => {
                                 e.stopPropagation();
                                 handleNodeClick(idx);
                             }}
-                        />
+                        >
+                            {nodeImage && (
+                                <img 
+                                    src={nodeImage} 
+                                    alt="Node" 
+                                    className={`w-full h-full object-contain drop-shadow-md ${isActive ? 'brightness-125 saturate-150' : 'opacity-80 grayscale'}`}
+                                />
+                            )}
+                            
+                            {/* Renderizar ícone do Firestore se existir */}
+                            {nodeData[idx] && nodeData[idx].icon && (
+                                <div 
+                                    className="absolute inset-0 flex items-center justify-center pointer-events-none"
+                                    style={{ zIndex: 11 }}
+                                >
+                                    <i 
+                                        className={nodeData[idx].icon} 
+                                        style={{ 
+                                            color: nodeData[idx].iconColor || '#ffffff',
+                                            fontSize: isLeaf ? '2rem' : (isCore ? '1.5rem' : '1.2rem'),
+                                            filter: 'drop-shadow(0 2px 2px rgba(0,0,0,0.8))'
+                                        }}
+                                    ></i>
+                                </div>
+                            )}
+                        </div>
                     );
                 })}
             </div>
@@ -574,7 +730,12 @@ const EtherTree = () => {
                                 marginTop: '-10px'
                             }}
                         >
-                            <h3 className="text-[#FFD700] font-bold text-lg mb-1 border-b border-cyan-500/30 pb-1">{name}</h3>
+                            <h3 className="text-[#FFD700] font-bold text-lg mb-1 border-b border-cyan-500/30 pb-1 flex items-center gap-2">
+                                {dbData.icon && (
+                                    <i className={dbData.icon} style={{ color: dbData.iconColor || '#FFD700' }}></i>
+                                )}
+                                {name}
+                            </h3>
                             <p className="text-gray-300 text-sm leading-relaxed whitespace-pre-line">{description}</p>
                             <div className="mt-3 flex items-center justify-between text-xs font-mono text-gray-500 border-t border-gray-800 pt-2">
                                 <span>ID: {hoveredNode}</span>

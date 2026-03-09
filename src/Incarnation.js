@@ -42,6 +42,15 @@ const Incarnation = () => {
                     <button onClick={() => navigate('/classes')} className="block w-full text-left px-4 py-2 hover:bg-white/5 hover:text-white">Classes</button>
                     <button onClick={() => navigate('/items')} className="block w-full text-left px-4 py-2 hover:bg-white/5 hover:text-white">Items</button>
                     <button onClick={() => navigate('/runes')} className="block w-full text-left px-4 py-2 hover:bg-white/5 hover:text-white">Runas</button>
+                    <button onClick={() => navigate('/relics')} className="block w-full text-left px-4 py-2 hover:bg-white/5 hover:text-white">Relíquias</button>
+                    <button onClick={() => navigate('/chaos-tower')} className="block w-full text-left px-4 py-2 hover:bg-white/5 hover:text-white">Chaos Tower</button>
+                    <button onClick={() => navigate('/mercenarios')} className="block w-full text-left px-4 py-2 hover:bg-white/5 hover:text-white">Mercenários</button>
+                    <button onClick={() => navigate('/chaves')} className="block w-full text-left px-4 py-2 hover:bg-white/5 hover:text-white">Chaves</button>
+                    <button onClick={() => navigate('/augments')} className="block w-full text-left px-4 py-2 hover:bg-white/5 hover:text-white">Augments</button>
+                    <button onClick={() => navigate('/quests')} className="block w-full text-left px-4 py-2 hover:bg-white/5 hover:text-white">Quests</button>
+                    <button onClick={() => navigate('/mineracao')} className="block w-full text-left px-4 py-2 hover:bg-white/5 hover:text-white">Mineração</button>
+                    <button onClick={() => navigate('/gems')} className="block w-full text-left px-4 py-2 hover:bg-white/5 hover:text-white">Gemas e Jóias</button>
+                    <button onClick={() => navigate('/charms')} className="block w-full text-left px-4 py-2 hover:bg-white/5 hover:text-white">Charms</button>
                   </div>
                 )}
               </div>
